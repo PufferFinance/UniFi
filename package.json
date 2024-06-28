@@ -1,0 +1,32 @@
+{
+  "name": "unifi",
+  "type": "module",
+  "engines": {
+    "node": ">=20.5.1",
+    "npm": ">=9.8.0"
+  },
+  "version": "1.0.0",
+  "description": "Bsed Rollup",
+  "scripts": {
+  },
+  "keywords": [
+    "ethereum",
+    "puffer",
+    "puffer-finance",
+    "solidity",
+    "L2",
+    "based-rollup"
+  ],
+  "author": {
+    "name": "Puffer Finance",
+    "url": "https://puffer.fi"
+  },
+  "license": "ISC",
+  "private": true,
+  "workspaces": {
+    "packages": ["l1-contracts", "l2-contracts"],
+    "nohoist": [
+      "**/*"
+    ]
+  }
+}
