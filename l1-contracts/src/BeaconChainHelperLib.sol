@@ -57,6 +57,9 @@ library BeaconChainHelperLib {
         } else if (block.chainid == 1) {
             // Mainnet
             genesisBlockTimestamp = 1606824023;
+        } else if (block.chainid == 7014190335) {
+            // Helder
+            genesisBlockTimestamp = 1718967660;
         }
 
         return ((timestamp - genesisBlockTimestamp) / 12) - 1;
