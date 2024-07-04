@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 /**
- * @title IPufferBatchInbox
- * @dev Interface for the PufferBatchInbox contract.
+ * @title IPufferBatchSender
+ * @dev Interface for the PufferBatchSender contract.
  */
-interface IPufferBatchInbox {
+
+interface IPufferBatchSender {
     /// @dev Error for incorrect bond amount.
     error IncorrectBondAmount();
 
@@ -22,6 +23,9 @@ interface IPufferBatchInbox {
 
     /// @dev Error for existent batch.
     error BatchAlreadyExist();
+
+    /// @dev Error for when the batch inbox revert the call.
+    error BatchInboxReverted();
 
     /**
      * @notice Allowlist a set of validators.

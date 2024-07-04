@@ -9,7 +9,7 @@ library BeaconChainHelperLib {
         returns (bool)
     {
         // Returns the parent_root, so check the next slot of the target block
-        (bool success, bytes32 beaconRootFromChain) = getRootFromTimestamp(timestamp);
+        (bool success, bytes32 beaconRootFromChain) = getRootFromTimestamp(timestamp + 12);
         assert(success);
 
         uint256 slot = timeStampToSlot(timestamp);
@@ -62,6 +62,6 @@ library BeaconChainHelperLib {
             genesisBlockTimestamp = 1718967660;
         }
 
-        return ((timestamp - genesisBlockTimestamp) / 12) - 1;
+        return ((timestamp - genesisBlockTimestamp) / 12);
     }
 }
