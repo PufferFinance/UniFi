@@ -46,18 +46,16 @@ contract TokenizedVault is ERC4626 {
 
     // a deposit function that receives assets fron users
     function deposit(
-        uint256 assets,
-        address receiver
-    ) public virtual override returns (uint256) {
-        return super.deposit(assets, receiver);
+        uint256 assets
+    ) public virtual returns (uint256) {
+        return super.deposit(assets, address(this));
         // mint the unifiETH to this vault, and transfer to the bridge contract??? - handled in afterDeposit
     }
 
     function mint(
-        uint256 shares,
-        address receiver
-    ) public virtual override returns (uint256) {
-        return super.mint(shares, receiver);
+        uint256 shares
+    ) public virtual returns (uint256) {
+        return super.mint(shares, address(this));
     }
 
     // returns total number of assets
