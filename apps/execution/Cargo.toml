@@ -1,0 +1,31 @@
+[package]
+name = "execution"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# reth
+reth.workspace = true
+reth-exex.workspace = true
+reth-node-api.workspace = true
+reth-node-ethereum.workspace = true
+reth-tracing.workspace = true
+reth-execution-types.workspace = true
+
+# alloy
+alloy-sol-types = { workspace = true }
+alloy-provider = { workspace = true }
+
+# async
+futures.workspace = true
+tokio.workspace = true
+
+# misc
+serde.workspace = true
+tracing.workspace = true
+eyre.workspace = true
+
+[dev-dependencies]
+reth-exex-test-utils.workspace = true
+
+tokio.workspace = true
