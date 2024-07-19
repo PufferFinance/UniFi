@@ -2647,12 +2647,19 @@ dependencies = [
  "alloy-sol-types",
  "eyre",
  "futures",
+ "rand 0.8.5",
  "reth",
+ "reth-chainspec",
+ "reth-config",
+ "reth-consensus",
+ "reth-db-common",
+ "reth-evm",
  "reth-execution-types",
  "reth-exex",
  "reth-exex-test-utils",
  "reth-node-api",
  "reth-node-ethereum",
+ "reth-testing-utils",
  "reth-tracing",
  "serde",
  "tokio",
@@ -7409,6 +7416,17 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-futures",
+]
+
+[[package]]
+name = "reth-testing-utils"
+version = "1.0.2"
+source = "git+https://github.com/paradigmxyz/reth#c3347f323c0a6d7784772624d91edebf4a76d36d"
+dependencies = [
+ "alloy-genesis",
+ "rand 0.8.5",
+ "reth-primitives",
+ "secp256k1",
 ]
 
 [[package]]

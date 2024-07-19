@@ -25,7 +25,11 @@ reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth" }
 reth-primitives = { git = "https://github.com/paradigmxyz/reth" }
 reth-provider = { git = "https://github.com/paradigmxyz/reth" }
 reth-revm = { git = "https://github.com/paradigmxyz/reth" }
+reth-evm = { git = "https://github.com/paradigmxyz/reth" }
 reth-tracing = { git = "https://github.com/paradigmxyz/reth" }
+reth-consensus = { git = "https://github.com/paradigmxyz/reth" }
+reth-db-common = { git = "https://github.com/paradigmxyz/reth" }
+reth-config = { git = "https://github.com/paradigmxyz/reth" }
 
 # alloy
 alloy-primitives = { version = "0.7", features = ["serde", "tiny-keccak"] }
