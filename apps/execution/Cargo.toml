@@ -13,7 +13,9 @@ reth-tracing.workspace = true
 reth-execution-types.workspace = true
 reth-consensus.workspace = true
 reth-evm.workspace = true
+reth-revm.workspace = true
 reth-db-common.workspace = true
+reth-provider.workspace = true
 reth-config.workspace = true
 
 # alloy
@@ -26,8 +28,10 @@ tokio.workspace = true
 
 # misc
 serde.workspace = true
+serde_json.workspace = true
 tracing.workspace = true
 eyre.workspace = true
+rusqlite.workspace = true
 
 [dev-dependencies]
 reth-exex-test-utils.workspace = true

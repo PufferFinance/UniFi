@@ -60,8 +60,10 @@ tokio-stream = "0.1"
 # misc
 hex = { package = "const-hex", version = "1.10", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1"
 tracing = "0.1.40"
 eyre = "0.6"
+rusqlite = { version = "0.31.0", features = ["bundled"] }
 
 # testing
 reth-exex-test-utils = { git = "https://github.com/paradigmxyz/reth" }
