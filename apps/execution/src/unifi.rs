@@ -107,7 +107,7 @@ mod tests {
     use rusqlite::Connection;
     use std::{pin::Pin, sync::Arc};
 
-    use crate::exex::UnifiRollup;
+    use crate::unifi::UnifiRollup;
 
     pub struct TestUnifiRollup {
         chain_spec: Arc<ChainSpec>,

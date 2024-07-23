@@ -3,9 +3,9 @@ members = ["apps/*"]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.1"
+version = "0.0.0"
 edition = "2021"
-rust-version = "1.76"
+rust-version = "1.79"
 authors = ["Puffer Labs"]
 homepage = "https://github.com/PufferFinance/UniFi"
 repository = "https://github.com/PufferFinance/UniFi"
@@ -30,26 +30,10 @@ reth-tracing = { git = "https://github.com/paradigmxyz/reth" }
 reth-consensus = { git = "https://github.com/paradigmxyz/reth" }
 reth-db-common = { git = "https://github.com/paradigmxyz/reth" }
 reth-config = { git = "https://github.com/paradigmxyz/reth" }
+reth-transaction-pool = { git = "https://github.com/paradigmxyz/reth" }
 
 # alloy
-alloy-primitives = { version = "0.7", features = ["serde", "tiny-keccak"] }
 alloy-sol-types = { version = "0.7", features = ["json"] }
-alloy-rlp = { version = "0.3.4" }
-alloy-contract = { version = "0.1", default-features = false }
-alloy-consensus = { version = "0.1", default-features = false, features = ["k256", "kzg"] }
-alloy-eips = { version = "0.1.3", default-features = false }
-alloy-json-rpc = { version = "0.1", default-features = false }
-alloy-network = { version = "0.1", default-features = false }
-alloy-node-bindings = { version = "0.1", default-features = false }
-alloy-provider = { version = "0.1", default-features = false, features = ["ws"] }
-alloy-rpc-types = { version = "0.1", default-features = false }
-alloy-rpc-types-eth = { version = "0.1", default-features = false }
-alloy-rpc-client = { version = "0.1", default-features = false }
-alloy-signer = { version = "0.1", default-features = false }
-alloy-signer-local = { version = "0.1", default-features = false }
-alloy-signer-aws = { version = "0.1", default-features = false }
-alloy-transport = { version = "0.1", default-features = false }
-alloy-transport-http = { version = "0.1", default-features = false }
 
 # async
 futures = "0.3"
@@ -63,7 +47,6 @@ serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1.40"
 eyre = "0.6"
-rusqlite = { version = "0.31.0", features = ["bundled"] }
 
 # testing
 reth-exex-test-utils = { git = "https://github.com/paradigmxyz/reth" }

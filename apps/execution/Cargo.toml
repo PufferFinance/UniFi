@@ -1,26 +1,29 @@
 [package]
 name = "execution"
-version = "0.1.0"
-edition = "2021"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
 # reth
 reth.workspace = true
+reth-chainspec.workspace = true
 reth-exex.workspace = true
 reth-node-api.workspace = true
 reth-node-ethereum.workspace = true
-reth-tracing.workspace = true
+reth-primitives.workspace = true
+reth-execution-errors.workspace = true
 reth-execution-types.workspace = true
-reth-consensus.workspace = true
-reth-evm.workspace = true
-reth-revm.workspace = true
-reth-db-common.workspace = true
 reth-provider.workspace = true
-reth-config.workspace = true
+reth-revm.workspace = true
+reth-tracing.workspace = true
+reth-transaction-pool.workspace = true
 
 # alloy
-alloy-sol-types = { workspace = true }
-alloy-provider = { workspace = true }
+alloy-consensus = { version = "0.2", features = ["kzg"] }
+alloy-rlp = "0.3"
+alloy-sol-types.workspace = true
 
 # async
 futures.workspace = true
@@ -31,12 +34,18 @@ serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 eyre.workspace = true
-rusqlite.workspace = true
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+foundry-blob-explorers = "0.5"
+once_cell = "1"
 
 [dev-dependencies]
 reth-exex-test-utils.workspace = true
 reth-testing-utils.workspace = true
 reth-chainspec.workspace = true
-rand = "0.8"
+reth-consensus.workspace = true
+reth-evm.workspace = true
+reth-db-common.workspace = true
+reth-config.workspace = true
 
-tokio.workspace = true
+rand = "0.8"
+secp256k1 = "0.29"
