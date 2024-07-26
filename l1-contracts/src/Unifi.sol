@@ -1,8 +1,7 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
 contract UnifiContract {
-
     struct BlockHeader {
         uint256 unifiChainId;
         uint256 sequenceNum;
@@ -28,13 +27,11 @@ contract UnifiContract {
         genesisBlockNumber = block.number;
     }
 
-    function submitBlock(
-        BlockHeader memory header,
-        bytes calldata
-    ) external {
+    function submitBlock(BlockHeader memory header, bytes calldata) external {
         // assert that the sequence number is valid and increment it
         uint256 _sequenceNum = lastSequenceNum[header.unifiChainId]++;
-        if (_sequenceNum != header.sequenceNum) revert NonMonotonicSequenceNum(_sequenceNum);
+        if (_sequenceNum != header.sequenceNum)
+            revert NonMonotonicSequenceNum(_sequenceNum);
         // assert this is the first rollup block submitted for this host block
         if (lastRollupSubmissionBlock[header.unifiChainId] == block.number)
             revert OneRollupSubmissionPerBlock();

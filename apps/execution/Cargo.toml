@@ -22,6 +22,7 @@ reth-transaction-pool.workspace = true
 
 # alloy
 alloy-consensus = { version = "0.2", features = ["kzg"] }
+alloy-contract.workspace = true
 alloy-rlp = "0.3"
 alloy-sol-types.workspace = true
 
@@ -49,3 +50,5 @@ reth-config.workspace = true
 
 rand = "0.8"
 secp256k1 = "0.29"
+
+alloy-network.workspace = true

@@ -1,3 +1,5 @@
 /target
 /apps/execution/data
 /apps/execution/data-mainnet
+l1-contracts/node_modules
+node_modules

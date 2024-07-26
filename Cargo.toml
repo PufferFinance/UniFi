@@ -34,6 +34,8 @@ reth-transaction-pool = { git = "https://github.com/paradigmxyz/reth" }
 
 # alloy
 alloy-sol-types = { version = "0.7", features = ["json"] }
+alloy-contract = "0.2.0"
+alloy-network = "0.2.0"
 
 # async
 futures = "0.3"

@@ -1,4 +1,4 @@
-use crate::db::Database;
+use crate::{db::Database, UnifiContract};
 use reth_execution_types::Chain;
 use reth_exex::{ExExContext, ExExEvent, ExExNotification};
 use reth_node_api::FullNodeComponents;
@@ -76,21 +76,13 @@ mod tests {
     use futures::Future;
     use rand::rngs::ThreadRng;
     use reth::{
-        blockchain_tree::noop::NoopBlockchainTree,
-        builder::{components::Components, NodeAdapter, NodeConfig},
-        network::{config::SecretKey, NetworkConfigBuilder, NetworkManager},
-        payload::noop::NoopPayloadBuilderService,
-        primitives::{
+        blockchain_tree::noop::NoopBlockchainTree, builder::{components::Components, NodeAdapter, NodeConfig}, network::{config::SecretKey, NetworkConfigBuilder, NetworkManager}, payload::noop::NoopPayloadBuilderService, primitives::{
             Address, Block, Header, Log, Receipt, Transaction, TransactionSigned, TxKind, TxLegacy,
             TxType, U256,
-        },
-        providers::{
+        }, providers::{
             providers::BlockchainProvider,
             test_utils::create_test_provider_factory_with_chain_spec, BlockReader,
-        },
-        revm::{db::BundleState, primitives::FixedBytes},
-        tasks::TaskManager,
-        transaction_pool::test_utils::testing_pool,
+        }, revm::{db::BundleState, primitives::FixedBytes}, rpc::types::TransactionRequest, tasks::TaskManager, transaction_pool::test_utils::testing_pool
     };
     use reth_chainspec::{ChainSpec, Head};
     use reth_consensus::test_utils::TestConsensus;
@@ -106,8 +98,9 @@ mod tests {
     use reth_testing_utils::generators::{random_block, random_receipt, random_signed_tx};
     use rusqlite::Connection;
     use std::{pin::Pin, sync::Arc};
+    use alloy_network::{EthereumWallet, ReceiptResponse, TransactionBuilder};
 
-    use crate::unifi::UnifiRollup;
+    use crate::{unifi::UnifiRollup, UnifiContract};
 
     pub struct TestUnifiRollup {
         chain_spec: Arc<ChainSpec>,
@@ -255,7 +248,14 @@ mod tests {
         Ok(chain)
     }
 
-    pub fn setup_contracts() -> eyre::Result<()> {
+    pub fn deploy_unifi_contracts_tx() -> eyre::Result<()> {
+        // UnifiContract::UnifiContractCalls::
+        let bytecode = "0x6080604052348015600e575f80fd5b50435f556102f68061001f5f395ff3fe608060405234801561000f575f80fd5b506004361061004a575f3560e01c80630356fe3a1461004e578063be5e78ba14610068578063e172c47814610087578063f4fca1de146100a6575b5f80fd5b6100565f5481565b60405190815260200160405180910390f35b610056610076366004610197565b60026020525f908152604090205481565b610056610095366004610197565b60016020525f908152604090205481565b6100b96100b43660046101f3565b6100bb565b005b82515f908152600260205260408120805490826100d78361029c565b919050559050836020015181146101085760405163215cd2a960e11b81526004810182905260240160405180910390fd5b83515f90815260016020526040902054439003610138576040516311521db560e11b815260040160405180910390fd5b83515f908152600160209081526040918290204390558551828701516060880151845191825292810192909252917ff5bf4c4c5cd6a5cd4ff7cd890e34c27b8c163f59ef0acecd903628a20ddd8569910160405180910390a250505050565b5f602082840312156101a7575f80fd5b5035919050565b5f8083601f8401126101be575f80fd5b50813567ffffffffffffffff8111156101d5575f80fd5b6020830191508360208285010111156101ec575f80fd5b9250929050565b5f805f83850360a0811215610206575f80fd5b6080811215610213575f80fd5b506040516080810181811067ffffffffffffffff8211171561024357634e487b7160e01b5f52604160045260245ffd5b604090815285358252602080870135908301528581013590820152606080860135908201529250608084013567ffffffffffffffff811115610283575f80fd5b61028f868287016101ae565b9497909650939450505050565b5f600182016102b957634e487b7160e01b5f52601160045260245ffd5b506001019056fea2646970667358221220e46dfc264081b565f2cf0d0b4d66b2046f06d04dd8c65d7104a9aad89f515b6764736f6c634300081a0033";
+        let tx = TransactionRequest::default().with_deploy_code(bytecode);
+
+        // convert to eip1559 tx
+        // Ok(tx.build_typed_tx())
+
         // Deploy puffer unifi contract via alloy
         // This would involve interacting with the Ethereum network, which is beyond the scope of this example
         Ok(())
