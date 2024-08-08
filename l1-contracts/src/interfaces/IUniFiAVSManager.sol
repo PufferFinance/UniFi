@@ -61,4 +61,45 @@ interface IUniFiAVSManager {
      * @notice Error thrown when the signature is invalid
      */
     error InvalidSignature();
+
+    /**
+     * @notice Event emitted when an operator is registered to AVS
+     * @param operator The address of the registered operator
+     * @param podOwner The address of the pod owner
+     */
+    event OperatorRegistered(address indexed operator, address indexed podOwner);
+
+    /**
+     * @notice Event emitted when a validator is registered
+     * @param podOwner The address of the pod owner
+     * @param ecdsaPubKeyHash The hash of the ECDSA public key
+     * @param blsPubKeyHash The hash of the BLS public key
+     */
+    event ValidatorRegistered(address indexed podOwner, bytes32 indexed ecdsaPubKeyHash, bytes32 blsPubKeyHash);
+
+    /**
+     * @notice Event emitted when an operator is deregistered from AVS
+     * @param operator The address of the deregistered operator
+     */
+    event OperatorDeregistered(address indexed operator);
+
+    /**
+     * @notice Registers an operator to AVS
+     * @param podOwner The address of the pod owner
+     * @param operatorSignature The signature of the operator with salt and expiry
+     */
+    function registerOperator(address podOwner, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
+        external;
+
+    /**
+     * @notice Registers a validator
+     * @param podOwner The address of the pod owner
+     * @param params The parameters for validator registration
+     */
+    function registerValidator(address podOwner, ValidatorRegistrationParams calldata params) external;
+
+    /**
+     * @notice Deregisters an operator from AVS
+     */
+    function deregisterOperator() external;
 }

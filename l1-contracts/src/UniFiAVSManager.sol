@@ -58,6 +58,8 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
         validOperator(podOwner)
     {
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
+
+        emit OperatorRegistered(msg.sender, podOwner);
     }
 
     function registerValidator(address podOwner, ValidatorRegistrationParams calldata params)
@@ -83,14 +85,18 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
 
         registeredValidators[params.ecdsaPubKeyHash] =
             ValidatorData({ blsPubKeyHash: params.ecdsaPubKeyHash, eigenPod: address(eigenPod) });
+
+        emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, pubkeyHash);
     }
 
     function deregisterOperator() external {
         AVS_DIRECTORY.deregisterOperatorFromAVS(msg.sender);
+
+        emit OperatorDeregistered(msg.sender);
     }
 
     function validatorRegistrationMessageHash(bytes32 ecdsaPubKeyHash) public view returns (BN254.G1Point memory) {
-        return BN254.hashToG1(_hashTypedDataV4(keccak256(abi.encode(VALIDATOR_REGISTRATION_TYPEHASH, ecdsaPubKeyHash))));
+        return BN254.hashToG1(_hashTypedDataV4(keccak256(abi.encode(VALIDATOR_REGISTRATION_TYPEHASH, ecdsaPubKeyHash)))); // TODO add salt and expiry?
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
