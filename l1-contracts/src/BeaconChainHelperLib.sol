@@ -24,7 +24,7 @@ library BeaconChainHelperLib {
         bytes32 leftNode = sha256(abi.encodePacked(slotAndProposerIndexNode, proof[0]));
         bytes32 root = sha256(abi.encodePacked(leftNode, proof[1]));
 
-        // Verify computed and expected deposit data roots match
+        // Verify computed and expected beacon block roots match
         return root == beaconRootFromChain;
     }
 
