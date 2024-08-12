@@ -10,13 +10,13 @@ import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
  */
 interface IUniFiAVSManager {
     /**
-     * @notice Struct used when registering a new ecdsa key
-     * @param registrationSignature is the registration message signed by the private key of the validator
-     * @param pubkeyG1 is the corresponding G1 public key of the validator
-     * @param pubkeyG2 is the corresponding G2 public key of the validator
-     * @param ecdsaPubKeyHash the hash of the ecdsa to be registered
-     * @param salt the salt used to generate the signature
-     * @param expiry the expiration timestamp (UTC) of the signature
+     * @notice Struct used when registering a new ECDSA key
+     * @param registrationSignature The registration message signed by the private key of the validator
+     * @param pubkeyG1 The corresponding G1 public key of the validator
+     * @param pubkeyG2 The corresponding G2 public key of the validator
+     * @param ecdsaPubKeyHash The hash of the ECDSA public key to be registered
+     * @param salt The salt used to generate the signature
+     * @param expiry The expiration timestamp (UTC) of the signature
      */
     struct ValidatorRegistrationParams {
         BN254.G1Point registrationSignature;
@@ -29,13 +29,27 @@ interface IUniFiAVSManager {
 
     /**
      * @notice Struct to hold validator data
-     * @param blsPubKeyHash is the hash of the BLS public key
-     * @param eigenPod is the address of the associated EigenPod
+     * @param ecdsaPubKeyHash The hash of the ECDSA public key
+     * @param eigenPod The address of the associated EigenPod
      */
     struct ValidatorData {
-        bytes32 blsPubKeyHash;
+        bytes32 ecdsaPubKeyHash;
         address eigenPod;
     }
+
+    /**
+     * @notice Struct to hold operator data
+     * @param validatorCount The count of validators associated with the operator
+     */
+    struct OperatorData {
+        uint32 validatorCount;
+    }
+
+    error RegistrationExpired();
+
+    error InvalidRegistrationSalt();
+
+    error OperatorHasValidators();
 
     /**
      * @notice Error thrown when the sender is not an operator
@@ -84,6 +98,12 @@ interface IUniFiAVSManager {
     event OperatorDeregistered(address indexed operator);
 
     /**
+     * @notice Event emitted when a validator is deregistered
+     * @param blsPubKeyHash The hash of the BLS public key
+     */
+    event ValidatorDeregistered(bytes32 blsPubKeyHash);
+
+    /**
      * @notice Registers an operator to AVS
      * @param podOwner The address of the pod owner
      * @param operatorSignature The signature of the operator with salt and expiry
@@ -99,7 +119,27 @@ interface IUniFiAVSManager {
     function registerValidator(address podOwner, ValidatorRegistrationParams calldata params) external;
 
     /**
+     * @notice Deregisters a validator
+     * @param blsPubKeyHashs The hashes of the BLS public keys to deregister
+     */
+    function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external;
+
+    /**
      * @notice Deregisters an operator from AVS
      */
     function deregisterOperator() external;
+
+    /**
+     * @notice Returns validator data for the given BLS public key hash.
+     * @param blsPubKeyHash The hash of the BLS public key.
+     * @return ValidatorData The data associated with the validator.
+     */
+    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory);
+
+    /**
+     * @notice Returns operator data for the given address.
+     * @param operator The address of the operator.
+     * @return OperatorData The data associated with the operator.
+     */
+    function getOperator(address operator) external view returns (OperatorData memory);
 }

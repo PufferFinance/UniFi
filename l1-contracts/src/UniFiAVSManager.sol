@@ -23,9 +23,14 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
     IAVSDirectory internal immutable AVS_DIRECTORY;
 
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
-        keccak256("BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash)");
+        keccak256("BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)");
 
-    mapping(bytes32 => ValidatorData) public registeredValidators;
+    bytes32 public constant VALIDATOR_DEREGISTRATION_TYPEHASH =
+        keccak256("BN254ValidatorDeregistration(bytes32 salt,uint256 expiry)");
+
+    mapping(bytes32 => ValidatorData) internal validators;
+    mapping(address => OperatorData) internal operators;
+    mapping(bytes32 => bool) internal salts;
 
     modifier validOperator(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
@@ -73,7 +78,18 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
             revert ValidatorNotActive();
         }
 
-        BN254.G1Point memory messageHash = validatorRegistrationMessageHash(params.ecdsaPubKeyHash);
+        if (params.expiry < block.timestamp) {
+            revert RegistrationExpired();
+        }
+
+        if (salts[params.salt]) {
+            revert InvalidRegistrationSalt();
+        }
+
+        salts[params.salt] = true;
+
+        BN254.G1Point memory messageHash =
+            blsMessageHash(VALIDATOR_REGISTRATION_TYPEHASH, params.ecdsaPubKeyHash, params.salt, params.expiry);
 
         if (
             !BLSSingatureCheckerLib.isBlsSignatureValid(
@@ -83,20 +99,66 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
             revert InvalidSignature();
         }
 
-        registeredValidators[params.ecdsaPubKeyHash] =
-            ValidatorData({ blsPubKeyHash: params.ecdsaPubKeyHash, eigenPod: address(eigenPod) });
+        validators[pubkeyHash] = ValidatorData({ ecdsaPubKeyHash: params.ecdsaPubKeyHash, eigenPod: address(eigenPod) });
 
         emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, pubkeyHash);
     }
 
+    function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external {
+        for (uint256 i = 0; i < blsPubKeyHashs.length; i++) {
+            ValidatorData memory validator = validators[blsPubKeyHashs[i]];
+
+            IEigenPod eigenPod = IEigenPod(validator.eigenPod);
+
+            if (EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) != msg.sender) {
+                revert NotDelegatedToOperator();
+            }
+
+            OperatorData storage operator = operators[msg.sender];
+
+            operator.validatorCount--;
+            delete validators[blsPubKeyHashs[i]];
+
+            emit ValidatorDeregistered(blsPubKeyHashs[i]);
+        }
+    }
+
     function deregisterOperator() external {
+        OperatorData storage operator = operators[msg.sender];
+
+        if (operator.validatorCount > 0) {
+            revert OperatorHasValidators();
+        }
+
         AVS_DIRECTORY.deregisterOperatorFromAVS(msg.sender);
 
         emit OperatorDeregistered(msg.sender);
     }
 
-    function validatorRegistrationMessageHash(bytes32 ecdsaPubKeyHash) public view returns (BN254.G1Point memory) {
-        return BN254.hashToG1(_hashTypedDataV4(keccak256(abi.encode(VALIDATOR_REGISTRATION_TYPEHASH, ecdsaPubKeyHash)))); // TODO add salt and expiry?
+    function blsMessageHash(bytes32 typeHash, bytes32 ecdsaPubKeyHash, bytes32 salt, uint256 expiry)
+        public
+        view
+        returns (BN254.G1Point memory)
+    {
+        return BN254.hashToG1(_hashTypedDataV4(keccak256(abi.encode(typeHash, ecdsaPubKeyHash, salt, expiry))));
+    }
+
+    /**
+     * @notice Returns validator data for the given BLS public key hash.
+     * @param blsPubKeyHash The hash of the BLS public key.
+     * @return ValidatorData The data associated with the validator.
+     */
+    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory) {
+        return validators[blsPubKeyHash];
+    }
+
+    /**
+     * @notice Returns operator data for the given address.
+     * @param operator The address of the operator.
+     * @return OperatorData The data associated with the operator.
+     */
+    function getOperator(address operator) external view returns (OperatorData memory) {
+        return operators[operator];
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
