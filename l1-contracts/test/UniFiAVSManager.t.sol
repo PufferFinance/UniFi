@@ -18,6 +18,7 @@ contract UniFiAVSManagerTest is Test {
 
     address public operator;
     address public podOwner;
+    uint256 public operatorPrivateKey;
 
     function setUp() public {
         mockEigenPodManager = new MockEigenPodManager();
@@ -31,7 +32,8 @@ contract UniFiAVSManagerTest is Test {
         );
         avsManager.initialize(address(this));
 
-        operator = address(0x1);
+        operatorPrivateKey = 0xA11CE;
+        operator = vm.addr(operatorPrivateKey);
         podOwner = address(0x2);
 
         vm.label(operator, "Operator");
@@ -54,6 +56,37 @@ contract UniFiAVSManagerTest is Test {
         return BN254.G2Point([privKey, privKey], [privKey, privKey]);
     }
 
+    function _getOperatorSignature(
+        uint256 _operatorPrivateKey,
+        address operator,
+        address avs,
+        bytes32 salt,
+        uint256 expiry
+    ) internal view returns (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) {
+        operatorSignature.expiry = expiry;
+        operatorSignature.salt = salt;
+        {
+            digestHash = IAVSDirectory(_getAVSDirectoryAddress()).calculateOperatorAVSRegistrationDigestHash(
+                operator, avs, salt, expiry
+            );
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(_operatorPrivateKey, digestHash);
+            operatorSignature.signature = abi.encodePacked(r, s, v);
+        }
+        return (digestHash, operatorSignature);
+    }
+
+    function _getAVSDirectoryAddress() internal view returns (address) {
+        if (block.chainid == 1) {
+            return 0x135DDa560e946695d6f155dACaFC6f1F25C1F5AF;
+        }
+
+        if (block.chainid == 17000) {
+            return 0x055733000064333CaDDbC92763c58BF0192fFeBf;
+        }
+
+        revert("Invalid chainId");
+    }
+
     function testInitialize() public {
         // Add appropriate initialization checks here
         assertTrue(address(avsManager) != address(0));
@@ -65,8 +98,16 @@ contract UniFiAVSManagerTest is Test {
         mockEigenPodManager.setPod(podOwner, IEigenPod(address(0x1234)));
         mockDelegationManager.setDelegation(podOwner, operator);
 
-        // Create a dummy signature
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature;
+        // Generate operator signature
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) = _getOperatorSignature(
+            operatorPrivateKey,
+            operator,
+            address(avsManager),
+            salt,
+            expiry
+        );
 
         // Test
         vm.prank(operator);
