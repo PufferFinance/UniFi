@@ -14,6 +14,8 @@ contract MockEigenPod is IEigenPod {
         return validatorStatuses[pubkeyHash];
     }
 
+    constructor() {}
+
     // Implement other required functions with minimal functionality
     function MAX_RESTAKED_BALANCE_GWEI_PER_VALIDATOR() external pure returns (uint64) { return 0; }
     function activateRestaking() external {}
