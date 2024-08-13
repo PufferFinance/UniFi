@@ -7,9 +7,9 @@ library BLSSingatureCheckerLib {
     using BN254 for BN254.G1Point;
 
     function isBlsSignatureValid(
-        BN254.G1Point calldata pubkeyG1,
-        BN254.G2Point calldata pubkeyG2,
-        BN254.G1Point calldata registrationSignature,
+        BN254.G1Point memory pubkeyG1,
+        BN254.G2Point memory pubkeyG2,
+        BN254.G1Point memory registrationSignature,
         BN254.G1Point memory messageHash
     ) internal view returns (bool) {
         uint256 gamma = uint256(

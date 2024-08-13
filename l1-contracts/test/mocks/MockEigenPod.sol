@@ -53,8 +53,8 @@ contract MockEigenPod is IEigenPod {
     function recoverTokens(IERC20[] memory, uint256[] memory, address) external { }
     function stake(bytes calldata, bytes calldata, bytes32) external payable { }
 
-    function validatorPubkeyHashToInfo(bytes32) external pure returns (ValidatorInfo memory) {
-        return ValidatorInfo(0, 0, 0, VALIDATOR_STATUS.INACTIVE);
+    function validatorPubkeyHashToInfo(bytes32 pubkeyHash) external view returns (ValidatorInfo memory) {
+        return ValidatorInfo(0, 0, 0, validatorStatuses[pubkeyHash]);
     }
 
     function validatorPubkeyToInfo(bytes calldata) external pure returns (ValidatorInfo memory) {

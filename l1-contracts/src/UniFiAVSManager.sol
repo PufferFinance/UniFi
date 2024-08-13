@@ -14,8 +14,15 @@ import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { BLSSingatureCheckerLib } from "./lib/BLSSingatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
+import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 
-contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, IUniFiAVSManager {
+contract UniFiAVSManager is
+    UniFiAVSManagerStorage,
+    IUniFiAVSManager,
+    EIP712,
+    UUPSUpgradeable,
+    AccessManagedUpgradeable
+{
     using BN254 for BN254.G1Point;
 
     IEigenPodManager public immutable EIGEN_POD_MANAGER;
@@ -27,10 +34,6 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
 
     bytes32 public constant VALIDATOR_DEREGISTRATION_TYPEHASH =
         keccak256("BN254ValidatorDeregistration(bytes32 salt,uint256 expiry)");
-
-    mapping(bytes32 => ValidatorData) internal validators;
-    mapping(address => OperatorData) internal operators;
-    mapping(bytes32 => bool) internal salts;
 
     modifier validOperator(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
@@ -70,10 +73,14 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
         external
         validOperator(podOwner)
     {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
         bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
 
-        if (eigenPod.validatorStatus(pubkeyHash) != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
+        IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(pubkeyHash);
+
+        if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
             revert ValidatorNotActive();
         }
 
@@ -81,11 +88,11 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
             revert RegistrationExpired();
         }
 
-        if (salts[params.salt]) {
+        if ($.salts[params.salt]) {
             revert InvalidRegistrationSalt();
         }
 
-        salts[params.salt] = true;
+        $.salts[params.salt] = true;
 
         BN254.G1Point memory messageHash =
             blsMessageHash(VALIDATOR_REGISTRATION_TYPEHASH, params.ecdsaPubKeyHash, params.salt, params.expiry);
@@ -98,14 +105,18 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
             revert InvalidSignature();
         }
 
-        validators[pubkeyHash] = ValidatorData({ ecdsaPubKeyHash: params.ecdsaPubKeyHash, eigenPod: address(eigenPod) });
+        $.validatorIndexes[validatorInfo.validatorIndex] = pubkeyHash;
+        $.validators[pubkeyHash] =
+            ValidatorData({ ecdsaPubKeyHash: params.ecdsaPubKeyHash, eigenPod: address(eigenPod) });
 
         emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, pubkeyHash);
     }
 
     function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
         for (uint256 i = 0; i < blsPubKeyHashs.length; i++) {
-            ValidatorData memory validator = validators[blsPubKeyHashs[i]];
+            ValidatorData memory validator = $.validators[blsPubKeyHashs[i]];
 
             IEigenPod eigenPod = IEigenPod(validator.eigenPod);
 
@@ -113,17 +124,19 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
                 revert NotDelegatedToOperator();
             }
 
-            OperatorData storage operator = operators[msg.sender];
+            OperatorData storage operator = $.operators[msg.sender];
 
             operator.validatorCount--;
-            delete validators[blsPubKeyHashs[i]];
+            delete $.validators[blsPubKeyHashs[i]];
 
             emit ValidatorDeregistered(blsPubKeyHashs[i]);
         }
     }
 
     function deregisterOperator() external {
-        OperatorData storage operator = operators[msg.sender];
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        OperatorData storage operator = $.operators[msg.sender];
 
         if (operator.validatorCount > 0) {
             revert OperatorHasValidators();
@@ -148,7 +161,20 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
      * @return ValidatorData The data associated with the validator.
      */
     function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory) {
-        return validators[blsPubKeyHash];
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        return $.validators[blsPubKeyHash];
+    }
+
+    /**
+     * @notice Returns validator data for the given the validator index.
+     * @param validatorIndex The index of the validator.
+     * @return ValidatorData The data associated with the validator.
+     */
+    function getValidator(uint256 validatorIndex) external view returns (ValidatorData memory) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        return $.validators[$.validatorIndexes[validatorIndex]];
     }
 
     /**
@@ -157,7 +183,9 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
      * @return OperatorData The data associated with the operator.
      */
     function getOperator(address operator) external view returns (OperatorData memory) {
-        return operators[operator];
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        return $.operators[operator];
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }

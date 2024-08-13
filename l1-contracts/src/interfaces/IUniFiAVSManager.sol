@@ -137,6 +137,13 @@ interface IUniFiAVSManager {
     function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory);
 
     /**
+     * @notice Returns validator data for the given the validator index.
+     * @param validatorIndex The index of the validator.
+     * @return ValidatorData The data associated with the validator.
+     */
+    function getValidator(uint256 validatorIndex) external view returns (ValidatorData memory);
+
+    /**
      * @notice Returns operator data for the given address.
      * @param operator The address of the operator.
      * @return OperatorData The data associated with the operator.
