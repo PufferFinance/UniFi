@@ -9,8 +9,13 @@ import "./mocks/MockDelegationManager.sol";
 import "./mocks/MockAVSDirectory.sol";
 import "eigenlayer-middleware/libraries/BN254.sol";
 import "eigenlayer-middleware/interfaces/IBLSApkRegistry.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+
 
 contract UniFiAVSManagerTest is Test {
+    using BN254 for BN254.G1Point;
+    using Strings for uint256;
+
     UniFiAVSManager public avsManager;
     MockEigenPodManager public mockEigenPodManager;
     MockDelegationManager public mockDelegationManager;
@@ -50,12 +55,30 @@ contract UniFiAVSManagerTest is Test {
         return pubkey;
     }
 
-    function _mulGo(uint256 privKey) internal returns (BN254.G2Point memory) {
-        // This is a placeholder implementation. In a real scenario, you'd use a proper BLS library or external call.
-        // For testing purposes, we're just creating a dummy G2 point.
-        return BN254.G2Point([privKey, privKey], [privKey, privKey]);
+    function _mulGo(uint256 x) internal returns (BN254.G2Point memory g2Point) {
+        string[] memory inputs = new string[](3);
+        inputs[0] = "./test/go2mul-mac"; // lib/eigenlayer-middleware/test/ffi/go/g2mul.go binary
+        // inputs[0] = "./test/go2mul"; // lib/eigenlayer-middleware/test/ffi/go/g2mul.go binary
+        inputs[1] = x.toString();
+
+        inputs[2] = "1";
+        bytes memory res = vm.ffi(inputs);
+        g2Point.X[1] = abi.decode(res, (uint256));
+
+        inputs[2] = "2";
+        res = vm.ffi(inputs);
+        g2Point.X[0] = abi.decode(res, (uint256));
+
+        inputs[2] = "3";
+        res = vm.ffi(inputs);
+        g2Point.Y[1] = abi.decode(res, (uint256));
+
+        inputs[2] = "4";
+        res = vm.ffi(inputs);
+        g2Point.Y[0] = abi.decode(res, (uint256));
     }
 
+    // With ECDSA key, he sign the hash confirming that the operator wants to be registered to a certain restaking service
     function _getOperatorSignature(
         uint256 _operatorPrivateKey,
         address operator,
