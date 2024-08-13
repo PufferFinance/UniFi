@@ -9,8 +9,7 @@ import "./mocks/MockDelegationManager.sol";
 import "./mocks/MockAVSDirectory.sol";
 import "eigenlayer-middleware/libraries/BN254.sol";
 import "eigenlayer-middleware/interfaces/IBLSApkRegistry.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract UniFiAVSManagerTest is Test {
     using BN254 for BN254.G1Point;
@@ -45,10 +44,9 @@ contract UniFiAVSManagerTest is Test {
         vm.label(podOwner, "Pod Owner");
     }
 
-    function _generateBlsPubkeyParams(uint256 privKey)
-        internal
-        returns (IBLSApkRegistry.PubkeyRegistrationParams memory)
-    {
+    function _generateBlsPubkeyParams(
+        uint256 privKey
+    ) internal returns (IBLSApkRegistry.PubkeyRegistrationParams memory) {
         IBLSApkRegistry.PubkeyRegistrationParams memory pubkey;
         pubkey.pubkeyG1 = BN254.generatorG1().scalar_mul(privKey);
         pubkey.pubkeyG2 = _mulGo(privKey);
@@ -85,14 +83,28 @@ contract UniFiAVSManagerTest is Test {
         address avs,
         bytes32 salt,
         uint256 expiry
-    ) internal view returns (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) {
+    )
+        internal
+        view
+        returns (
+            bytes32 digestHash,
+            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+        )
+    {
         operatorSignature.expiry = expiry;
         operatorSignature.salt = salt;
         {
-            digestHash = IAVSDirectory(_getAVSDirectoryAddress()).calculateOperatorAVSRegistrationDigestHash(
-                operator, avs, salt, expiry
+            digestHash = IAVSDirectory(_getAVSDirectoryAddress())
+                .calculateOperatorAVSRegistrationDigestHash(
+                    operator,
+                    avs,
+                    salt,
+                    expiry
+                );
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+                _operatorPrivateKey,
+                digestHash
             );
-            (uint8 v, bytes32 r, bytes32 s) = vm.sign(_operatorPrivateKey, digestHash);
             operatorSignature.signature = abi.encodePacked(r, s, v);
         }
         return (digestHash, operatorSignature);
@@ -124,13 +136,16 @@ contract UniFiAVSManagerTest is Test {
         // Generate operator signature
         bytes32 salt = bytes32(uint256(1));
         uint256 expiry = block.timestamp + 1 days;
-        (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) = _getOperatorSignature(
-            operatorPrivateKey,
-            operator,
-            address(avsManager),
-            salt,
-            expiry
-        );
+        (
+            bytes32 digestHash,
+            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+        ) = _getOperatorSignature(
+                operatorPrivateKey,
+                operator,
+                address(avsManager),
+                salt,
+                expiry
+            );
 
         // Test
         vm.prank(operator);
@@ -147,7 +162,8 @@ contract UniFiAVSManagerTest is Test {
 
         // Generate BLS key pair
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
-        IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
+        IBLSApkRegistry.PubkeyRegistrationParams
+            memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
 
         // Create ValidatorRegistrationParams
         UniFiAVSManager.ValidatorRegistrationParams memory params;
@@ -171,7 +187,8 @@ contract UniFiAVSManagerTest is Test {
         avsManager.registerValidator(podOwner, params);
 
         bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
-        UniFiAVSManager.ValidatorData memory validatorData = avsManager.getValidator(pubkeyHash);
+        UniFiAVSManager.ValidatorData memory validatorData = avsManager
+            .getValidator(pubkeyHash);
         assertEq(validatorData.ecdsaPubKeyHash, params.ecdsaPubKeyHash);
     }
 
@@ -184,7 +201,10 @@ contract UniFiAVSManagerTest is Test {
 
         vm.mockCall(
             address(avsManager),
-            abi.encodeWithSelector(UniFiAVSManager.getValidator.selector, pubkeyHash),
+            abi.encodeWithSelector(
+                UniFiAVSManager.getValidator.selector,
+                pubkeyHash
+            ),
             abi.encode(validatorData)
         );
 
@@ -199,18 +219,23 @@ contract UniFiAVSManagerTest is Test {
         // Verify (this will depend on how you've implemented getValidator)
         vm.mockCall(
             address(avsManager),
-            abi.encodeWithSelector(IUniFiAVSManager.getValidator.selector, pubkeyHash),
+            abi.encodeWithSelector(
+                IUniFiAVSManager.getValidator.selector,
+                pubkeyHash
+            ),
             abi.encode(IUniFiAVSManager.ValidatorData(bytes32(0), address(0)))
         );
     }
 
     function testDeregisterOperator() public {
         // Setup
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = ISignatureUtils.SignatureWithSaltAndExpiry({
-            signature: new bytes(0),
-            salt: bytes32(0),
-            expiry: 0
-        });
+        ISignatureUtils.SignatureWithSaltAndExpiry
+            memory operatorSignature = ISignatureUtils
+                .SignatureWithSaltAndExpiry({
+                    signature: new bytes(0),
+                    salt: bytes32(0),
+                    expiry: 0
+                });
         mockAVSDirectory.registerOperatorToAVS(operator, operatorSignature);
 
         // Test
