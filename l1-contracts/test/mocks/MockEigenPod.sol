@@ -3,7 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "eigenlayer/interfaces/IEigenPod.sol";
 
-abstract contract MockEigenPod is IEigenPod {
+contract MockEigenPod is IEigenPod {
     mapping(bytes32 => VALIDATOR_STATUS) public validatorStatuses;
 
     function setValidatorStatus(bytes32 pubkeyHash, VALIDATOR_STATUS status) external {
@@ -26,15 +26,12 @@ abstract contract MockEigenPod is IEigenPod {
     function provenWithdrawal(bytes32, uint64) external pure returns (bool) { return false; }
     function recoverTokens(IERC20[] memory, uint256[] memory, address) external {}
     function stake(bytes calldata, bytes calldata, bytes32) external payable {}
-    function validatorPubkeyHashToInfo(bytes32) external pure returns (ValidatorInfo memory) { return ValidatorInfo(0, 0, 0, 0); }
-    function validatorPubkeyToInfo(bytes calldata) external pure returns (ValidatorInfo memory) { return ValidatorInfo(0, 0, 0, 0); }
+    function validatorPubkeyHashToInfo(bytes32) external pure returns (ValidatorInfo memory) { return ValidatorInfo(0, 0, 0, VALIDATOR_STATUS.INACTIVE); }
+    function validatorPubkeyToInfo(bytes calldata) external pure returns (ValidatorInfo memory) { return ValidatorInfo(0, 0, 0, VALIDATOR_STATUS.INACTIVE); }
     function verifyAndProcessWithdrawals(bytes calldata, bytes[] calldata, bytes[] calldata) external {}
     function verifyBalanceUpdates(bytes calldata, bytes[] calldata, bytes[] calldata) external {}
     function verifyWithdrawalCredentials(bytes calldata, bytes calldata, bytes32) external pure returns (bool) { return false; }
     function validatorStatus(bytes calldata) external pure returns (VALIDATOR_STATUS) { return VALIDATOR_STATUS.INACTIVE; }
-    function verifyAndProcessWithdrawals(bytes calldata, bytes[] calldata, bytes[] calldata) external {}
-    function verifyBalanceUpdates(bytes calldata, bytes[] calldata, bytes[] calldata) external {}
-    function verifyWithdrawalCredentials(bytes calldata, bytes calldata, bytes32) external pure returns (bool) { return false; }
     function withdrawBeforeRestaking() external {}
     function withdrawNonBeaconChainETHBalanceWei(address, uint256) external {}
     function withdrawRestakedBeaconChainETH(address, uint256) external {}
