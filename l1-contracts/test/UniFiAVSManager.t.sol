@@ -184,7 +184,7 @@ contract UniFiAVSManagerTest is Test {
 
         // Create a pod and set validator status
         bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
-        MockEigenPod mockEigenPod = MockEigenPodManager(address(mockEigenPodManager)).createPod(podOwner);
+        mockEigenPodManager.createPod(podOwner);
         mockEigenPodManager.setValidatorStatus(podOwner, pubkeyHash, IEigenPod.VALIDATOR_STATUS.ACTIVE);
 
         // Test
