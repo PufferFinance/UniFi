@@ -7,6 +7,8 @@ import "../src/interfaces/IUniFiAVSManager.sol";
 import "./mocks/MockEigenPodManager.sol";
 import "./mocks/MockDelegationManager.sol";
 import "./mocks/MockAVSDirectory.sol";
+import "eigenlayer-middleware/libraries/BN254.sol";
+import "eigenlayer-middleware/interfaces/IBLSApkRegistry.sol";
 
 contract UniFiAVSManagerTest is Test {
     UniFiAVSManager public avsManager;
@@ -36,6 +38,22 @@ contract UniFiAVSManagerTest is Test {
         vm.label(podOwner, "Pod Owner");
     }
 
+    function _generateBlsPubkeyParams(uint256 privKey)
+        internal
+        returns (IBLSApkRegistry.PubkeyRegistrationParams memory)
+    {
+        IBLSApkRegistry.PubkeyRegistrationParams memory pubkey;
+        pubkey.pubkeyG1 = BN254.generatorG1().scalar_mul(privKey);
+        pubkey.pubkeyG2 = _mulGo(privKey);
+        return pubkey;
+    }
+
+    function _mulGo(uint256 privKey) internal returns (BN254.G2Point memory) {
+        // This is a placeholder implementation. In a real scenario, you'd use a proper BLS library or external call.
+        // For testing purposes, we're just creating a dummy G2 point.
+        return BN254.G2Point([privKey, privKey], [privKey, privKey]);
+    }
+
     function testInitialize() public {
         // Add appropriate initialization checks here
         assertTrue(address(avsManager) != address(0));
@@ -63,26 +81,26 @@ contract UniFiAVSManagerTest is Test {
         mockEigenPodManager.setPod(podOwner, IEigenPod(address(0x1234)));
         mockDelegationManager.setDelegation(podOwner, operator);
 
-        // Create ValidatorRegistrationParams with a valid signature
+        // Generate BLS key pair
+        uint256 privateKey = 123456; // This is a dummy private key for testing purposes
+        IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
+
+        // Create ValidatorRegistrationParams
         UniFiAVSManager.ValidatorRegistrationParams memory params;
-        params.pubkeyG1 = BN254.G1Point(1, 2);
-        params.pubkeyG2 = BN254.G2Point([uint256(1), uint256(2)], [uint256(3), uint256(4)]);
+        params.pubkeyG1 = blsKeyPair.pubkeyG1;
+        params.pubkeyG2 = blsKeyPair.pubkeyG2;
         params.ecdsaPubKeyHash = bytes32(uint256(1));
         params.salt = bytes32(uint256(2));
         params.expiry = block.timestamp + 1 days;
 
         // Generate a valid signature
-        uint256 privateKey = 123456; // This is a dummy private key for testing purposes
         BN254.G1Point memory messagePoint = avsManager.blsMessageHash(
             avsManager.VALIDATOR_REGISTRATION_TYPEHASH(),
             params.ecdsaPubKeyHash,
             params.salt,
             params.expiry
         );
-        bytes32 messageHash = BN254.hashG1Point(messagePoint);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, messageHash);
-        // Create a valid BN254.G1Point for the registrationSignature
-        params.registrationSignature = BN254.G1Point(uint256(r), uint256(s));
+        params.registrationSignature = messagePoint.scalar_mul(privateKey);
 
         // Test
         vm.prank(operator);
