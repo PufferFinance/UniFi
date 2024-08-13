@@ -51,7 +51,6 @@ contract UniFiAVSManager is EIP712, UUPSUpgradeable, AccessManagedUpgradeable, I
         EIGEN_POD_MANAGER = eigenPodManager;
         EIGEN_DELEGATION_MANAGER = eigenDelegationManager;
         AVS_DIRECTORY = avsDirectory;
-        _disableInitializers();
     }
 
     function initialize(address accessManager) public initializer {

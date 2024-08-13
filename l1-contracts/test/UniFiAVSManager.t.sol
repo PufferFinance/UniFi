@@ -27,14 +27,13 @@ contract UniFiAVSManagerTest is Test {
             IDelegationManager(address(mockDelegationManager)),
             IAVSDirectory(address(mockAVSDirectory))
         );
+        avsManager.initialize(address(this));
 
         operator = address(0x1);
         podOwner = address(0x2);
 
         vm.label(operator, "Operator");
         vm.label(podOwner, "Pod Owner");
-
-        avsManager.initialize(address(this));
     }
 
     function testInitialize() public {
