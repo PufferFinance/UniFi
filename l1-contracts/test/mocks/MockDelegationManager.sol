@@ -3,7 +3,12 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "eigenlayer/interfaces/IDelegationManager.sol";
 
-contract MockDelegationManager is IDelegationManager {
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.8.0 <0.9.0;
+
+import "eigenlayer/interfaces/IDelegationManager.sol";
+
+contract MockDelegationManager {
     mapping(address => bool) public operators;
     mapping(address => address) public delegations;
 
@@ -21,8 +26,8 @@ contract MockDelegationManager is IDelegationManager {
     }
 
     // Mock function to set a delegation for testing
-    function setDelegation(address podOwner, address delegatedTo) external {
-        delegations[podOwner] = delegatedTo;
+    function setDelegation(address podOwner, address delegatee) external {
+        delegations[podOwner] = delegatee;
     }
 
     // Implement other functions from IDelegationManager as needed for testing
