@@ -36,4 +36,25 @@ contract MockEigenPod is IEigenPod {
     function withdrawNonBeaconChainETHBalanceWei(address, uint256) external {}
     function withdrawRestakedBeaconChainETH(address, uint256) external {}
     function withdrawableRestakedExecutionLayerGwei() external pure returns (uint64) { return 0; }
+
+    // Implement the missing functions
+    function verifyAndProcessWithdrawals(
+        bytes calldata, 
+        bytes[] calldata, 
+        bytes[] calldata
+    ) external override {}
+
+    function verifyBalanceUpdates(
+        bytes calldata, 
+        bytes[] calldata, 
+        bytes[] calldata
+    ) external override {}
+
+    function verifyWithdrawalCredentials(
+        bytes calldata, 
+        bytes calldata, 
+        bytes32
+    ) external pure override returns (bool) {
+        return false;
+    }
 }
