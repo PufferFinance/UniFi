@@ -81,7 +81,8 @@ contract UniFiAVSManagerTest is Test {
         );
         bytes32 messageHash = BN254.hashG1Point(messagePoint);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, messageHash);
-        params.registrationSignature = abi.encodePacked(r, s, v);
+        // Create a valid BN254.G1Point for the registrationSignature
+        params.registrationSignature = BN254.G1Point(uint256(r), uint256(s));
 
         // Test
         vm.prank(operator);
