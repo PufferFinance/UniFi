@@ -5,6 +5,7 @@ import "eigenlayer/interfaces/IEigenPod.sol";
 
 contract MockEigenPod is IEigenPod {
     mapping(bytes32 => VALIDATOR_STATUS) public validatorStatuses;
+    mapping(bytes32 => mapping(uint64 => bool)) public provenWithdrawals;
 
     function setValidatorStatus(bytes32 pubkeyHash, VALIDATOR_STATUS status) external {
         validatorStatuses[pubkeyHash] = status;
@@ -16,7 +17,7 @@ contract MockEigenPod is IEigenPod {
 
     constructor() {}
 
-    // Implement other required functions with minimal functionality
+    // Implement required functions with minimal functionality
     function MAX_RESTAKED_BALANCE_GWEI_PER_VALIDATOR() external pure returns (uint64) { return 0; }
     function activateRestaking() external {}
     function eigenPodManager() external pure returns (IEigenPodManager) { return IEigenPodManager(address(0)); }
@@ -25,7 +26,7 @@ contract MockEigenPod is IEigenPod {
     function mostRecentWithdrawalTimestamp() external pure returns (uint64) { return 0; }
     function nonBeaconChainETHBalanceWei() external pure returns (uint256) { return 0; }
     function podOwner() external pure returns (address) { return address(0); }
-    function provenWithdrawal(bytes32, uint64) external pure returns (bool) { return false; }
+    function provenWithdrawal(bytes32 validatorPubkeyHash, uint64 slot) external view returns (bool) { return provenWithdrawals[validatorPubkeyHash][slot]; }
     function recoverTokens(IERC20[] memory, uint256[] memory, address) external {}
     function stake(bytes calldata, bytes calldata, bytes32) external payable {}
     function validatorPubkeyHashToInfo(bytes32) external pure returns (ValidatorInfo memory) { return ValidatorInfo(0, 0, 0, VALIDATOR_STATUS.INACTIVE); }
@@ -38,22 +39,32 @@ contract MockEigenPod is IEigenPod {
 
     // Implement the missing functions
     function verifyAndProcessWithdrawals(
-        bytes calldata, 
-        bytes[] calldata, 
-        bytes[] calldata
-    ) external pure {}
+        uint64,
+        BeaconChainProofs.StateRootProof calldata,
+        BeaconChainProofs.WithdrawalProof[] calldata,
+        bytes[] calldata,
+        bytes32[][] calldata,
+        bytes32[][] calldata
+    ) external {}
 
     function verifyBalanceUpdates(
-        bytes calldata, 
-        bytes[] calldata, 
-        bytes[] calldata
-    ) external pure {}
+        uint64,
+        uint40[] calldata,
+        BeaconChainProofs.StateRootProof calldata,
+        bytes[] calldata,
+        bytes32[][] calldata
+    ) external {}
 
     function verifyWithdrawalCredentials(
-        bytes calldata, 
-        bytes calldata, 
-        bytes32
-    ) external pure returns (bool) {
-        return false;
+        uint64,
+        BeaconChainProofs.StateRootProof calldata,
+        uint40[] calldata,
+        bytes[] calldata,
+        bytes32[][] calldata
+    ) external {}
+
+    // Add a function to set proven withdrawals for testing
+    function setProvenWithdrawal(bytes32 validatorPubkeyHash, uint64 slot, bool proven) external {
+        provenWithdrawals[validatorPubkeyHash][slot] = proven;
     }
 }
