@@ -70,6 +70,7 @@ contract UniFiAVSManagerTest is Test {
         params.ecdsaPubKeyHash = bytes32(uint256(1));
         params.salt = bytes32(uint256(2));
         params.expiry = block.timestamp + 1 days;
+        params.registrationSignature = new bytes(96); // Add a dummy signature
 
         // Test
         vm.prank(operator);
