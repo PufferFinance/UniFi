@@ -73,16 +73,13 @@ contract UniFiAVSManagerTest is Test {
 
         // Generate a valid signature
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
-        bytes32 messageHash = BN254.hashToField(
-            abi.encodePacked(
-                avsManager.blsMessageHash(
-                    avsManager.VALIDATOR_REGISTRATION_TYPEHASH(),
-                    params.ecdsaPubKeyHash,
-                    params.salt,
-                    params.expiry
-                )
-            )
+        BN254.G1Point memory messagePoint = avsManager.blsMessageHash(
+            avsManager.VALIDATOR_REGISTRATION_TYPEHASH(),
+            params.ecdsaPubKeyHash,
+            params.salt,
+            params.expiry
         );
+        bytes32 messageHash = BN254.hashG1Point(messagePoint);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, messageHash);
         params.registrationSignature = abi.encodePacked(r, s, v);
 
