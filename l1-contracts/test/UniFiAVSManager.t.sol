@@ -3,6 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
 import "../src/UniFiAVSManager.sol";
+import "../src/interfaces/IUniFiAVSManager.sol";
 import "./mocks/MockEigenPodManager.sol";
 import "./mocks/MockDelegationManager.sol";
 import "./mocks/MockAVSDirectory.sol";
@@ -66,7 +67,7 @@ contract UniFiAVSManagerTest is Test {
         // Create dummy ValidatorRegistrationParams
         UniFiAVSManager.ValidatorRegistrationParams memory params;
         params.pubkeyG1 = BN254.G1Point(1, 2);
-        params.pubkeyG2 = BN254.G2Point([1, 2], [3, 4]);
+        params.pubkeyG2 = BN254.G2Point([uint256(1), uint256(2)], [uint256(3), uint256(4)]);
         params.ecdsaPubKeyHash = bytes32(uint256(1));
         params.salt = bytes32(uint256(2));
         params.expiry = block.timestamp + 1 days;
@@ -104,8 +105,8 @@ contract UniFiAVSManagerTest is Test {
         // Verify (this will depend on how you've implemented getValidator)
         vm.mockCall(
             address(avsManager),
-            abi.encodeWithSelector(UniFiAVSManager.getValidator.selector, pubkeyHash),
-            abi.encode(UniFiAVSManager.ValidatorData(bytes32(0), address(0)))
+            abi.encodeWithSelector(IUniFiAVSManager.getValidator.selector, pubkeyHash),
+            abi.encode(IUniFiAVSManager.ValidatorData(bytes32(0), address(0)))
         );
     }
 
