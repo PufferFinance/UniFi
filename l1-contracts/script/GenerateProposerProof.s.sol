@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Script.sol";
-import {stdJson} from "forge-std/StdJson.sol";
+import { stdJson } from "forge-std/StdJson.sol";
 
 /**
  *
@@ -39,87 +39,51 @@ contract GenerateProposerProof is Script {
         console.log(beaconBlockHeaderJSON);
 
         // Parse beacon block header JSON
-        bytes32 blockRoot = vm.parseJsonBytes32(
-            beaconBlockHeaderJSON,
-            ".block_root"
-        );
-        bytes32 bodyRoot = vm.parseJsonBytes32(
-            beaconBlockHeaderJSON,
-            ".body_root"
-        );
-        bytes32 parentRoot = vm.parseJsonBytes32(
-            beaconBlockHeaderJSON,
-            ".parent_root"
-        );
-        bytes32 stateRoot = vm.parseJsonBytes32(
-            beaconBlockHeaderJSON,
-            ".state_root"
-        );
-        uint256 proposerIndex = vm.parseJsonUint(
-            beaconBlockHeaderJSON,
-            ".proposer_index"
-        );
-        uint256 slotFromBeaconNode = vm.parseJsonUint(
-            beaconBlockHeaderJSON,
-            ".slot"
-        );
+        bytes32 blockRoot = vm.parseJsonBytes32(beaconBlockHeaderJSON, ".block_root");
+        bytes32 bodyRoot = vm.parseJsonBytes32(beaconBlockHeaderJSON, ".body_root");
+        bytes32 parentRoot = vm.parseJsonBytes32(beaconBlockHeaderJSON, ".parent_root");
+        bytes32 stateRoot = vm.parseJsonBytes32(beaconBlockHeaderJSON, ".state_root");
+        uint256 proposerIndex = vm.parseJsonUint(beaconBlockHeaderJSON, ".proposer_index");
+        uint256 slotFromBeaconNode = vm.parseJsonUint(beaconBlockHeaderJSON, ".slot");
         console.logBytes32(blockRoot);
         console.logBytes32(bodyRoot);
         console.logBytes32(parentRoot);
         console.logBytes32(stateRoot);
         console.logUint(proposerIndex);
 
-        bytes32[2] memory proof = buildBeaconBlockProof(
-            parentRoot,
-            stateRoot,
-            bodyRoot
-        );
+        bytes32[2] memory proof = buildBeaconBlockProof(parentRoot, stateRoot, bodyRoot);
 
         bool valid = verifyProposerAt(slotFromBeaconNode, proposerIndex, proof);
         require(valid, "Proof is invalid, wrong proposer index for this slot");
     }
 
-    function buildBeaconBlockProof(
-        bytes32 parentRoot,
-        bytes32 stateRoot,
-        bytes32 bodyRoot
-    ) public pure returns (bytes32[2] memory) {
-        bytes32 parentAndStateNode = sha256(
-            abi.encodePacked(parentRoot, stateRoot)
-        );
+    function buildBeaconBlockProof(bytes32 parentRoot, bytes32 stateRoot, bytes32 bodyRoot)
+        public
+        pure
+        returns (bytes32[2] memory)
+    {
+        bytes32 parentAndStateNode = sha256(abi.encodePacked(parentRoot, stateRoot));
         bytes32 bodyAndZeroes = sha256(abi.encodePacked(bodyRoot, bytes32(0)));
-        
+
         // sha256(abi.encodePacked(bytes32(0), bytes32(0)));
         bytes32 zeroesLeaf = hex"f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b";
         bytes32 rightNode = sha256(abi.encodePacked(bodyAndZeroes, zeroesLeaf));
         return [parentAndStateNode, rightNode];
     }
 
-    function verifyProposerAt(
-        uint256 slot,
-        uint256 proposerIndex,
-        bytes32[2] memory proof
-    ) public returns (bool) {
+    function verifyProposerAt(uint256 slot, uint256 proposerIndex, bytes32[2] memory proof) public returns (bool) {
         // Returns the parent_root, so check the next slot of the target block
         (bool success, bytes32 beaconRootFromChain) = _getRootFromSlot(slot + 1);
         assert(success);
 
         bytes32 slotAndProposerIndexNode = sha256(
             abi.encodePacked(
-                abi.encodePacked(
-                    _to_little_endian_64(uint64(slot)),
-                    bytes24(0)
-                ),
-                abi.encodePacked(
-                    _to_little_endian_64(uint64(proposerIndex)),
-                    bytes24(0)
-                )
+                abi.encodePacked(_to_little_endian_64(uint64(slot)), bytes24(0)),
+                abi.encodePacked(_to_little_endian_64(uint64(proposerIndex)), bytes24(0))
             )
         );
 
-        bytes32 leftNode = sha256(
-            abi.encodePacked(slotAndProposerIndexNode, proof[0])
-        );
+        bytes32 leftNode = sha256(abi.encodePacked(slotAndProposerIndexNode, proof[0]));
         bytes32 root = sha256(abi.encodePacked(leftNode, proof[1]));
         console.logBytes32(root);
 
@@ -142,27 +106,17 @@ contract GenerateProposerProof is Script {
 
         bytes32 slotAndProposerIndexNode = sha256(
             abi.encodePacked(
-                abi.encodePacked(
-                    _to_little_endian_64(uint64(slot)),
-                    bytes24(0)
-                ),
-                abi.encodePacked(
-                    _to_little_endian_64(uint64(proposerIndex)),
-                    bytes24(0)
-                )
+                abi.encodePacked(_to_little_endian_64(uint64(slot)), bytes24(0)),
+                abi.encodePacked(_to_little_endian_64(uint64(proposerIndex)), bytes24(0))
             )
         );
 
-        bytes32 parentAndStateNode = sha256(
-            abi.encodePacked(parentRoot, stateRoot)
-        );
+        bytes32 parentAndStateNode = sha256(abi.encodePacked(parentRoot, stateRoot));
 
         bytes32 bodyAndZeroes = sha256(abi.encodePacked(bodyRoot, bytes32(0)));
 
         bytes32 zeroesLeaf = hex"f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b";
-        bytes32 leftNode = sha256(
-            abi.encodePacked(slotAndProposerIndexNode, parentAndStateNode)
-        );
+        bytes32 leftNode = sha256(abi.encodePacked(slotAndProposerIndexNode, parentAndStateNode));
         bytes32 rightNode = sha256(abi.encodePacked(bodyAndZeroes, zeroesLeaf));
         bytes32 root = sha256(abi.encodePacked(leftNode, rightNode));
         console.logBytes32(root);
@@ -183,12 +137,8 @@ contract GenerateProposerProof is Script {
         return _getRootFromTimestamp(timestamp);
     }
 
-    function _getRootFromTimestamp(
-        uint256 timestamp
-    ) public returns (bool, bytes32) {
-        (bool ret, bytes memory data) = beaconRootsContract.call(
-            bytes.concat(bytes32(timestamp))
-        );
+    function _getRootFromTimestamp(uint256 timestamp) public returns (bool, bytes32) {
+        (bool ret, bytes memory data) = beaconRootsContract.call(bytes.concat(bytes32(timestamp)));
         return (ret, bytes32(data));
     }
 
@@ -200,9 +150,7 @@ contract GenerateProposerProof is Script {
         return (timestamp - GENESIS_BLOCK_TIMESTAMP) / 12;
     }
 
-    function _to_little_endian_64(
-        uint64 value
-    ) internal pure returns (bytes memory ret) {
+    function _to_little_endian_64(uint64 value) internal pure returns (bytes memory ret) {
         ret = new bytes(8);
         bytes8 bytesValue = bytes8(value);
         // Byteswapping during copying to bytes.

@@ -7,7 +7,10 @@ import "eigenlayer/interfaces/ISignatureUtils.sol";
 contract MockAVSDirectory {
     mapping(address => bool) public registeredOperators;
 
-    function registerOperatorToAVS(address operator, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
+    function registerOperatorToAVS(
+        address operator,
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+    ) external {
         registeredOperators[operator] = true;
     }
 
@@ -21,12 +24,11 @@ contract MockAVSDirectory {
     }
 
     // Mock function to calculate the operator AVS registration digest hash
-    function calculateOperatorAVSRegistrationDigestHash(
-        address operator,
-        address avs,
-        bytes32 salt,
-        uint256 expiry
-    ) external pure returns (bytes32) {
+    function calculateOperatorAVSRegistrationDigestHash(address operator, address avs, bytes32 salt, uint256 expiry)
+        external
+        pure
+        returns (bytes32)
+    {
         return keccak256(abi.encodePacked(operator, avs, salt, expiry));
     }
 
