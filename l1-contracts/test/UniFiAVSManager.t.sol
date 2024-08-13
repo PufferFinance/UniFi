@@ -63,14 +63,24 @@ contract UniFiAVSManagerTest is Test {
         mockEigenPodManager.setPod(podOwner, IEigenPod(address(0x1234)));
         mockDelegationManager.setDelegation(podOwner, operator);
 
-        // Create dummy ValidatorRegistrationParams
+        // Create ValidatorRegistrationParams with a valid signature
         UniFiAVSManager.ValidatorRegistrationParams memory params;
         params.pubkeyG1 = BN254.G1Point(1, 2);
         params.pubkeyG2 = BN254.G2Point([uint256(1), uint256(2)], [uint256(3), uint256(4)]);
         params.ecdsaPubKeyHash = bytes32(uint256(1));
         params.salt = bytes32(uint256(2));
         params.expiry = block.timestamp + 1 days;
-        params.registrationSignature = new bytes(96); // Add a dummy signature
+
+        // Generate a valid signature
+        uint256 privateKey = 123456; // This is a dummy private key for testing purposes
+        BN254.G1Point memory messageHash = avsManager.blsMessageHash(
+            avsManager.VALIDATOR_REGISTRATION_TYPEHASH(),
+            params.ecdsaPubKeyHash,
+            params.salt,
+            params.expiry
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, messageHash.hashG1Point());
+        params.registrationSignature = abi.encodePacked(r, s, v);
 
         // Test
         vm.prank(operator);
