@@ -39,13 +39,13 @@ contract MockEigenPod is IEigenPod {
         bytes calldata, 
         bytes[] calldata, 
         bytes[] calldata
-    ) external {}
+    ) external pure {}
 
     function verifyBalanceUpdates(
         bytes calldata, 
         bytes[] calldata, 
         bytes[] calldata
-    ) external {}
+    ) external pure {}
 
     function verifyWithdrawalCredentials(
         bytes calldata, 
