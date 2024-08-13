@@ -157,7 +157,8 @@ contract UniFiAVSManagerTest is Test {
     function testRegisterValidator() public {
         // Setup
         mockDelegationManager.setOperator(operator, true);
-        mockEigenPodManager.setPod(podOwner, IEigenPod(address(0x1234)));
+        address mockEigenPod = address(0x1234);
+        mockEigenPodManager.setPod(podOwner, IEigenPod(mockEigenPod));
         mockDelegationManager.setDelegation(podOwner, operator);
 
         // Generate BLS key pair
@@ -182,11 +183,18 @@ contract UniFiAVSManagerTest is Test {
         );
         params.registrationSignature = messagePoint.scalar_mul(privateKey);
 
+        // Mock the validatorStatus call
+        bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
+        vm.mockCall(
+            mockEigenPod,
+            abi.encodeWithSelector(IEigenPod.validatorStatus.selector, pubkeyHash),
+            abi.encode(IEigenPod.VALIDATOR_STATUS.ACTIVE)
+        );
+
         // Test
         vm.prank(operator);
         avsManager.registerValidator(podOwner, params);
 
-        bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
         UniFiAVSManager.ValidatorData memory validatorData = avsManager
             .getValidator(pubkeyHash);
         assertEq(validatorData.ecdsaPubKeyHash, params.ecdsaPubKeyHash);
