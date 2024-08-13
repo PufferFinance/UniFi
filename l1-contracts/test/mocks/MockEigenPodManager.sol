@@ -28,5 +28,7 @@ contract MockEigenPodManager {
         pods[podOwner].setValidatorStatus(pubkeyHash, status);
     }
 
+    // Remove the setPod function as it's no longer needed
+
     // Implement other functions from IEigenPodManager as needed for testing
 }

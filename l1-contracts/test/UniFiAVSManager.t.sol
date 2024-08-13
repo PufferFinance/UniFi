@@ -79,7 +79,7 @@ contract UniFiAVSManagerTest is Test {
     // With ECDSA key, he sign the hash confirming that the operator wants to be registered to a certain restaking service
     function _getOperatorSignature(
         uint256 _operatorPrivateKey,
-        address operator,
+        address _operator,
         address avs,
         bytes32 salt,
         uint256 expiry
@@ -157,8 +157,7 @@ contract UniFiAVSManagerTest is Test {
     function testRegisterValidator() public {
         // Setup
         mockDelegationManager.setOperator(operator, true);
-        address mockEigenPod = address(0x1234);
-        mockEigenPodManager.setPod(podOwner, IEigenPod(mockEigenPod));
+        MockEigenPod mockEigenPod = mockEigenPodManager.createPod(podOwner);
         mockDelegationManager.setDelegation(podOwner, operator);
 
         // Generate BLS key pair
