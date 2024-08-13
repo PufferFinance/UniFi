@@ -4,12 +4,6 @@ pragma solidity >=0.8.0 <0.9.0;
 import "eigenlayer/interfaces/IEigenPodManager.sol";
 import "eigenlayer/interfaces/IEigenPod.sol";
 
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.8.0 <0.9.0;
-
-import "eigenlayer/interfaces/IEigenPodManager.sol";
-import "eigenlayer/interfaces/IEigenPod.sol";
-
 contract MockEigenPodManager {
     mapping(address => IEigenPod) public pods;
 

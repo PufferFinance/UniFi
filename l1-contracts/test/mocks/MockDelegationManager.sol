@@ -3,11 +3,6 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "eigenlayer/interfaces/IDelegationManager.sol";
 
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.8.0 <0.9.0;
-
-import "eigenlayer/interfaces/IDelegationManager.sol";
-
 contract MockDelegationManager {
     mapping(address => bool) public operators;
     mapping(address => address) public delegations;
