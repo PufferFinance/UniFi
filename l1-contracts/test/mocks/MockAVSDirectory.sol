@@ -20,5 +20,15 @@ contract MockAVSDirectory {
         return registeredOperators[operator];
     }
 
+    // Mock function to calculate the operator AVS registration digest hash
+    function calculateOperatorAVSRegistrationDigestHash(
+        address operator,
+        address avs,
+        bytes32 salt,
+        uint256 expiry
+    ) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(operator, avs, salt, expiry));
+    }
+
     // Implement other functions from IAVSDirectory as needed for testing
 }
