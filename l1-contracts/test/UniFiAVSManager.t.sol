@@ -112,7 +112,7 @@ contract UniFiAVSManagerTest is Test {
 
     function testDeregisterOperator() public {
         // Setup
-        mockAVSDirectory.registerOperatorToAVS(operator, ISignatureUtils.SignatureWithSaltAndExpiry(bytes32(0), bytes32(0), 0, new bytes(0)));
+        mockAVSDirectory.registerOperatorToAVS(operator, ISignatureUtils.SignatureWithSaltAndExpiry(bytes32(0), 0, new bytes(0)));
 
         // Test
         vm.prank(operator);
