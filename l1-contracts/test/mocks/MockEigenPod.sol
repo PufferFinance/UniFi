@@ -28,9 +28,6 @@ contract MockEigenPod is IEigenPod {
     function stake(bytes calldata, bytes calldata, bytes32) external payable {}
     function validatorPubkeyHashToInfo(bytes32) external pure returns (ValidatorInfo memory) { return ValidatorInfo(0, 0, 0, VALIDATOR_STATUS.INACTIVE); }
     function validatorPubkeyToInfo(bytes calldata) external pure returns (ValidatorInfo memory) { return ValidatorInfo(0, 0, 0, VALIDATOR_STATUS.INACTIVE); }
-    function verifyAndProcessWithdrawals(bytes calldata, bytes[] calldata, bytes[] calldata) external {}
-    function verifyBalanceUpdates(bytes calldata, bytes[] calldata, bytes[] calldata) external {}
-    function verifyWithdrawalCredentials(bytes calldata, bytes calldata, bytes32) external pure returns (bool) { return false; }
     function validatorStatus(bytes calldata) external pure returns (VALIDATOR_STATUS) { return VALIDATOR_STATUS.INACTIVE; }
     function withdrawBeforeRestaking() external {}
     function withdrawNonBeaconChainETHBalanceWei(address, uint256) external {}
@@ -42,19 +39,19 @@ contract MockEigenPod is IEigenPod {
         bytes calldata, 
         bytes[] calldata, 
         bytes[] calldata
-    ) external override {}
+    ) external {}
 
     function verifyBalanceUpdates(
         bytes calldata, 
         bytes[] calldata, 
         bytes[] calldata
-    ) external override {}
+    ) external {}
 
     function verifyWithdrawalCredentials(
         bytes calldata, 
         bytes calldata, 
         bytes32
-    ) external pure override returns (bool) {
+    ) external pure returns (bool) {
         return false;
     }
 }
