@@ -183,13 +183,10 @@ contract UniFiAVSManagerTest is Test {
         );
         params.registrationSignature = messagePoint.scalar_mul(privateKey);
 
-        // Mock the validatorStatus call
+        // Create a pod and set validator status
         bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
-        vm.mockCall(
-            mockEigenPod,
-            abi.encodeWithSelector(IEigenPod.validatorStatus.selector, pubkeyHash),
-            abi.encode(IEigenPod.VALIDATOR_STATUS.ACTIVE)
-        );
+        MockEigenPod mockEigenPod = MockEigenPodManager(address(mockEigenPodManager)).createPod(podOwner);
+        mockEigenPodManager.setValidatorStatus(podOwner, pubkeyHash, IEigenPod.VALIDATOR_STATUS.ACTIVE);
 
         // Test
         vm.prank(operator);
