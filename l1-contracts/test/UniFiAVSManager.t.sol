@@ -130,7 +130,7 @@ contract UniFiAVSManagerTest is Test {
     function testRegisterOperator() public {
         // Setup
         mockDelegationManager.setOperator(operator, true);
-        mockEigenPodManager.setPod(podOwner, IEigenPod(address(0x1234)));
+        mockEigenPodManager.createPod(podOwner);
         mockDelegationManager.setDelegation(podOwner, operator);
 
         // Generate operator signature
