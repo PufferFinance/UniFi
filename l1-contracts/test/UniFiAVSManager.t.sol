@@ -159,15 +159,15 @@ contract UniFiAVSManagerTest is Test {
     }
 
     function testDeregisterValidator() public {
-        // bytes32[] memory pubkeyHashes = new bytes32[](1);
+        bytes32[] memory pubkeyHashes = new bytes32[](1);
 
-        // pubkeyHashes[0] = testRegisterValidator();
+        pubkeyHashes[0] = testRegisterValidator();
 
-        // vm.startPrank(operator);
-        // avsManager.deregisterValidator(pubkeyHashes);
+        vm.startPrank(operator);
+        avsManager.deregisterValidator(pubkeyHashes);
 
-        // UniFiAVSManager.OperatorData memory operatorData = avsManager.getOperator(operator);
-        // assertEq(operatorData.validatorCount, 0);
+        UniFiAVSManager.OperatorData memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 0);
     }
 
     function testDeregisterOperator() public {

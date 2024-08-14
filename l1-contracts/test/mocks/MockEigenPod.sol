@@ -6,6 +6,7 @@ import "eigenlayer/interfaces/IEigenPod.sol";
 contract MockEigenPod is IEigenPod {
     mapping(bytes32 => VALIDATOR_STATUS) public validatorStatuses;
     mapping(bytes32 => mapping(uint64 => bool)) public provenWithdrawals;
+    address owner;
 
     function setValidatorStatus(bytes32 pubkeyHash, VALIDATOR_STATUS status) external {
         validatorStatuses[pubkeyHash] = status;
@@ -15,7 +16,9 @@ contract MockEigenPod is IEigenPod {
         return validatorStatuses[pubkeyHash];
     }
 
-    constructor() { }
+    constructor(address _owner) {
+        owner = _owner;
+    }
 
     // Implement required functions with minimal functionality
     function MAX_RESTAKED_BALANCE_GWEI_PER_VALIDATOR() external pure returns (uint64) {
@@ -42,8 +45,8 @@ contract MockEigenPod is IEigenPod {
         return 0;
     }
 
-    function podOwner() external pure returns (address) {
-        return address(0);
+    function podOwner() external view returns (address) {
+        return owner;
     }
 
     function provenWithdrawal(bytes32 validatorPubkeyHash, uint64 slot) external view returns (bool) {

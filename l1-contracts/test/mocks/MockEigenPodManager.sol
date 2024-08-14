@@ -17,7 +17,7 @@ contract MockEigenPodManager {
 
     // Mock function to create a new pod for testing
     function createPod(address podOwner) external returns (MockEigenPod) {
-        MockEigenPod newPod = new MockEigenPod();
+        MockEigenPod newPod = new MockEigenPod(podOwner);
         pods[podOwner] = newPod;
         return newPod;
     }
