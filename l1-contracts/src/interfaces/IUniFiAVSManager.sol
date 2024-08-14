@@ -44,6 +44,7 @@ interface IUniFiAVSManager {
      */
     struct OperatorData {
         uint32 validatorCount;
+        bool isRegistered;
     }
 
     error RegistrationExpired();
@@ -109,8 +110,9 @@ interface IUniFiAVSManager {
      * @param podOwner The address of the pod owner
      * @param operatorSignature The signature of the operator with salt and expiry
      */
-    function registerOperator(address podOwner, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
-        external;
+    function createOperator(bytes32 salt) external returns (address);
+
+    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external;
 
     /**
      * @notice Registers a validator

@@ -12,6 +12,7 @@ import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
  * @custom:security-contact security@puffer.fi
  */
 interface IRestakingOperator {
+    function owner() external view returns (address);
     /**
      * @notice Returns the EigenLayer's DelegationManager
      */

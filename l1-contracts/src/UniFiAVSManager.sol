@@ -51,10 +51,7 @@ contract UniFiAVSManager is
         __AccessManaged_init(accessManager);
     }
 
-    function registerOperator(bytes32 salt, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
-        external
-        onlyPodOwner
-    {
+    function createOperator(bytes32 salt) external onlyPodOwner returns (address) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         bytes memory bytecode = abi.encodePacked(
@@ -64,12 +61,26 @@ contract UniFiAVSManager is
 
         address operatorAddress = Create2.deploy(0, salt, bytecode);
 
-        RestakingOperator operator = RestakingOperator(operatorAddress);
-        operator.registerToAVS(operatorSignature.signature);
+        $.operators[operatorAddress] = OperatorData({validatorCount: 0, isRegistered: false});
 
-        $.operators[operatorAddress] = OperatorData({validatorCount: 0});
+        emit OperatorCreated(operatorAddress, msg.sender);
 
-        emit OperatorRegistered(operatorAddress, msg.sender);
+        return operatorAddress;
+    }
+
+    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
+        external
+    {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        require($.operators[msg.sender].isRegistered == false, "Operator already registered");
+        require(EIGEN_POD_MANAGER.hasPod(RestakingOperator(msg.sender).owner()), "Not a pod owner");
+
+        RestakingOperator(msg.sender).registerToAVS(operatorSignature.signature);
+
+        $.operators[msg.sender].isRegistered = true;
+
+        emit OperatorRegistered(msg.sender, RestakingOperator(msg.sender).owner());
     }
 
     function registerValidator(address podOwner, ValidatorRegistrationParams calldata params)

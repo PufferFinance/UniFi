@@ -22,7 +22,7 @@ import { IRewardsCoordinator } from "./interfaces/EigenLayer/IRewardsCoordinator
  * @notice PufferModule
  * @custom:security-contact security@puffer.fi
  */
-contract RestakingOperator is IRestakingOperator, IERC1271, Initializable, AccessManagedUpgradeable {
+contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
     using Address for address;
     // keccak256(abi.encode(uint256(keccak256("RestakingOperator.storage")) - 1)) & ~bytes32(uint256(0xff))
     // slither-disable-next-line unused-state
@@ -80,13 +80,30 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable, Acces
         _disableInitializers();
     }
 
+    address public immutable owner;
+    IUniFiAVSManager public immutable avsManager;
+
+    constructor(address _owner, address _avsManager) {
+        owner = _owner;
+        avsManager = IUniFiAVSManager(_avsManager);
+    }
+
     function initialize(
-        address initialAuthority,
         IDelegationManager.OperatorDetails calldata operatorDetails,
         string calldata metadataURI
     ) external initializer {
-        __AccessManaged_init(initialAuthority);
+        require(msg.sender == address(avsManager), "Only AVS Manager can initialize");
         EIGEN_DELEGATION_MANAGER.registerAsOperator(operatorDetails, metadataURI);
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
+    modifier onlyAVSManager() {
+        require(msg.sender == address(avsManager), "Only AVS Manager can call this function");
+        _;
     }
 
     /**
