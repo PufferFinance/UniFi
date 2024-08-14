@@ -119,7 +119,7 @@ contract UniFiAVSManagerTest is Test {
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
     }
 
-    function testRegisterValidator() public {
+    function testRegisterValidator() public returns (bytes32) {
         // Setup
         mockDelegationManager.setOperator(operator, true);
         MockEigenPod mockEigenPod = mockEigenPodManager.createPod(podOwner);
@@ -154,10 +154,20 @@ contract UniFiAVSManagerTest is Test {
 
         UniFiAVSManager.ValidatorData memory validatorData = avsManager.getValidator(pubkeyHash);
         assertEq(validatorData.ecdsaPubKeyHash, params.ecdsaPubKeyHash);
+
+        return pubkeyHash;
     }
 
     function testDeregisterValidator() public {
-        // todo
+        // bytes32[] memory pubkeyHashes = new bytes32[](1);
+
+        // pubkeyHashes[0] = testRegisterValidator();
+
+        // vm.startPrank(operator);
+        // avsManager.deregisterValidator(pubkeyHashes);
+
+        // UniFiAVSManager.OperatorData memory operatorData = avsManager.getOperator(operator);
+        // assertEq(operatorData.validatorCount, 0);
     }
 
     function testDeregisterOperator() public {

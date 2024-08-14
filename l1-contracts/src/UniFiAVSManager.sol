@@ -15,6 +15,7 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { BLSSingatureCheckerLib } from "./lib/BLSSingatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
+import "forge-std/Script.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -31,9 +32,6 @@ contract UniFiAVSManager is
 
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
         keccak256("BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)");
-
-    bytes32 public constant VALIDATOR_DEREGISTRATION_TYPEHASH =
-        keccak256("BN254ValidatorDeregistration(bytes32 salt,uint256 expiry)");
 
     modifier validOperator(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
@@ -116,10 +114,11 @@ contract UniFiAVSManager is
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         for (uint256 i = 0; i < blsPubKeyHashs.length; i++) {
-            ValidatorData memory validator = $.validators[blsPubKeyHashs[i]];
+            ValidatorData storage validator = $.validators[blsPubKeyHashs[i]];
 
             IEigenPod eigenPod = IEigenPod(validator.eigenPod);
-
+            console.log(msg.sender);
+            console.log(EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()));
             if (EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) != msg.sender) {
                 revert NotDelegatedToOperator();
             }
@@ -155,33 +154,18 @@ contract UniFiAVSManager is
         return BN254.hashToG1(_hashTypedDataV4(keccak256(abi.encode(typeHash, ecdsaPubKeyHash, salt, expiry))));
     }
 
-    /**
-     * @notice Returns validator data for the given BLS public key hash.
-     * @param blsPubKeyHash The hash of the BLS public key.
-     * @return ValidatorData The data associated with the validator.
-     */
     function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         return $.validators[blsPubKeyHash];
     }
 
-    /**
-     * @notice Returns validator data for the given the validator index.
-     * @param validatorIndex The index of the validator.
-     * @return ValidatorData The data associated with the validator.
-     */
     function getValidator(uint256 validatorIndex) external view returns (ValidatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         return $.validators[$.validatorIndexes[validatorIndex]];
     }
 
-    /**
-     * @notice Returns operator data for the given address.
-     * @param operator The address of the operator.
-     * @return OperatorData The data associated with the operator.
-     */
     function getOperator(address operator) external view returns (OperatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
