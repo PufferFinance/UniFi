@@ -38,6 +38,20 @@ interface IUniFiAVSManager {
         address eigenPod;
     }
 
+    /**
+     * @notice Struct to hold operator data
+     * @param operatorContract The address of the operator contract
+     * @param isRegistered Whether the operator is registered
+     * @param isDelegated Whether the operator is delegated
+     * @param validatorCount The number of validators associated with this operator
+     */
+    struct OperatorData {
+        address operatorContract;
+        bool isRegistered;
+        bool isDelegated;
+        uint256 validatorCount;
+    }
+
 
     error RegistrationExpired();
     error InvalidRegistrationSalt();
