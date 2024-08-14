@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
+import "./structs/ValidatorData.sol";
+import "./structs/OperatorData.sol";
 
 /**
  * @title UniFiAVSManagerStorage
@@ -9,15 +10,8 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
  * @custom:security-contact security@puffer.fi
  */
 abstract contract UniFiAVSManagerStorage {
-    struct OperatorData {
-        address operatorContract;
-        bool isRegistered;
-        bool isDelegated;
-        uint256 validatorCount;
-    }
-
     struct UniFiAVSStorage {
-        mapping(bytes32 => IUniFiAVSManager.ValidatorData) validators;
+        mapping(bytes32 => ValidatorData) validators;
         mapping(uint256 => bytes32) validatorIndexes;
         mapping(address => OperatorData) operators; // podOwner => OperatorData
         mapping(bytes32 => bool) salts;

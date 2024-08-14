@@ -16,6 +16,9 @@ import { BLSSingatureCheckerLib } from "./lib/BLSSingatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import { RestakingOperator } from "./RestakingOperator.sol";
+import "./structs/ValidatorRegistrationParams.sol";
+import "./structs/ValidatorData.sol";
+import "./structs/OperatorData.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 
 error InvalidOperator();
