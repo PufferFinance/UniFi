@@ -54,14 +54,14 @@ contract UniFiAVSManager is
     function createOperator() external onlyPodOwner returns (address) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
+        if ($.operators[msg.sender].operatorContract != address(0)) {
+            revert OperatorAlreadyExists();
+        }
+
         bytes memory bytecode = abi.encodePacked(
             type(RestakingOperator).creationCode,
             abi.encode(msg.sender, address(this))
         );
-
-        if ($.operators[msg.sender].operatorContract != address(0)) {
-            revert OperatorAlreadyExists();
-        }
 
         bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
         address operatorAddress = Create2.deploy(0, salt, bytecode);
@@ -83,12 +83,13 @@ contract UniFiAVSManager is
     {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        require($.operators[msg.sender].isRegistered == false, "Operator already registered");
+        require($.operators[RestakingOperator(msg.sender).owner()].operatorContract == msg.sender, "Not a valid operator");
+        require($.operators[RestakingOperator(msg.sender).owner()].isRegistered == false, "Operator already registered");
         require(EIGEN_POD_MANAGER.hasPod(RestakingOperator(msg.sender).owner()), "Not a pod owner");
 
-        RestakingOperator(msg.sender).registerToAVS(operatorSignature.signature);
+        AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
-        $.operators[msg.sender].isRegistered = true;
+        $.operators[RestakingOperator(msg.sender).owner()].isRegistered = true;
 
         emit OperatorRegistered(msg.sender, RestakingOperator(msg.sender).owner());
     }

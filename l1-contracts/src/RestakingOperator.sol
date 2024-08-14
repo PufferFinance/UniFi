@@ -96,6 +96,10 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
         EIGEN_DELEGATION_MANAGER.registerAsOperator(operatorDetails, metadataURI);
     }
 
+    function registerToAVS(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external onlyOwner {
+        avsManager.registerOperator(operatorSignature);
+    }
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
         _;

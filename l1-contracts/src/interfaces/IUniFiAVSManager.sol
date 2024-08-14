@@ -130,6 +130,12 @@ interface IUniFiAVSManager {
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external;
 
     /**
+     * @notice Creates a new RestakingOperator contract for the pod owner
+     * @return The address of the newly created RestakingOperator contract
+     */
+    function createOperator() external returns (address);
+
+    /**
      * @notice Registers a validator
      * @param podOwner The address of the pod owner
      * @param params The parameters for validator registration
