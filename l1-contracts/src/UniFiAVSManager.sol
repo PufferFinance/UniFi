@@ -18,6 +18,10 @@ import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import { RestakingOperator } from "./RestakingOperator.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 
+error InvalidOperator();
+error OperatorAlreadyRegistered();
+error NotPodOwner();
+
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
     IUniFiAVSManager,
@@ -83,15 +87,22 @@ contract UniFiAVSManager is
     {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        require($.operators[RestakingOperator(msg.sender).owner()].operatorContract == msg.sender, "Not a valid operator");
-        require($.operators[RestakingOperator(msg.sender).owner()].isRegistered == false, "Operator already registered");
-        require(EIGEN_POD_MANAGER.hasPod(RestakingOperator(msg.sender).owner()), "Not a pod owner");
+        address podOwner = RestakingOperator(msg.sender).owner();
+        if ($.operators[podOwner].operatorContract != msg.sender) {
+            revert InvalidOperator();
+        }
+        if ($.operators[podOwner].isRegistered) {
+            revert OperatorAlreadyRegistered();
+        }
+        if (!EIGEN_POD_MANAGER.hasPod(podOwner)) {
+            revert NotPodOwner();
+        }
 
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
-        $.operators[RestakingOperator(msg.sender).owner()].isRegistered = true;
+        $.operators[podOwner].isRegistered = true;
 
-        emit OperatorRegistered(msg.sender, RestakingOperator(msg.sender).owner());
+        emit OperatorRegistered(msg.sender, podOwner);
     }
 
     function registerValidator(address podOwner, ValidatorRegistrationParams calldata params)
