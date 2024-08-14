@@ -53,11 +53,13 @@ contract UniFiAVSManager is
     constructor(
         IEigenPodManager eigenPodManager,
         IDelegationManager eigenDelegationManager,
-        IAVSDirectory avsDirectory
+        IAVSDirectory avsDirectory,
+        address restakingOperatorBeacon
     ) EIP712("UniFiAVSManager", "v0.0.1") {
         EIGEN_POD_MANAGER = eigenPodManager;
         EIGEN_DELEGATION_MANAGER = eigenDelegationManager;
         AVS_DIRECTORY = avsDirectory;
+        RESTAKING_OPERATOR_BEACON = restakingOperatorBeacon;
         _disableInitializers();
     }
 

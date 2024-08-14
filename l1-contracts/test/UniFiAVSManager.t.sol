@@ -32,10 +32,13 @@ contract UniFiAVSManagerTest is Test {
         mockDelegationManager = new MockDelegationManager();
         mockAVSDirectory = new MockAVSDirectory();
 
+        address mockRestakingOperatorBeacon = address(0x1234); // Mock address for RESTAKING_OPERATOR_BEACON
+
         avsManager = new UniFiAVSManager(
             IEigenPodManager(address(mockEigenPodManager)),
             IDelegationManager(address(mockDelegationManager)),
-            IAVSDirectory(address(mockAVSDirectory))
+            IAVSDirectory(address(mockAVSDirectory)),
+            mockRestakingOperatorBeacon
         );
         avsManager.initialize(address(this));
 
