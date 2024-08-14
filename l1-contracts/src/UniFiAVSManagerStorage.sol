@@ -9,10 +9,15 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
  * @custom:security-contact security@puffer.fi
  */
 abstract contract UniFiAVSManagerStorage {
+    struct OperatorInfo {
+        bool isOptedIn;
+        uint256 validatorCount;
+    }
+
     struct UniFiAVSStorage {
         mapping(bytes32 => IUniFiAVSManager.ValidatorData) validators;
         mapping(uint256 => bytes32) validatorIndexes;
-        mapping(address => IUniFiAVSManager.OperatorData) operators;
+        mapping(address => OperatorInfo) operators;
         mapping(bytes32 => bool) salts;
     }
 

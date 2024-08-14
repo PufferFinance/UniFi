@@ -54,13 +54,6 @@ contract UniFiAVSManager is
     function createOperator(bytes32 salt) external onlyPodOwner returns (address) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        // Check if the pod owner already has an operator
-        for (uint256 i = 0; i < $.operatorList.length; i++) {
-            if (RestakingOperator($.operatorList[i]).owner() == msg.sender) {
-                revert OperatorAlreadyExists();
-            }
-        }
-
         bytes memory bytecode = abi.encodePacked(
             type(RestakingOperator).creationCode,
             abi.encode(msg.sender, address(this))
@@ -68,8 +61,15 @@ contract UniFiAVSManager is
 
         address operatorAddress = Create2.deploy(0, salt, bytecode);
 
-        $.operators[operatorAddress] = OperatorData({validatorCount: 0, isRegistered: false});
-        $.operatorList.push(operatorAddress);
+        // Check if the operator already exists
+        if ($.operators[operatorAddress].isOptedIn) {
+            revert OperatorAlreadyExists();
+        }
+
+        $.operators[operatorAddress] = OperatorInfo({
+            isOptedIn: false,
+            validatorCount: 0
+        });
 
         emit OperatorCreated(operatorAddress, msg.sender);
 

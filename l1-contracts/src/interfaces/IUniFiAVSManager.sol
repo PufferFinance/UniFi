@@ -40,11 +40,12 @@ interface IUniFiAVSManager {
 
     /**
      * @notice Struct to hold operator data
+     * @param isOptedIn Whether the operator has opted in
      * @param validatorCount The count of validators associated with the operator
      */
-    struct OperatorData {
-        uint32 validatorCount;
-        bool isRegistered;
+    struct OperatorInfo {
+        bool isOptedIn;
+        uint256 validatorCount;
     }
 
     error RegistrationExpired();
