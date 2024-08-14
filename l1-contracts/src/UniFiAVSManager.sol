@@ -69,6 +69,7 @@ contract UniFiAVSManager is
         $.operators[msg.sender] = OperatorData({
             operatorContract: operatorAddress,
             isRegistered: false,
+            isDelegated: false,
             validatorCount: 0
         });
 

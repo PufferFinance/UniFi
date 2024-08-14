@@ -43,8 +43,10 @@ interface IUniFiAVSManager {
      * @param isOptedIn Whether the operator has opted in
      * @param validatorCount The count of validators associated with the operator
      */
-    struct OperatorInfo {
-        bool isOptedIn;
+    struct OperatorData {
+        address operatorContract;
+        bool isRegistered;
+        bool isDelegated;
         uint256 validatorCount;
     }
 
