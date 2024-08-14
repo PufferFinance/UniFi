@@ -61,3 +61,7 @@ temp/
 # Package lock files
 package-lock.json
 yarn.lock
+.aider*
+
+environment
+target/

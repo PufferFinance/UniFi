@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import { BeaconChainHelperLib } from "./BeaconChainHelperLib.sol";
+import { BeaconChainHelperLib } from "./lib/BeaconChainHelperLib.sol";
 import { PufferBatchSenderStorage } from "./PufferBatchSenderStorage.sol";
 import { IPufferBatchSender } from "./interfaces/IPufferBatchSender.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
