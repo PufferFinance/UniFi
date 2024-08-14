@@ -79,6 +79,18 @@ interface IUniFiAVSManager {
     error InvalidSignature();
 
     /**
+     * @notice Error thrown when the pod owner already has an operator
+     */
+    error OperatorAlreadyExists();
+
+    /**
+     * @notice Event emitted when an operator is created
+     * @param operator The address of the created operator
+     * @param podOwner The address of the pod owner
+     */
+    event OperatorCreated(address indexed operator, address indexed podOwner);
+
+    /**
      * @notice Event emitted when an operator is registered to AVS
      * @param operator The address of the registered operator
      * @param podOwner The address of the pod owner
