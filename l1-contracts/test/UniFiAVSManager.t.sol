@@ -18,7 +18,7 @@ contract UniFiAVSManagerTest is Test {
     using BN254 for BN254.G1Point;
     using Strings for uint256;
 
-    UniFiAVSManagerTest public avsManager;
+    UniFiAVSManager public avsManager;
     MockEigenPodManager public mockEigenPodManager;
     MockDelegationManager public mockDelegationManager;
     MockAVSDirectory public mockAVSDirectory;
@@ -32,7 +32,7 @@ contract UniFiAVSManagerTest is Test {
         mockDelegationManager = new MockDelegationManager();
         mockAVSDirectory = new MockAVSDirectory();
 
-        avsManager = new UniFiAVSManagerTest(
+        avsManager = new UniFiAVSManager(
             IEigenPodManager(address(mockEigenPodManager)),
             IDelegationManager(address(mockDelegationManager)),
             IAVSDirectory(address(mockAVSDirectory))
@@ -133,7 +133,7 @@ contract UniFiAVSManagerTest is Test {
         IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
 
         // Create ValidatorRegistrationParams
-        UniFiAVSManager.ValidatorRegistrationParams memory params;
+        ValidatorRegistrationParams memory params;
         params.pubkeyG1 = blsKeyPair.pubkeyG1;
         params.pubkeyG2 = blsKeyPair.pubkeyG2;
         params.ecdsaPubKeyHash = bytes32(uint256(1));
@@ -155,7 +155,7 @@ contract UniFiAVSManagerTest is Test {
         vm.prank(operator);
         avsManager.registerValidator(podOwner, params);
 
-        UniFiAVSManager.ValidatorData memory validatorData = avsManager.getValidator(pubkeyHash);
+        ValidatorData memory validatorData = avsManager.getValidator(pubkeyHash);
         assertEq(validatorData.ecdsaPubKeyHash, params.ecdsaPubKeyHash);
 
         return pubkeyHash;
@@ -169,7 +169,7 @@ contract UniFiAVSManagerTest is Test {
         vm.startPrank(operator);
         avsManager.deregisterValidator(pubkeyHashes);
 
-        UniFiAVSManager.OperatorData memory operatorData = avsManager.getOperator(operator);
+        OperatorData memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 0);
     }
 

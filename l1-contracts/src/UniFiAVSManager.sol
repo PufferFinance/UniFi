@@ -3,7 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {ISignatureUtils} from "eigenlayer/interfaces/ISignatureUtils.sol";
 import {IAVSDirectory} from "eigenlayer/interfaces/IAVSDirectory.sol";
 import {IDelegationManager} from "eigenlayer/interfaces/IDelegationManager.sol";
@@ -25,7 +25,7 @@ error InvalidOperator();
 error OperatorAlreadyRegistered();
 error NotPodOwner();
 
-abstract contract UniFiAVSManager is
+contract UniFiAVSManager is
     UniFiAVSManagerStorage,
     IUniFiAVSManager,
     EIP712,
@@ -58,6 +58,7 @@ abstract contract UniFiAVSManager is
         EIGEN_POD_MANAGER = eigenPodManager;
         EIGEN_DELEGATION_MANAGER = eigenDelegationManager;
         AVS_DIRECTORY = avsDirectory;
+        _disableInitializers();
     }
 
     function initialize(address accessManager) public initializer {
@@ -66,7 +67,7 @@ abstract contract UniFiAVSManager is
 
     function createOperator(
         string calldata metadataURI,
-                address delegationApprover
+        address delegationApprover
     ) external onlyPodOwner returns (address) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -78,7 +79,7 @@ abstract contract UniFiAVSManager is
             memory operatorDetails = IDelegationManager.OperatorDetails({
                 earningsReceiver: address(this),
                 delegationApprover: delegationApprover,
-                stakerOptOutWindowBlocks: 65 // todo
+                stakerOptOutWindowBlocks: uint32(65) // todo
             });
 
         address restakingOperator = Create2.deploy({
@@ -104,7 +105,7 @@ abstract contract UniFiAVSManager is
         // bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
         // address operatorAddress = Create2.deploy(0, salt, bytecode);
 
-        $.operators[msg.sender] = UniFiAVSStorage.OperatorData({
+        $.operators[msg.sender] = OperatorData({
             operatorContract: restakingOperator,
             isRegistered: false,
             isDelegated: false,
