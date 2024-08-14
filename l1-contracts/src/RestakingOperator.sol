@@ -149,29 +149,6 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable, Acces
      * @inheritdoc IRestakingOperator
      * @dev Restricted to the PufferModuleManager
      */
-    function registerOperatorToAVSWithChurn(
-        address avsManager,
-        bytes calldata quorumNumbers,
-        string calldata socket,
-        IBLSApkRegistry.PubkeyRegistrationParams calldata params,
-        IRegistryCoordinator.OperatorKickParam[] calldata operatorKickParams,
-        ISignatureUtils.SignatureWithSaltAndExpiry memory churnApproverSignature,
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
-    ) external virtual {
-        IUniFiAVSManager(avsManager).registerOperatorToAVSWithChurn(
-            quorumNumbers,
-            socket,
-            params,
-            operatorKickParams,
-            churnApproverSignature,
-            operatorSignature
-        );
-    }
-
-    /**
-     * @inheritdoc IRestakingOperator
-     * @dev Restricted to the PufferModuleManager
-     */
     function customCalldataCall(address target, bytes calldata customCalldata)
         external
         virtual
