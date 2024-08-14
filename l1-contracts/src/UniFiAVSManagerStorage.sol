@@ -12,6 +12,7 @@ abstract contract UniFiAVSManagerStorage {
     struct OperatorData {
         address operatorContract;
         bool isRegistered;
+        bool isDelegated;
         uint256 validatorCount;
     }
 
