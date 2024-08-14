@@ -150,3 +150,30 @@ interface IUniFiAVSManager {
      */
     function getOperator(address operator) external view returns (OperatorData memory);
 }
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.8.0 <0.9.0;
+
+import { IBLSApkRegistry } from "eigenlayer-middleware/interfaces/IRegistryCoordinator.sol";
+import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
+
+interface IUniFiAVSManager {
+    function registerOperatorToAVS(
+        bytes calldata quorumNumbers,
+        string calldata socket,
+        IBLSApkRegistry.PubkeyRegistrationParams calldata params,
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+    ) external;
+
+    function registerOperatorToAVSWithChurn(
+        bytes calldata quorumNumbers,
+        string calldata socket,
+        IBLSApkRegistry.PubkeyRegistrationParams calldata params,
+        IRegistryCoordinator.OperatorKickParam[] calldata operatorKickParams,
+        ISignatureUtils.SignatureWithSaltAndExpiry memory churnApproverSignature,
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+    ) external;
+
+    function deregisterOperatorFromAVS(bytes calldata quorumNumbers) external;
+
+    function updateOperatorAVSSocket(string memory socket) external;
+}
