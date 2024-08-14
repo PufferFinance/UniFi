@@ -58,13 +58,13 @@ contract UniFiAVSManager is
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         bytes memory bytecode = abi.encodePacked(
-            type(Operator).creationCode,
+            type(RestakingOperator).creationCode,
             abi.encode(msg.sender, address(this))
         );
 
         address operatorAddress = Create2.deploy(0, salt, bytecode);
 
-        Operator operator = Operator(operatorAddress);
+        RestakingOperator operator = RestakingOperator(operatorAddress);
         operator.registerToAVS(operatorSignature.signature);
 
         $.operators[operatorAddress] = OperatorData({validatorCount: 0});
