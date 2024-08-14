@@ -15,7 +15,7 @@ contract UniFiAVSManagerTest is Test {
     using BN254 for BN254.G1Point;
     using Strings for uint256;
 
-    UniFiAVSManager public avsManager;
+    UniFiAVSManagerTest public avsManager;
     MockEigenPodManager public mockEigenPodManager;
     MockDelegationManager public mockDelegationManager;
     MockAVSDirectory public mockAVSDirectory;
@@ -29,7 +29,7 @@ contract UniFiAVSManagerTest is Test {
         mockDelegationManager = new MockDelegationManager();
         mockAVSDirectory = new MockAVSDirectory();
 
-        avsManager = new UniFiAVSManager(
+        avsManager = new UniFiAVSManagerTest(
             IEigenPodManager(address(mockEigenPodManager)),
             IDelegationManager(address(mockDelegationManager)),
             IAVSDirectory(address(mockAVSDirectory))

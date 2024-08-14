@@ -22,7 +22,7 @@ import { IRewardsCoordinator } from "./interfaces/EigenLayer/IRewardsCoordinator
  * @notice PufferModule
  * @custom:security-contact security@puffer.fi
  */
-contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
+abstract contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
     using Address for address;
     // keccak256(abi.encode(uint256(keccak256("RestakingOperator.storage")) - 1)) & ~bytes32(uint256(0xff))
     // slither-disable-next-line unused-state
@@ -63,23 +63,6 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
     ISlasher public immutable override EIGEN_SLASHER;
 
     // We use constructor to set the immutable variables
-    constructor(
-        IDelegationManager delegationManager,
-        ISlasher slasher,
-        IRewardsCoordinator rewardsCoordinator
-    ) {
-        if (address(delegationManager) == address(0)) {
-            revert InvalidAddress();
-        }
-        if (address(slasher) == address(0)) {
-            revert InvalidAddress();
-        }
-        EIGEN_DELEGATION_MANAGER = delegationManager;
-        EIGEN_SLASHER = slasher;
-        EIGEN_REWARDS_COORDINATOR = rewardsCoordinator;
-        _disableInitializers();
-    }
-
     address public immutable owner;
     IUniFiAVSManager public immutable avsManager;
 
@@ -90,11 +73,15 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
         ISlasher slasher,
         IRewardsCoordinator rewardsCoordinator
     ) {
+        if (address(delegationManager) == address(0) || address(slasher) == address(0)) {
+            revert InvalidAddress();
+        }
         owner = _owner;
         avsManager = IUniFiAVSManager(_avsManager);
         EIGEN_DELEGATION_MANAGER = delegationManager;
         EIGEN_SLASHER = slasher;
         EIGEN_REWARDS_COORDINATOR = rewardsCoordinator;
+        _disableInitializers();
     }
 
     function initialize(

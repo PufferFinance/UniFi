@@ -70,7 +70,7 @@ abstract contract UniFiAVSManager is
         bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
         address operatorAddress = Create2.deploy(0, salt, bytecode);
 
-        $.operators[msg.sender] = OperatorData({
+        $.operators[msg.sender] = UniFiAVSStorage.OperatorData({
             operatorContract: operatorAddress,
             isRegistered: false,
             isDelegated: false,
@@ -159,7 +159,7 @@ abstract contract UniFiAVSManager is
                 revert NotDelegatedToOperator();
             }
 
-            OperatorData storage operator = $.operators[msg.sender];
+            UniFiAVSStorage.OperatorData storage operator = $.operators[msg.sender];
 
             operator.validatorCount--;
             delete $.validators[blsPubKeyHashs[i]];
@@ -171,7 +171,7 @@ abstract contract UniFiAVSManager is
     function deregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        OperatorData storage operator = $.operators[msg.sender];
+        UniFiAVSStorage.OperatorData storage operator = $.operators[msg.sender];
 
         if (operator.validatorCount > 0) {
             revert OperatorHasValidators();
@@ -204,7 +204,7 @@ abstract contract UniFiAVSManager is
 
     function getOperator(address operator) external view returns (OperatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        OperatorData memory operatorData = $.operators[operator];
+        UniFiAVSStorage.OperatorData memory operatorData = $.operators[operator];
         return operatorData;
     }
 
