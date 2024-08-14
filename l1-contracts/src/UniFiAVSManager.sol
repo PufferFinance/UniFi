@@ -61,7 +61,10 @@ contract UniFiAVSManager is
         external
         validOperator(podOwner)
     {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
+
+        $.operators[msg.sender].podOwner = podOwner;
 
         emit OperatorRegistered(msg.sender, podOwner);
     }
@@ -121,6 +124,7 @@ contract UniFiAVSManager is
             IEigenPod eigenPod = IEigenPod(validator.eigenPod);
 
             if (EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) != msg.sender) {
+                // eject if no longer active
                 IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHashs[i]);
                 if (validatorInfo.status == IEigenPod.VALIDATOR_STATUS.ACTIVE) {
                     revert NotDelegatedToOperator();
@@ -136,12 +140,20 @@ contract UniFiAVSManager is
         }
     }
 
-    function deregisterOperator() external {
+    function deregisterOperator(address operator) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        OperatorData storage operator = $.operators[msg.sender];
+        if (operator != msg.sender) {
+            // eject if no longer delegated to
+            OperatorData storage operatorData = $.operators[operator];
+            if (EIGEN_DELEGATION_MANAGER.delegatedTo(operatorData.podOwner) == operator) {
+                revert NotOperator();
+            }
+        }
 
-        if (operator.validatorCount > 0) {
+        OperatorData storage operatorData = $.operators[msg.sender];
+
+        if (operatorData.validatorCount > 0) {
             revert OperatorHasValidators();
         }
 
