@@ -38,150 +38,36 @@ interface IUniFiAVSManager {
         address eigenPod;
     }
 
-    /**
-     * @notice Struct to hold operator data
-     * @param isOptedIn Whether the operator has opted in
-     * @param validatorCount The count of validators associated with the operator
-     */
-    struct OperatorData {
-        address operatorContract;
-        bool isRegistered;
-        bool isDelegated;
-        uint256 validatorCount;
-    }
-
     error RegistrationExpired();
-
     error InvalidRegistrationSalt();
-
     error OperatorHasValidators();
-
-    /**
-     * @notice Error thrown when the sender is not an operator
-     */
     error NotOperator();
-
-    /**
-     * @notice Error thrown when the pod owner does not have an EigenPod
-     */
     error NoEigenPod();
-
-    /**
-     * @notice Error thrown when the pod owner has not delegated to the operator
-     */
     error NotDelegatedToOperator();
-
-    /**
-     * @notice Error thrown when the validator is not active
-     */
     error ValidatorNotActive();
-
-    /**
-     * @notice Error thrown when the signature is invalid
-     */
     error InvalidSignature();
-
-    /**
-     * @notice Error thrown when the pod owner already has an operator
-     */
     error OperatorAlreadyExists();
 
-    /**
-     * @notice Event emitted when an operator is created
-     * @param operator The address of the created operator
-     * @param podOwner The address of the pod owner
-     */
     event OperatorCreated(address indexed operator, address indexed podOwner);
-
-    /**
-     * @notice Event emitted when an operator is registered to AVS
-     * @param operator The address of the registered operator
-     * @param podOwner The address of the pod owner
-     */
     event OperatorRegistered(address indexed operator, address indexed podOwner);
-
-    /**
-     * @notice Event emitted when a validator is registered
-     * @param podOwner The address of the pod owner
-     * @param ecdsaPubKeyHash The hash of the ECDSA public key
-     * @param blsPubKeyHash The hash of the BLS public key
-     */
     event ValidatorRegistered(address indexed podOwner, bytes32 indexed ecdsaPubKeyHash, bytes32 blsPubKeyHash);
-
-    /**
-     * @notice Event emitted when an operator is deregistered from AVS
-     * @param operator The address of the deregistered operator
-     */
     event OperatorDeregistered(address indexed operator);
-
-    /**
-     * @notice Event emitted when a validator is deregistered
-     * @param blsPubKeyHash The hash of the BLS public key
-     */
     event ValidatorDeregistered(bytes32 blsPubKeyHash);
 
-    /**
-     * @notice Registers an operator to AVS
-     * @param podOwner The address of the pod owner
-     * @param operatorSignature The signature of the operator with salt and expiry
-     */
-    function createOperator(bytes32 salt) external returns (address);
-
-    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external;
-
-    /**
-     * @notice Creates a new RestakingOperator contract for the pod owner
-     * @return The address of the newly created RestakingOperator contract
-     */
     function createOperator() external returns (address);
-
-    /**
-     * @notice Registers a validator
-     * @param podOwner The address of the pod owner
-     * @param params The parameters for validator registration
-     */
+    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external;
     function registerValidator(address podOwner, ValidatorRegistrationParams calldata params) external;
-
-    /**
-     * @notice Deregisters a validator
-     * @param blsPubKeyHashs The hashes of the BLS public keys to deregister
-     */
     function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external;
-
-    /**
-     * @notice Deregisters an operator from AVS
-     */
     function deregisterOperator() external;
-
-    /**
-     * @notice Returns validator data for the given BLS public key hash.
-     * @param blsPubKeyHash The hash of the BLS public key.
-     * @return ValidatorData The data associated with the validator.
-     */
     function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory);
-
-    /**
-     * @notice Returns validator data for the given the validator index.
-     * @param validatorIndex The index of the validator.
-     * @return ValidatorData The data associated with the validator.
-     */
     function getValidator(uint256 validatorIndex) external view returns (ValidatorData memory);
-
-    /**
-     * @notice Returns operator data for the given address.
-     * @param operator The address of the operator.
-     * @return OperatorData The data associated with the operator.
-     */
     function getOperator(address operator) external view returns (OperatorData memory);
-
     function registerOperatorToAVS(
         bytes calldata quorumNumbers,
         string calldata socket,
         IBLSApkRegistry.PubkeyRegistrationParams calldata params,
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
     ) external;
-
     function deregisterOperatorFromAVS(bytes calldata quorumNumbers) external;
-
     function updateOperatorAVSSocket(string memory socket) external;
 }

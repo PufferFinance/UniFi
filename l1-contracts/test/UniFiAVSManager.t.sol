@@ -114,7 +114,7 @@ contract UniFiAVSManagerTest is Test {
 
         // Test
         vm.prank(operator);
-        avsManager.registerOperator(podOwner, operatorSignature);
+        avsManager.registerOperator(operatorSignature);
 
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
     }

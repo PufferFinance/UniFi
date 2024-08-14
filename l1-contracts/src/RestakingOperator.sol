@@ -83,9 +83,18 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
     address public immutable owner;
     IUniFiAVSManager public immutable avsManager;
 
-    constructor(address _owner, address _avsManager) {
+    constructor(
+        address _owner,
+        address _avsManager,
+        IDelegationManager delegationManager,
+        ISlasher slasher,
+        IRewardsCoordinator rewardsCoordinator
+    ) {
         owner = _owner;
         avsManager = IUniFiAVSManager(_avsManager);
+        EIGEN_DELEGATION_MANAGER = delegationManager;
+        EIGEN_SLASHER = slasher;
+        EIGEN_REWARDS_COORDINATOR = rewardsCoordinator;
     }
 
     function initialize(
@@ -114,7 +123,7 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
      * @inheritdoc IRestakingOperator
      * @dev Restricted to the PufferModuleManager
      */
-    function optIntoSlashing(address slasher) external virtual {
+    function optIntoSlashing(address slasher) external virtual onlyOwner {
         EIGEN_SLASHER.optIntoSlashing(slasher);
     }
 
@@ -125,6 +134,7 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
     function modifyOperatorDetails(IDelegationManager.OperatorDetails calldata newOperatorDetails)
         external
         virtual
+        onlyOwner
     {
         EIGEN_DELEGATION_MANAGER.modifyOperatorDetails(newOperatorDetails);
     }
@@ -133,7 +143,7 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
      * @inheritdoc IRestakingOperator
      * @dev Restricted to the PufferModuleManager
      */
-    function updateOperatorMetadataURI(string calldata metadataURI) external virtual {
+    function updateOperatorMetadataURI(string calldata metadataURI) external virtual onlyOwner {
         EIGEN_DELEGATION_MANAGER.updateOperatorMetadataURI(metadataURI);
     }
 
@@ -141,7 +151,7 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
      * @inheritdoc IRestakingOperator
      * @dev Restricted to the PufferModuleManager
      */
-    function updateSignatureProof(bytes32 digestHash, address signer) external virtual {
+    function updateSignatureProof(bytes32 digestHash, address signer) external virtual onlyOwner {
         RestakingOperatorStorage storage $ = _getRestakingOperatorStorage();
 
         $.hashSigners[digestHash] = signer;
@@ -152,13 +162,12 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
      * @dev Restricted to the PufferModuleManager
      */
     function registerOperatorToAVS(
-        address avsManager,
         bytes calldata quorumNumbers,
         string calldata socket,
         IBLSApkRegistry.PubkeyRegistrationParams calldata params,
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
-    ) external virtual {
-        IUniFiAVSManager(avsManager).registerOperatorToAVS(
+    ) external virtual onlyOwner {
+        avsManager.registerOperatorToAVS(
             quorumNumbers,
             socket,
             params,
@@ -173,6 +182,7 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
     function customCalldataCall(address target, bytes calldata customCalldata)
         external
         virtual
+        onlyOwner
         returns (bytes memory response)
     {
         return target.functionCall(customCalldata);
@@ -182,22 +192,24 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
      * @inheritdoc IRestakingOperator
      * @dev Restricted to the PufferModuleManager
      */
-    function deregisterOperatorFromAVS(address avsManager, bytes calldata quorumNumbers)
+    function deregisterOperatorFromAVS(bytes calldata quorumNumbers)
         external
         virtual
+        onlyOwner
     {
-        IUniFiAVSManager(avsManager).deregisterOperatorFromAVS(quorumNumbers);
+        avsManager.deregisterOperatorFromAVS(quorumNumbers);
     }
 
     /**
      * @inheritdoc IRestakingOperator
      * @dev Restricted to the PufferModuleManager
      */
-    function updateOperatorAVSSocket(address avsManager, string memory socket)
+    function updateOperatorAVSSocket(string memory socket)
         external
         virtual
+        onlyOwner
     {
-        IUniFiAVSManager(avsManager).updateOperatorAVSSocket(socket);
+        avsManager.updateOperatorAVSSocket(socket);
     }
 
     /**

@@ -22,7 +22,7 @@ error InvalidOperator();
 error OperatorAlreadyRegistered();
 error NotPodOwner();
 
-contract UniFiAVSManager is
+abstract contract UniFiAVSManager is
     UniFiAVSManagerStorage,
     IUniFiAVSManager,
     EIP712,
