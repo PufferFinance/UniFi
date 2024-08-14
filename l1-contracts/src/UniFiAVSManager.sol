@@ -15,7 +15,6 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { BLSSingatureCheckerLib } from "./lib/BLSSingatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
-import "forge-std/Script.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -117,8 +116,7 @@ contract UniFiAVSManager is
             ValidatorData storage validator = $.validators[blsPubKeyHashs[i]];
 
             IEigenPod eigenPod = IEigenPod(validator.eigenPod);
-            console.log(msg.sender);
-            console.log(EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()));
+
             if (EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) != msg.sender) {
                 revert NotDelegatedToOperator();
             }
