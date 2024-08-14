@@ -204,8 +204,8 @@ abstract contract UniFiAVSManager is
 
     function getOperator(address operator) external view returns (OperatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
-        return $.operators[operator];
+        OperatorData memory operatorData = $.operators[operator];
+        return operatorData;
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }

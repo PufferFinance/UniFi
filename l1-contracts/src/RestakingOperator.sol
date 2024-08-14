@@ -202,18 +202,6 @@ contract RestakingOperator is IRestakingOperator, IERC1271, Initializable {
 
     /**
      * @inheritdoc IRestakingOperator
-     * @dev Restricted to the PufferModuleManager
-     */
-    function updateOperatorAVSSocket(string memory socket)
-        external
-        virtual
-        onlyOwner
-    {
-        avsManager.updateOperatorAVSSocket(socket);
-    }
-
-    /**
-     * @inheritdoc IRestakingOperator
      * @dev Restricted to PufferModuleManager
      */
     function callSetClaimerFor(address claimer) external virtual {
