@@ -10,6 +10,7 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
  */
 abstract contract UniFiAVSManagerStorage {
     struct OperatorData {
+        address operatorContract;
         bool isRegistered;
         uint256 validatorCount;
     }
@@ -17,7 +18,7 @@ abstract contract UniFiAVSManagerStorage {
     struct UniFiAVSStorage {
         mapping(bytes32 => IUniFiAVSManager.ValidatorData) validators;
         mapping(uint256 => bytes32) validatorIndexes;
-        mapping(address => OperatorData) operators;
+        mapping(address => OperatorData) operators; // podOwner => OperatorData
         mapping(bytes32 => bool) salts;
     }
 

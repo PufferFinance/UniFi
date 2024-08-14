@@ -69,7 +69,8 @@ contract UniFiAVSManager is
 
         operatorAddress = Create2.deploy(0, salt, bytecode);
 
-        $.operators[operatorAddress] = OperatorData({
+        $.operators[msg.sender] = OperatorData({
+            operatorContract: operatorAddress,
             isRegistered: false,
             validatorCount: 0
         });
