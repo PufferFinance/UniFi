@@ -103,8 +103,11 @@ contract UniFiAVSManager is
         }
 
         $.validatorIndexes[validatorInfo.validatorIndex] = pubkeyHash;
-        $.validators[pubkeyHash] =
-            ValidatorData({ ecdsaPubKeyHash: params.ecdsaPubKeyHash, eigenPod: address(eigenPod) });
+        $.validators[pubkeyHash] = ValidatorData({
+            ecdsaPubKeyHash: params.ecdsaPubKeyHash,
+            eigenPod: address(eigenPod),
+            operator: msg.sender
+        });
         $.operators[msg.sender].validatorCount++;
 
         emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, pubkeyHash);
@@ -118,10 +121,13 @@ contract UniFiAVSManager is
             IEigenPod eigenPod = IEigenPod(validator.eigenPod);
 
             if (EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) != msg.sender) {
-                revert NotDelegatedToOperator();
+                IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHashs[i]);
+                if (validatorInfo.status == IEigenPod.VALIDATOR_STATUS.ACTIVE) {
+                    revert NotDelegatedToOperator();
+                }
             }
 
-            OperatorData storage operator = $.operators[msg.sender];
+            OperatorData storage operator = $.operators[validator.operator];
 
             operator.validatorCount--;
             delete $.validators[blsPubKeyHashs[i]];

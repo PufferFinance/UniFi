@@ -35,6 +35,7 @@ interface IUniFiAVSManager {
     struct ValidatorData {
         bytes32 ecdsaPubKeyHash;
         address eigenPod;
+        address operator;
     }
 
     /**
