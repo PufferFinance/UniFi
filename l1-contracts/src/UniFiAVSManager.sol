@@ -62,11 +62,11 @@ contract UniFiAVSManager is
         address operatorAddress = Create2.deploy(0, salt, bytecode);
 
         // Check if the operator already exists
-        if ($.operators[operatorAddress].isOptedIn) {
+        if ($.operators[operatorAddress].isRegistered) {
             revert OperatorAlreadyExists();
         }
 
-        $.operators[operatorAddress] = OperatorInfo({
+        $.operators[operatorAddress] = OperatorData({
             isOptedIn: false,
             validatorCount: 0
         });
