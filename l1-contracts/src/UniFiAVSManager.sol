@@ -74,7 +74,6 @@ contract UniFiAVSManager is
 
     function registerValidator(address podOwner, ValidatorRegistrationParams calldata params)
         external
-        validOperator(podOwner)
     {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
