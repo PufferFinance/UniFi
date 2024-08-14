@@ -15,6 +15,8 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { BLSSingatureCheckerLib } from "./lib/BLSSingatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
+import { Operator } from "./Operator.sol";
+import "@openzeppelin/contracts/utils/Create2.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -32,16 +34,8 @@ contract UniFiAVSManager is
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
         keccak256("BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)");
 
-    modifier validOperator(address podOwner) {
-        if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
-            revert NotOperator();
-        }
-        if (!EIGEN_POD_MANAGER.hasPod(podOwner)) {
-            revert NoEigenPod();
-        }
-        if (EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) != msg.sender) {
-            revert NotDelegatedToOperator();
-        }
+    modifier onlyPodOwner() {
+        require(EIGEN_POD_MANAGER.hasPod(msg.sender), "Not a pod owner");
         _;
     }
 
@@ -57,13 +51,25 @@ contract UniFiAVSManager is
         __AccessManaged_init(accessManager);
     }
 
-    function registerOperator(address podOwner, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
+    function registerOperator(bytes32 salt, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
         external
-        validOperator(podOwner)
+        onlyPodOwner
     {
-        AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        emit OperatorRegistered(msg.sender, podOwner);
+        bytes memory bytecode = abi.encodePacked(
+            type(Operator).creationCode,
+            abi.encode(msg.sender, address(this))
+        );
+
+        address operatorAddress = Create2.deploy(0, salt, bytecode);
+
+        Operator operator = Operator(operatorAddress);
+        operator.registerToAVS(operatorSignature.signature);
+
+        $.operators[operatorAddress] = OperatorData({validatorCount: 0});
+
+        emit OperatorRegistered(operatorAddress, msg.sender);
     }
 
     function registerValidator(address podOwner, ValidatorRegistrationParams calldata params)
