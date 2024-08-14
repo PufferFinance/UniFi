@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { AccessManagedUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
-import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
-import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
-import { IEigenPodManager } from "eigenlayer/interfaces/IEigenPodManager.sol";
-import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
-import { IEigenPod } from "eigenlayer/interfaces/IEigenPod.sol";
-import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { BLSSingatureCheckerLib } from "./lib/BLSSingatureCheckerLib.sol";
-import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
-import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
-import { RestakingOperator } from "./RestakingOperator.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import {ISignatureUtils} from "eigenlayer/interfaces/ISignatureUtils.sol";
+import {IAVSDirectory} from "eigenlayer/interfaces/IAVSDirectory.sol";
+import {IDelegationManager} from "eigenlayer/interfaces/IDelegationManager.sol";
+import {IEigenPodManager} from "eigenlayer/interfaces/IEigenPodManager.sol";
+import {ISignatureUtils} from "eigenlayer/interfaces/ISignatureUtils.sol";
+import {IEigenPod} from "eigenlayer/interfaces/IEigenPod.sol";
+import {BN254} from "eigenlayer-middleware/libraries/BN254.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {BLSSingatureCheckerLib} from "./lib/BLSSingatureCheckerLib.sol";
+import {IUniFiAVSManager} from "./interfaces/IUniFiAVSManager.sol";
+import {UniFiAVSManagerStorage} from "./UniFiAVSManagerStorage.sol";
+import {RestakingOperator} from "./RestakingOperator.sol";
 import "./structs/ValidatorRegistrationParams.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
@@ -38,17 +38,23 @@ abstract contract UniFiAVSManager is
     IDelegationManager public immutable EIGEN_DELEGATION_MANAGER;
     IAVSDirectory internal immutable AVS_DIRECTORY;
 
+    address public immutable RESTAKING_OPERATOR_BEACON;
+
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
-        keccak256("BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)");
+        keccak256(
+            "BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)"
+        );
 
     modifier onlyPodOwner() {
         require(EIGEN_POD_MANAGER.hasPod(msg.sender), "Not a pod owner");
         _;
     }
 
-    constructor(IEigenPodManager eigenPodManager, IDelegationManager eigenDelegationManager, IAVSDirectory avsDirectory)
-        EIP712("UniFiAVSManager", "v0.0.1")
-    {
+    constructor(
+        IEigenPodManager eigenPodManager,
+        IDelegationManager eigenDelegationManager,
+        IAVSDirectory avsDirectory
+    ) EIP712("UniFiAVSManager", "v0.0.1") {
         EIGEN_POD_MANAGER = eigenPodManager;
         EIGEN_DELEGATION_MANAGER = eigenDelegationManager;
         AVS_DIRECTORY = avsDirectory;
@@ -58,36 +64,61 @@ abstract contract UniFiAVSManager is
         __AccessManaged_init(accessManager);
     }
 
-    function createOperator() external onlyPodOwner returns (address) {
+    function createOperator(
+        string calldata metadataURI,
+                address delegationApprover
+    ) external onlyPodOwner returns (address) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         if ($.operators[msg.sender].operatorContract != address(0)) {
             revert OperatorAlreadyExists();
         }
 
-        bytes memory bytecode = abi.encodePacked(
-            type(RestakingOperator).creationCode,
-            abi.encode(msg.sender, address(this))
-        );
+        IDelegationManager.OperatorDetails
+            memory operatorDetails = IDelegationManager.OperatorDetails({
+                earningsReceiver: address(this),
+                delegationApprover: delegationApprover,
+                stakerOptOutWindowBlocks: 65 // todo
+            });
 
-        bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
-        address operatorAddress = Create2.deploy(0, salt, bytecode);
+        address restakingOperator = Create2.deploy({
+            amount: 0,
+            salt: keccak256(abi.encode(metadataURI)),
+            bytecode: abi.encodePacked(
+                type(BeaconProxy).creationCode,
+                abi.encode(
+                    RESTAKING_OPERATOR_BEACON,
+                    abi.encodeCall(
+                        RestakingOperator.initialize,
+                        (authority(), operatorDetails, metadataURI)
+                    )
+                )
+            )
+        });
+
+        // bytes memory bytecode = abi.encodePacked(
+        //     type(RestakingOperator).creationCode,
+        //     abi.encode(msg.sender, address(this))
+        // );
+
+        // bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
+        // address operatorAddress = Create2.deploy(0, salt, bytecode);
 
         $.operators[msg.sender] = UniFiAVSStorage.OperatorData({
-            operatorContract: operatorAddress,
+            operatorContract: restakingOperator,
             isRegistered: false,
             isDelegated: false,
             validatorCount: 0
         });
 
-        emit OperatorCreated(operatorAddress, msg.sender);
+        emit OperatorCreated(restakingOperator, msg.sender);
 
-        return operatorAddress;
+        return restakingOperator;
     }
 
-    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
-        external
-    {
+    function registerOperator(
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+    ) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         address podOwner = RestakingOperator(msg.sender).owner();
@@ -108,15 +139,17 @@ abstract contract UniFiAVSManager is
         emit OperatorRegistered(msg.sender, podOwner);
     }
 
-    function registerValidator(address podOwner, ValidatorRegistrationParams calldata params)
-        external
-    {
+    function registerValidator(
+        address podOwner,
+        ValidatorRegistrationParams calldata params
+    ) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
         bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
 
-        IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(pubkeyHash);
+        IEigenPod.ValidatorInfo memory validatorInfo = eigenPod
+            .validatorPubkeyHashToInfo(pubkeyHash);
 
         if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
             revert ValidatorNotActive();
@@ -132,20 +165,29 @@ abstract contract UniFiAVSManager is
 
         $.salts[params.salt] = true;
 
-        BN254.G1Point memory messageHash =
-            blsMessageHash(VALIDATOR_REGISTRATION_TYPEHASH, params.ecdsaPubKeyHash, params.salt, params.expiry);
+        BN254.G1Point memory messageHash = blsMessageHash(
+            VALIDATOR_REGISTRATION_TYPEHASH,
+            params.ecdsaPubKeyHash,
+            params.salt,
+            params.expiry
+        );
 
         if (
             !BLSSingatureCheckerLib.isBlsSignatureValid(
-                params.pubkeyG1, params.pubkeyG2, params.registrationSignature, messageHash
+                params.pubkeyG1,
+                params.pubkeyG2,
+                params.registrationSignature,
+                messageHash
             )
         ) {
             revert InvalidSignature();
         }
 
         $.validatorIndexes[validatorInfo.validatorIndex] = pubkeyHash;
-        $.validators[pubkeyHash] =
-            ValidatorData({ ecdsaPubKeyHash: params.ecdsaPubKeyHash, eigenPod: address(eigenPod) });
+        $.validators[pubkeyHash] = ValidatorData({
+            ecdsaPubKeyHash: params.ecdsaPubKeyHash,
+            eigenPod: address(eigenPod)
+        });
         $.operators[msg.sender].validatorCount++;
 
         emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, pubkeyHash);
@@ -158,11 +200,14 @@ abstract contract UniFiAVSManager is
             ValidatorData storage validator = $.validators[blsPubKeyHashs[i]];
             IEigenPod eigenPod = IEigenPod(validator.eigenPod);
 
-            if (EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) != msg.sender) {
+            if (
+                EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) !=
+                msg.sender
+            ) {
                 revert NotDelegatedToOperator();
             }
 
-            UniFiAVSStorage.OperatorData storage operator = $.operators[msg.sender];
+            OperatorData storage operator = $.operators[msg.sender];
 
             operator.validatorCount--;
             delete $.validators[blsPubKeyHashs[i]];
@@ -174,7 +219,7 @@ abstract contract UniFiAVSManager is
     function deregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        UniFiAVSStorage.OperatorData storage operator = $.operators[msg.sender];
+        OperatorData storage operator = $.operators[msg.sender];
 
         if (operator.validatorCount > 0) {
             revert OperatorHasValidators();
@@ -185,31 +230,47 @@ abstract contract UniFiAVSManager is
         emit OperatorDeregistered(msg.sender);
     }
 
-    function blsMessageHash(bytes32 typeHash, bytes32 ecdsaPubKeyHash, bytes32 salt, uint256 expiry)
-        public
-        view
-        returns (BN254.G1Point memory)
-    {
-        return BN254.hashToG1(_hashTypedDataV4(keccak256(abi.encode(typeHash, ecdsaPubKeyHash, salt, expiry))));
+    function blsMessageHash(
+        bytes32 typeHash,
+        bytes32 ecdsaPubKeyHash,
+        bytes32 salt,
+        uint256 expiry
+    ) public view returns (BN254.G1Point memory) {
+        return
+            BN254.hashToG1(
+                _hashTypedDataV4(
+                    keccak256(
+                        abi.encode(typeHash, ecdsaPubKeyHash, salt, expiry)
+                    )
+                )
+            );
     }
 
-    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory) {
+    function getValidator(
+        bytes32 blsPubKeyHash
+    ) external view returns (ValidatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         return $.validators[blsPubKeyHash];
     }
 
-    function getValidator(uint256 validatorIndex) external view returns (ValidatorData memory) {
+    function getValidator(
+        uint256 validatorIndex
+    ) external view returns (ValidatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         return $.validators[$.validatorIndexes[validatorIndex]];
     }
 
-    function getOperator(address operator) external view returns (OperatorData memory) {
+    function getOperator(
+        address operator
+    ) external view returns (OperatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        UniFiAVSStorage.OperatorData memory operatorData = $.operators[operator];
+        OperatorData memory operatorData = $.operators[operator];
         return operatorData;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal virtual override restricted {}
 }
