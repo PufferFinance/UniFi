@@ -59,15 +59,12 @@ contract UniFiAVSManager is
             abi.encode(msg.sender, address(this))
         );
 
-        bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
-        address operatorAddress = Create2.computeAddress(salt, keccak256(bytecode));
-
-        // Check if any contract already exists at this address
-        if (operatorAddress.code.length > 0) {
+        if ($.operators[msg.sender].operatorContract != address(0)) {
             revert OperatorAlreadyExists();
         }
 
-        operatorAddress = Create2.deploy(0, salt, bytecode);
+        bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
+        address operatorAddress = Create2.deploy(0, salt, bytecode);
 
         $.operators[msg.sender] = OperatorData({
             operatorContract: operatorAddress,
