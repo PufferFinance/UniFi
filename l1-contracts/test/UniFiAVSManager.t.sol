@@ -299,6 +299,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
             blsPubKeyHash
         );
         assertEq(validatorData.delegatePubKey, delegatePubKey);
+
+        OperatorData memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 1);
     }
 
     function testRegisterValidator_OperatorNotRegistered() public {
@@ -408,10 +411,13 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerValidator(podOwner, params);
         pubkeyHashes[0] = blsPubKeyHash;
 
+        OperatorData memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 1);
+
         vm.startPrank(operator);
         avsManager.deregisterValidator(pubkeyHashes);
 
-        OperatorData memory operatorData = avsManager.getOperator(operator);
+        operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 0);
     }
 
@@ -426,10 +432,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         ) = _registerValidator(
                 privateKey,
                 delegatePubKey,
-                true,
-                true,
-                true,
-                false
+                true, // setupOperator
+                true, // registerOperator
+                true, // setupValidator
+                false // don't modify params
             );
 
         vm.prank(operator);
@@ -443,6 +449,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.NotDelegatedToOperator.selector);
         avsManager.deregisterValidator(pubkeyHashes);
+
+        OperatorData memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 1);
     }
 
     function testDeregisterValidator_NonExistentValidator() public {
@@ -450,7 +459,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         pubkeyHashes[0] = bytes32(uint256(1)); // Non-existent validator
 
         vm.prank(operator);
-        vm.expectRevert(); // Expect a revert, but the exact error message depends on the implementation
+        vm.expectRevert(); // Expect a revert, but the exact error message depends EigenPod
         avsManager.deregisterValidator(pubkeyHashes);
     }
 
@@ -479,6 +488,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(unauthorizedCaller);
         vm.expectRevert(IUniFiAVSManager.NotDelegatedToOperator.selector);
         avsManager.deregisterValidator(pubkeyHashes);
+
+        OperatorData memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 1);
     }
 
     function testDeregisterOperator() public {
