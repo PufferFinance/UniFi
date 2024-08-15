@@ -63,5 +63,9 @@ interface IUniFiAVSManager {
 
     function getValidator(bytes32 blsPubKeyHash) external view returns (PreConferInfo memory);
 
+    function getValidator(uint256 validatorIndex) external view returns (PreConferInfo memory);
+
+    function getValidators(bytes32[] calldata blsPubKeyHashes) external view returns (PreConferInfo[] memory);
+
     function setOperatorDelegateKey(bytes memory newDelegateKey) external;
 }

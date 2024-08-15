@@ -209,6 +209,20 @@ contract UniFiAVSManager is
         });
     }
 
+    function getValidator(uint256 validatorIndex) external view returns (PreConferInfo memory) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        bytes32 blsPubKeyHash = $.validatorIndexes[validatorIndex];
+        return this.getValidator(blsPubKeyHash);
+    }
+
+    function getValidators(bytes32[] calldata blsPubKeyHashes) external view returns (PreConferInfo[] memory) {
+        PreConferInfo[] memory validators = new PreConferInfo[](blsPubKeyHashes.length);
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            validators[i] = this.getValidator(blsPubKeyHashes[i]);
+        }
+        return validators;
+    }
+
     function setOperatorDelegateKey(bytes memory newDelegateKey) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
