@@ -164,29 +164,6 @@ contract UniFiAVSManager is
         }
     }
 
-    function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        OperatorData storage operator = $.operators[msg.sender];
-
-        if (!operator.registered) {
-            revert OperatorNotRegistered();
-        }
-
-        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
-            bytes32 blsPubKeyHash = blsPubKeyHashes[i];
-            ValidatorData storage validator = $.validators[blsPubKeyHash];
-            
-            if (!validator.registered || validator.operator != msg.sender) {
-                revert ValidatorNotFound();
-            }
-
-            validator.registered = false;
-            operator.validatorCount--;
-
-            emit ValidatorDeregistered(blsPubKeyHash, validator.validatorIndex, address(validator.eigenPod), msg.sender);
-        }
-    }
-
     function deregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 

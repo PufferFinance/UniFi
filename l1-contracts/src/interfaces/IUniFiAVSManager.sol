@@ -55,7 +55,6 @@ interface IUniFiAVSManager {
 
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external;
 
-    function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external;
     function deregisterOperator() external;
 
     function getOperator(
