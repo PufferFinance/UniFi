@@ -10,7 +10,7 @@ import {IEigenPodManager} from "eigenlayer/interfaces/IEigenPodManager.sol";
 import {IEigenPod} from "eigenlayer/interfaces/IEigenPod.sol";
 import {BN254} from "eigenlayer-middleware/libraries/BN254.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import {BLSSignatureCheckerLib} from "./lib/BLSSingatureCheckerLib.sol";
+import {BLSSignatureCheckerLib} from "./lib/BLSSignatureCheckerLib.sol";
 import {IUniFiAVSManager} from "./interfaces/IUniFiAVSManager.sol";
 import {UniFiAVSManagerStorage} from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorRegistrationParams.sol";
