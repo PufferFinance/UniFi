@@ -146,17 +146,39 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function _registerValidator(
         uint256 privateKey,
-        bytes memory delegatePubKey
-    ) internal returns (bytes32) {
-        (
-            ValidatorRegistrationParams memory params,
-            bytes32 pubkeyHash
-        ) = _setupValidator(privateKey, delegatePubKey);
+        bytes memory delegatePubKey,
+        bool setupOperator,
+        bool registerOperator,
+        bool setupValidator,
+        bool modifyParams
+    ) internal returns (bytes32, ValidatorRegistrationParams memory) {
+        if (setupOperator) {
+            _setupOperator();
+        }
+        
+        if (registerOperator) {
+            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams({
+                salt: bytes32(uint256(1)),
+                expiry: uint256(block.timestamp + 1 days)
+            });
 
-        vm.prank(operator);
-        avsManager.registerValidator(podOwner, params);
+            vm.prank(operator);
+            avsManager.registerOperator(operatorSignature);
+        }
 
-        return pubkeyHash;
+        ValidatorRegistrationParams memory params;
+        bytes32 pubkeyHash;
+
+        if (setupValidator) {
+            (params, pubkeyHash) = _setupValidator(privateKey, delegatePubKey);
+        }
+
+        if (modifyParams) {
+            // Modify params for unhappy path tests
+            params.expiry = block.timestamp - 1; // Set expired timestamp
+        }
+
+        return (pubkeyHash, params);
     }
 
     // BEGIN TESTS
@@ -254,25 +276,103 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testRegisterValidator() public {
-        _setupOperator();
-        ISignatureUtils.SignatureWithSaltAndExpiry
-            memory operatorSignature = _registerOperatorParams({
-                salt: bytes32(uint256(1)),
-                expiry: uint256(block.timestamp + 1 days)
-            });
-
-        vm.prank(operator);
-        avsManager.registerOperator(operatorSignature);
-
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
         bytes memory delegatePubKey = abi.encodePacked(uint256(1));
-        bytes32 blsPubKeyHash = _registerValidator(privateKey, delegatePubKey);
+        (bytes32 blsPubKeyHash, ValidatorRegistrationParams memory params) = _registerValidator(
+            privateKey,
+            delegatePubKey,
+            true,  // setupOperator
+            true,  // registerOperator
+            true,  // setupValidator
+            false  // don't modify params
+        );
+
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
 
         // Verify they registered
-        ValidatorData memory validatorData = avsManager.getValidator(
-            blsPubKeyHash
-        );
+        ValidatorData memory validatorData = avsManager.getValidator(blsPubKeyHash);
         assertEq(validatorData.delegatePubKey, delegatePubKey);
+    }
+
+    function testRegisterValidator_OperatorNotRegistered() public {
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (, ValidatorRegistrationParams memory params) = _registerValidator(
+            privateKey,
+            delegatePubKey,
+            true,  // setupOperator
+            false, // don't register operator
+            true,  // setupValidator
+            false  // don't modify params
+        );
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
+        avsManager.registerValidator(podOwner, params);
+    }
+
+    function testRegisterValidator_RegistrationExpired() public {
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (, ValidatorRegistrationParams memory params) = _registerValidator(
+            privateKey,
+            delegatePubKey,
+            true,  // setupOperator
+            true,  // registerOperator
+            true,  // setupValidator
+            true   // modify params (set expired timestamp)
+        );
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.RegistrationExpired.selector);
+        avsManager.registerValidator(podOwner, params);
+    }
+
+    function testRegisterValidator_InvalidRegistrationSalt() public {
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (_, ValidatorRegistrationParams memory params) = _registerValidator(
+            privateKey,
+            delegatePubKey,
+            true,  // setupOperator
+            true,  // registerOperator
+            true,  // setupValidator
+            false  // don't modify params
+        );
+
+        // Register the validator once
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
+
+        // Try to register again with the same salt
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.InvalidRegistrationSalt.selector);
+        avsManager.registerValidator(podOwner, params);
+    }
+
+    function testRegisterValidator_ValidatorNotActive() public {
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (bytes32 pubkeyHash, ValidatorRegistrationParams memory params) = _registerValidator(
+            privateKey,
+            delegatePubKey,
+            true,  // setupOperator
+            true,  // registerOperator
+            true,  // setupValidator
+            false  // don't modify params
+        );
+
+        // Set validator status to inactive
+        mockEigenPodManager.setValidatorStatus(
+            podOwner,
+            pubkeyHash,
+            IEigenPod.VALIDATOR_STATUS.INACTIVE
+        );
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.ValidatorNotActive.selector);
+        avsManager.registerValidator(podOwner, params);
     }
 
     function testDeregisterValidator() public {
