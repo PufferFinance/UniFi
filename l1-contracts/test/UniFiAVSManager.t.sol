@@ -88,6 +88,15 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerOperator(operatorSignature);
     }
 
+    function _registerValidator(uint256 privateKey, bytes memory delegatePubKey) internal returns (bytes32) {
+        (ValidatorRegistrationParams memory params, bytes32 pubkeyHash) = _setupValidator(privateKey, delegatePubKey);
+
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
+
+        return pubkeyHash;
+    }
+
     function _setupValidator(uint256 privateKey, bytes memory delegatePubKey) internal returns (ValidatorRegistrationParams memory, bytes32) {
         IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
 
@@ -130,13 +139,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
         bytes memory delegatePubKey = abi.encodePacked(uint256(1));
-        (ValidatorRegistrationParams memory params, bytes32 pubkeyHash) = _setupValidator(privateKey, delegatePubKey);
-
-        vm.prank(operator);
-        avsManager.registerValidator(podOwner, params);
+        bytes32 pubkeyHash = _registerValidator(privateKey, delegatePubKey);
 
         ValidatorData memory validatorData = avsManager.getValidator(pubkeyHash);
-        assertEq(validatorData.delegatePubKey, params.delegatePubKey);
+        assertEq(validatorData.delegatePubKey, delegatePubKey);
 
         return pubkeyHash;
     }
