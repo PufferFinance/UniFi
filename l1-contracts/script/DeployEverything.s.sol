@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import { BaseScript } from "script/BaseScript.s.sol";
-import { DeployAVS } from "script/DeployAVS.s.sol";
+import { DeployAVSManager } from "script/DeployAVSManager.s.sol";
 import { SetupAccess } from "script/SetupAccess.s.sol";
 import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
@@ -25,16 +25,16 @@ contract DeployEverything is BaseScript {
         AVSDeployment memory deployment;
 
         // 1. Deploy AVSManager
-        address avsManager = new DeployAVSManager().run(
+        (address avsManagerImplementation, address avsManagerProxy) = new DeployAVSManager().run(
             accessManager,
             eigenPodManager,
             eigenDelegationManager,
             avsDirectory
         );
 
-        deployment.avsManagerImplementation = avsManager;
-        // todo access manager
-        // deployment.accessManager = avsDeployment.accessManager;
+        deployment.avsManagerImplementation = avsManagerImplementation;
+        deployment.avsManager = avsManagerProxy;
+        deployment.accessManager = accessManager;
 
         // `anvil` in the terminal
         if (_localAnvil) {
@@ -47,11 +47,11 @@ contract DeployEverything is BaseScript {
             DAO = _broadcaster;
         }
 
-        new SetupAccess().run(avsDeployment, DAO, _broadcaster);
+        new SetupAccess().run(deployment, DAO, _broadcaster);
 
-        _writeJson(avsDeployment);
+        _writeJson(deployment);
 
-        return avsDeployment;
+        return deployment;
     }
 
     function _writeJson(AVSDeployment memory deployment) internal {
