@@ -179,11 +179,17 @@ contract UniFiAVSManager is
 
         OperatorData storage operator = $.operators[msg.sender];
 
+        if (!operator.isRegistered) {
+            revert OperatorNotRegistered();
+        }
+
         if (operator.validatorCount > 0) {
             revert OperatorHasValidators();
         }
 
         AVS_DIRECTORY.deregisterOperatorFromAVS(msg.sender);
+
+        operator.isRegistered = false;
 
         emit OperatorDeregistered(msg.sender);
     }
