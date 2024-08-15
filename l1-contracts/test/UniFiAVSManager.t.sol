@@ -512,21 +512,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testDeregisterOperator_NotRegistered() public {
         vm.prank(operator);
-        vm.expectRevert("Operator is not registered"); // Assuming this is the error message
+        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
         avsManager.deregisterOperator();
     }
 
     function testDeregisterOperator_HasValidators() public {
-        _setupOperator();
-        ISignatureUtils.SignatureWithSaltAndExpiry
-            memory operatorSignature = _registerOperatorParams({
-                salt: bytes32(uint256(1)),
-                expiry: uint256(block.timestamp + 1 days)
-            });
-
-        vm.prank(operator);
-        avsManager.registerOperator(operatorSignature);
-
         // Register a validator
         uint256 privateKey = 123456;
         bytes memory delegatePubKey = abi.encodePacked(uint256(1));
@@ -536,8 +526,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         ) = _registerValidator(
                 privateKey,
                 delegatePubKey,
-                false, // setupOperator (already done)
-                false, // registerOperator (already done)
+                true, // setupOperator 
+                true, // registerOperator 
                 true, // setupValidator
                 false // don't modify params
             );
@@ -563,7 +553,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         address unauthorizedCaller = address(0x123);
         vm.prank(unauthorizedCaller);
-        vm.expectRevert("Caller is not the operator"); // Assuming this is the error message
+        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
         avsManager.deregisterOperator();
 
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));

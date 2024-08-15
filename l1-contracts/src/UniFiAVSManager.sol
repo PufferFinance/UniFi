@@ -189,7 +189,7 @@ contract UniFiAVSManager is
 
         AVS_DIRECTORY.deregisterOperatorFromAVS(msg.sender);
 
-        operator.isRegistered = false;
+        delete $.operators[msg.sender];
 
         emit OperatorDeregistered(msg.sender);
     }
