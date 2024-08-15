@@ -93,9 +93,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         mockDelegationManager.setDelegation(podOwner, operator);
     }
 
-    function _registerOperator() internal {
-        bytes32 salt = bytes32(uint256(1));
-        uint256 expiry = block.timestamp + 1 days;
+    function _registerOperatorParams(bytes32 salt, uint256 expiry) internal returns (ISignatureUtils.SignatureWithSaltAndExpiry memory) {
         (
             bytes32 digestHash,
             ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
@@ -107,8 +105,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
                 expiry
             );
 
-        vm.prank(operator);
-        avsManager.registerOperator(operatorSignature);
+        return operatorSignature;
     }
 
     function _setupValidator(
@@ -169,32 +166,28 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testRegisterOperator() public {
         _setupOperator();
         assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
-        _registerOperator();
+        
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams(salt, expiry);
+        
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
+        
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
     }
 
     function testRegisterOperator_AlreadyRegistered() public {
         _setupOperator();
-        _registerOperator();
-        assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
         
-        // vm.expectRevert(IUniFiAVSManager.OperatorAlreadyRegistered.selector);
-        // vm.expectRevert();
-        // _registerOperator();
-
         bytes32 salt = bytes32(uint256(1));
         uint256 expiry = block.timestamp + 1 days;
-        (
-            bytes32 digestHash,
-            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
-        ) = _getOperatorSignature(
-                operatorPrivateKey,
-                operator,
-                address(avsManager),
-                salt,
-                expiry
-            );
-
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams(salt, expiry);
+        
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
+        assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
+        
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.OperatorAlreadyRegistered.selector);
         avsManager.registerOperator(operatorSignature);
@@ -205,16 +198,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         
         bytes32 salt = bytes32(uint256(1));
         uint256 expiry = block.timestamp - 1; // Expired timestamp
-        (
-            bytes32 digestHash,
-            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
-        ) = _getOperatorSignature(
-                operatorPrivateKey,
-                operator,
-                address(avsManager),
-                salt,
-                expiry
-            );
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams(salt, expiry);
 
         vm.prank(operator);
         vm.expectRevert("AVSDirectory.registerOperatorToAVS: operator signature expired");
@@ -226,16 +210,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         
         bytes32 salt = bytes32(uint256(1));
         uint256 expiry = block.timestamp + 1 days;
-        (
-            bytes32 digestHash,
-            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
-        ) = _getOperatorSignature(
-                operatorPrivateKey,
-                operator,
-                address(avsManager),
-                salt,
-                expiry
-            );
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams(salt, expiry);
 
         // Tamper with the signature
         operatorSignature.signature = abi.encodePacked(bytes32(0), bytes32(0), uint8(0));
@@ -247,7 +222,12 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testRegisterValidator() public {
         _setupOperator();
-        _registerOperator();
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams(salt, expiry);
+        
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
 
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
         bytes memory delegatePubKey = abi.encodePacked(uint256(1));
@@ -262,7 +242,12 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testDeregisterValidator() public {
         _setupOperator();
-        _registerOperator();
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams(salt, expiry);
+        
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
 
         bytes32[] memory pubkeyHashes = new bytes32[](1);
 
@@ -280,7 +265,12 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testDeregisterOperator() public {
         _setupOperator();
-        _registerOperator();
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = _registerOperatorParams(salt, expiry);
+        
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
 
         vm.prank(operator);
         avsManager.deregisterOperator();
