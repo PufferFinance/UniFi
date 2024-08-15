@@ -115,19 +115,19 @@ contract UniFiAVSManager is
             }
 
             // Check if the validator already exists
-            if ($.validators[blsPubkeyHash].operator != address(0)) {
+            if ($.validators[blsPubkeyHash].registered) {
                 revert ValidatorAlreadyRegistered();
             }
 
             $.validators[blsPubkeyHash] = ValidatorData({
                 eigenPod: address(eigenPod),
                 validatorIndex: validatorInfo.validatorIndex,
-                operator: msg.sender
+                operator: msg.sender,
+                registered: true
             });
 
             $validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
-            $.operators[msg.sender].validatorPubKeyHashes.push(blsPubkeyHash);
             $.operators[msg.sender].validatorCount++;
 
             emit ValidatorRegistered(podOwner, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex);
@@ -144,19 +144,15 @@ contract UniFiAVSManager is
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
-            bool found = false;
-            for (uint256 j = 0; j < operator.validatorPubKeyHashes.length; j++) {
-                if (operator.validatorPubKeyHashes[j] == blsPubKeyHash) {
-                    operator.validatorPubKeyHashes[j] = operator.validatorPubKeyHashes[operator.validatorPubKeyHashes.length - 1];
-                    operator.validatorPubKeyHashes.pop();
-                    operator.validatorCount--;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
+            ValidatorData storage validator = $.validators[blsPubKeyHash];
+            
+            if (!validator.registered || validator.operator != msg.sender) {
                 revert ValidatorNotFound();
             }
+
+            validator.registered = false;
+            operator.validatorCount--;
+
             emit ValidatorDeregistered(blsPubKeyHash);
         }
     }

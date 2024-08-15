@@ -5,5 +5,4 @@ struct OperatorData {
     bool isRegistered;
     uint256 validatorCount;
     bytes delegateKey;
-    bytes32[] validatorPubKeyHashes;
 }
