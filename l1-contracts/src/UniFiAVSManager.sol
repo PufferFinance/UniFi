@@ -190,6 +190,16 @@ contract UniFiAVSManager is
         return $.operators[operator];
     }
 
+    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory, uint64, IEigenPod.VALIDATOR_STATUS) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        ValidatorData memory validatorData = $.validators[blsPubKeyHash];
+        
+        IEigenPod eigenPod = IEigenPod(validatorData.eigenPod);
+        IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHash);
+        
+        return (validatorData, validatorInfo.validatorIndex, validatorInfo.status);
+    }
+
     function setOperatorDelegateKey(bytes memory newDelegateKey) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
