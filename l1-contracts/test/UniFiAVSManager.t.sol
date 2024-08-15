@@ -112,13 +112,13 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         ValidatorRegistrationParams memory params;
         params.pubkeyG1 = blsKeyPair.pubkeyG1;
         params.pubkeyG2 = blsKeyPair.pubkeyG2;
-        params.ecdsaPubKeyHash = bytes32(uint256(1));
+        params.delegatePubKey = abi.encodePacked(uint256(1));
         params.salt = bytes32(uint256(2));
         params.expiry = block.timestamp + 1 days;
 
         // Generate a valid signature
         BN254.G1Point memory messagePoint = avsManager.blsMessageHash(
-            avsManager.VALIDATOR_REGISTRATION_TYPEHASH(), params.ecdsaPubKeyHash, params.salt, params.expiry
+            avsManager.VALIDATOR_REGISTRATION_TYPEHASH(), params.delegatePubKey, params.salt, params.expiry
         );
         params.registrationSignature = messagePoint.scalar_mul(privateKey);
 
@@ -132,7 +132,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerValidator(podOwner, params);
 
         ValidatorData memory validatorData = avsManager.getValidator(pubkeyHash);
-        assertEq(validatorData.ecdsaPubKeyHash, params.ecdsaPubKeyHash);
+        assertEq(validatorData.delegatePubKey, params.delegatePubKey);
 
         return pubkeyHash;
     }

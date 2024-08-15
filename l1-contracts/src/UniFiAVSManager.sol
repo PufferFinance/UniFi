@@ -36,7 +36,7 @@ contract UniFiAVSManager is
 
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
         keccak256(
-            "BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)"
+            "BN254ValidatorRegistration(bytes delegatePubKey,bytes32 salt,uint256 expiry)"
         );
 
     modifier podIsDelegated(address podOwner) {
@@ -133,12 +133,12 @@ contract UniFiAVSManager is
 
         $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
         $.validators[blsPubkeyHash] = ValidatorData({
-            ecdsaPubKeyHash: params.ecdsaPubKeyHash,
+            delegatePubKey: params.delegatePubKey,
             eigenPod: address(eigenPod)
         });
         $.operators[msg.sender].validatorCount++;
 
-        emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, blsPubkeyHash, validatorInfo.validatorIndex);
+        emit ValidatorRegistered(podOwner, params.delegatePubKey, blsPubkeyHash, validatorInfo.validatorIndex);
     }
 
     function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external {
@@ -180,7 +180,7 @@ contract UniFiAVSManager is
 
     function blsMessageHash(
         bytes32 typeHash,
-        bytes32 ecdsaPubKeyHash,
+        bytes memory delegatePubKey,
         bytes32 salt,
         uint256 expiry
     ) public view returns (BN254.G1Point memory) {
@@ -188,7 +188,7 @@ contract UniFiAVSManager is
             BN254.hashToG1(
                 _hashTypedDataV4(
                     keccak256(
-                        abi.encode(typeHash, ecdsaPubKeyHash, salt, expiry)
+                        abi.encode(typeHash, keccak256(delegatePubKey), salt, expiry)
                     )
                 )
             );
