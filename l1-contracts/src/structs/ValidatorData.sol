@@ -9,7 +9,7 @@ pragma solidity >=0.8.0 <0.9.0;
 struct ValidatorData {
     /// @notice The address of the EigenPod associated with this validator.
     address eigenPod;
-    /// @notice The index of the validator.
+    /// @notice The beacon chain validator index.
     uint64 validatorIndex;
     /// @notice The address of the operator managing this validator.
     address operator;

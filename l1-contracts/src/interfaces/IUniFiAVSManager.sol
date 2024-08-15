@@ -4,7 +4,6 @@ pragma solidity >=0.8.0 <0.9.0;
 import {BN254} from "eigenlayer-middleware/libraries/BN254.sol";
 import {IBLSApkRegistry} from "eigenlayer-middleware/interfaces/IRegistryCoordinator.sol";
 import {ISignatureUtils} from "eigenlayer/interfaces/ISignatureUtils.sol";
-import "../structs/ValidatorRegistrationParams.sol";
 import "../structs/ValidatorData.sol";
 import "../structs/OperatorData.sol";
 import "../structs/PreConferInfo.sol";
@@ -103,10 +102,10 @@ interface IUniFiAVSManager {
 
     /**
      * @notice Emitted when a new validator is registered in the UniFi AVS system.
-     * @param podOwner The address of the pod owner.
+     * @param podOwner The address of the validator's EigenPod owner.
      * @param delegatePubKey The delegate public key for the validator.
      * @param blsPubKeyHash The BLS public key hash of the validator.
-     * @param validatorIndex The index of the validator.
+     * @param validatorIndex The beacon chain validator index.
      */
     event ValidatorRegistered(
         address indexed podOwner,
@@ -125,7 +124,7 @@ interface IUniFiAVSManager {
      * @notice Emitted when a validator is deregistered from the UniFi AVS system.
      * @param blsPubKeyHash The BLS public key hash of the deregistered validator.
      * @param validatorIndex The index of the deregistered validator.
-     * @param podOwner The address of the pod owner.
+     * @param podOwner The address of the EigenPod owner.
      * @param operator The address of the operator managing the validator.
      */
     event ValidatorDeregistered(
