@@ -3,23 +3,19 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {ISignatureUtils} from "eigenlayer/interfaces/ISignatureUtils.sol";
 import {IAVSDirectory} from "eigenlayer/interfaces/IAVSDirectory.sol";
 import {IDelegationManager} from "eigenlayer/interfaces/IDelegationManager.sol";
 import {IEigenPodManager} from "eigenlayer/interfaces/IEigenPodManager.sol";
-import {ISignatureUtils} from "eigenlayer/interfaces/ISignatureUtils.sol";
 import {IEigenPod} from "eigenlayer/interfaces/IEigenPod.sol";
 import {BN254} from "eigenlayer-middleware/libraries/BN254.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {BLSSingatureCheckerLib} from "./lib/BLSSingatureCheckerLib.sol";
 import {IUniFiAVSManager} from "./interfaces/IUniFiAVSManager.sol";
 import {UniFiAVSManagerStorage} from "./UniFiAVSManagerStorage.sol";
-import {RestakingOperator} from "./RestakingOperator.sol";
 import "./structs/ValidatorRegistrationParams.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
-import "@openzeppelin/contracts/utils/Create2.sol";
 
 error InvalidOperator();
 error OperatorAlreadyRegistered();
@@ -38,8 +34,6 @@ contract UniFiAVSManager is
     IDelegationManager public immutable EIGEN_DELEGATION_MANAGER;
     IAVSDirectory internal immutable AVS_DIRECTORY;
 
-    address public immutable RESTAKING_OPERATOR_BEACON;
-
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
         keccak256(
             "BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)"
@@ -53,13 +47,11 @@ contract UniFiAVSManager is
     constructor(
         IEigenPodManager eigenPodManager,
         IDelegationManager eigenDelegationManager,
-        IAVSDirectory avsDirectory,
-        address restakingOperatorBeacon
+        IAVSDirectory avsDirectory
     ) EIP712("UniFiAVSManager", "v0.0.1") {
         EIGEN_POD_MANAGER = eigenPodManager;
         EIGEN_DELEGATION_MANAGER = eigenDelegationManager;
         AVS_DIRECTORY = avsDirectory;
-        RESTAKING_OPERATOR_BEACON = restakingOperatorBeacon;
         _disableInitializers();
     }
 
@@ -77,46 +69,25 @@ contract UniFiAVSManager is
             revert OperatorAlreadyExists();
         }
 
-        IDelegationManager.OperatorDetails
-            memory operatorDetails = IDelegationManager.OperatorDetails({
-                earningsReceiver: address(this),
-                delegationApprover: delegationApprover,
-                stakerOptOutWindowBlocks: uint32(65) // todo
-            });
-
-        address restakingOperator = Create2.deploy({
-            amount: 0,
-            salt: keccak256(abi.encode(metadataURI)),
-            bytecode: abi.encodePacked(
-                type(BeaconProxy).creationCode,
-                abi.encode(
-                    RESTAKING_OPERATOR_BEACON,
-                    abi.encodeCall(
-                        RestakingOperator.initialize,
-                        (authority(), operatorDetails, metadataURI)
-                    )
-                )
-            )
+        IDelegationManager.OperatorDetails memory operatorDetails = IDelegationManager.OperatorDetails({
+            earningsReceiver: address(this),
+            delegationApprover: delegationApprover,
+            stakerOptOutWindowBlocks: uint32(65) // todo
         });
 
-        // bytes memory bytecode = abi.encodePacked(
-        //     type(RestakingOperator).creationCode,
-        //     abi.encode(msg.sender, address(this))
-        // );
-
-        // bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
-        // address operatorAddress = Create2.deploy(0, salt, bytecode);
+        // Register the operator with EigenLayer
+        EIGEN_DELEGATION_MANAGER.registerAsOperator(operatorDetails, metadataURI);
 
         $.operators[msg.sender] = OperatorData({
-            operatorContract: restakingOperator,
+            operatorContract: msg.sender,
             isRegistered: false,
             isDelegated: false,
             validatorCount: 0
         });
 
-        emit OperatorCreated(restakingOperator, msg.sender);
+        emit OperatorCreated(msg.sender, msg.sender);
 
-        return restakingOperator;
+        return msg.sender;
     }
 
     function registerOperator(
