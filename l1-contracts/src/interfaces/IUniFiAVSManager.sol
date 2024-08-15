@@ -40,6 +40,7 @@ interface IUniFiAVSManager {
     );
     event OperatorDeregistered(address indexed operator);
     event ValidatorDeregistered(bytes32 blsPubKeyHash, uint64 validatorIndex, address podOwner, address operator);
+    event OperatorDelegateKeySet(address indexed operator, bytes newDelegateKey);
 
     function registerOperator(
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature

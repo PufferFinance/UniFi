@@ -20,6 +20,7 @@ import "./structs/OperatorData.sol";
 error InvalidOperator();
 error OperatorAlreadyRegistered();
 error NotPodOwner();
+error ValidatorNotFound();
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -126,7 +127,7 @@ contract UniFiAVSManager is
                 registered: true
             });
 
-            $validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
+            $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
             $.operators[msg.sender].validatorCount++;
 
