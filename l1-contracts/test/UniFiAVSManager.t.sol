@@ -231,22 +231,38 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerOperator(newOperatorSignature);
     }
 
+    function _setupValidators(bytes32[] memory blsPubKeyHashes) internal {
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            mockEigenPodManager.setValidatorStatus(
+                podOwner,
+                blsPubKeyHashes[i],
+                IEigenPod.VALIDATOR_STATUS.ACTIVE
+            );
+        }
+    }
+
     function testRegisterValidators() public {
-        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
-
-        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
-
+        bytes32[] memory blsPubKeyHashes = new bytes32[](2);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+        blsPubKeyHashes[1] = keccak256(abi.encodePacked("validator2"));
 
         _setupOperator();
         _registerOperator();
+        _setupValidators(blsPubKeyHashes);
 
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
         OperatorData memory operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.validatorCount, 1);
+        assertEq(operatorData.validatorCount, 2);
         assertEq(operatorData.delegateKey, delegatePubKey);
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            ValidatorData memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
+            assertEq(validatorData.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
+            assertEq(validatorData.operator, operator);
+            assertTrue(validatorData.registered);
+        }
     }
 
     // function testRegisterValidator_OperatorNotRegistered() public {
