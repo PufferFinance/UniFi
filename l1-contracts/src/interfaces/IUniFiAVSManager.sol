@@ -32,7 +32,8 @@ interface IUniFiAVSManager {
     event ValidatorRegistered(
         address indexed podOwner,
         bytes32 indexed ecdsaPubKeyHash,
-        bytes32 blsPubKeyHash
+        bytes32 blsPubKeyHash,
+        uint256 validatorIndex
     );
     event OperatorDeregistered(address indexed operator);
     event ValidatorDeregistered(bytes32 blsPubKeyHash);

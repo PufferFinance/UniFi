@@ -138,7 +138,7 @@ contract UniFiAVSManager is
         });
         $.operators[msg.sender].validatorCount++;
 
-        emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, blsPubkeyHash);
+        emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, blsPubkeyHash, validatorInfo.validatorIndex);
     }
 
     function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external {
