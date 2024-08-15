@@ -85,24 +85,61 @@ interface IUniFiAVSManager {
      */
     error DelegateKeyNotSet();
 
+    /**
+     * @notice Emitted when a new operator is registered in the UniFi AVS system.
+     * @param operator The address of the registered operator.
+     */
     event OperatorRegistered(address indexed operator);
+
+    /**
+     * @notice Emitted when a validator's delegate key is modified.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param newDelegateKey The new delegate key for the validator.
+     */
     event ValidatorDelegateKeyModified(
         bytes32 indexed blsPubKeyHash,
         bytes newDelegateKey
     );
+
+    /**
+     * @notice Emitted when a new validator is registered in the UniFi AVS system.
+     * @param podOwner The address of the pod owner.
+     * @param delegatePubKey The delegate public key for the validator.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param validatorIndex The index of the validator.
+     */
     event ValidatorRegistered(
         address indexed podOwner,
         bytes delegatePubKey,
         bytes32 blsPubKeyHash,
         uint256 validatorIndex
     );
+
+    /**
+     * @notice Emitted when an operator is deregistered from the UniFi AVS system.
+     * @param operator The address of the deregistered operator.
+     */
     event OperatorDeregistered(address indexed operator);
+
+    /**
+     * @notice Emitted when a validator is deregistered from the UniFi AVS system.
+     * @param blsPubKeyHash The BLS public key hash of the deregistered validator.
+     * @param validatorIndex The index of the deregistered validator.
+     * @param podOwner The address of the pod owner.
+     * @param operator The address of the operator managing the validator.
+     */
     event ValidatorDeregistered(
         bytes32 blsPubKeyHash,
         uint64 validatorIndex,
         address podOwner,
         address operator
     );
+
+    /**
+     * @notice Emitted when an operator's delegate key is set or updated.
+     * @param operator The address of the operator.
+     * @param newDelegateKey The new delegate key for the operator.
+     */
     event OperatorDelegateKeySet(
         address indexed operator,
         bytes newDelegateKey
