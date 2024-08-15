@@ -20,4 +20,6 @@ struct PreConferInfo {
     bool backedByStake;
     /// @notice The delegate key associated with the validator's operator.
     bytes delegateKey;
+    /// @notice The address of the operator managing this validator.
+    address operator;
 }

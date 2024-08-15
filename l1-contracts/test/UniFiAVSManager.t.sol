@@ -522,6 +522,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         PreConferInfo memory preConferInfo = avsManager.getValidator(blsPubKeyHashes[0]);
 
         assertEq(preConferInfo.data.operator, operator);
+        assertEq(preConferInfo.operator, operator);
         assertTrue(preConferInfo.data.registered);
         assertFalse(preConferInfo.backedByStake, "backedByStake should be false when delegated to a different address");
     }
