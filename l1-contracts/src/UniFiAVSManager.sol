@@ -77,31 +77,9 @@ contract UniFiAVSManager is
     ) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        // address podOwner = RestakingOperator(msg.sender).owner();
-        address podOwner = msg.sender;
-        if ($.operators[msg.sender].operatorAddress != msg.sender) {
-            revert InvalidOperator();
-        }
         if ($.operators[msg.sender].isRegistered) {
             revert OperatorAlreadyRegistered();
         }
-        if (!EIGEN_POD_MANAGER.hasPod(podOwner)) {
-            revert NotPodOwner();
-        }
-
-        AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
-
-        $.operators[msg.sender].operatorAddress = msg.sender;
-        $.operators[msg.sender].isRegistered = true;
-        $.operators[msg.sender].delegatedPodOwners[podOwner] = true;
-
-        emit OperatorRegistered(msg.sender, podOwner);
-    }
-
-    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
-        external
-    {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
