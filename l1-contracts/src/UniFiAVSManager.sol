@@ -21,6 +21,7 @@ error InvalidOperator();
 error OperatorAlreadyRegistered();
 error NotPodOwner();
 error ValidatorNotFound();
+error DelegateKeyNotSet();
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -102,6 +103,10 @@ contract UniFiAVSManager is
 
         if (!$.operators[msg.sender].registered) {
             revert OperatorNotRegistered();
+        }
+
+        if ($.operators[msg.sender].delegateKey.length == 0) {
+            revert DelegateKeyNotSet();
         }
 
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);

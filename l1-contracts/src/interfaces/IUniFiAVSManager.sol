@@ -28,6 +28,7 @@ interface IUniFiAVSManager {
     error OperatorAlreadyRegistered();
     error NotValidatorOperator();
     error ValidatorAlreadyRegistered();
+    error DelegateKeyNotSet();
 
     event OperatorCreated(address indexed operator, address indexed podOwner);
     event OperatorRegistered(address indexed operator);
