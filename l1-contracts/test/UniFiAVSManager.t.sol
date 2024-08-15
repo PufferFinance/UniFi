@@ -586,4 +586,57 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(validatorData.delegatePubKey, delegatePubKey);
         assertFalse(backedByStake, "backedByStake should be false when delegated to a different address");
     }
+
+    function testModifyValidatorDelegateKey() public {
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (
+            bytes32 blsPubKeyHash,
+            ValidatorRegistrationParams memory params
+        ) = _registerValidator(
+                privateKey,
+                delegatePubKey,
+                true, // setupOperator
+                true, // registerOperator
+                true, // setupValidator
+                false // don't modify params
+            );
+
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
+
+        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+        
+        vm.prank(operator);
+        avsManager.modifyValidatorDelegateKey(blsPubKeyHash, newDelegateKey);
+
+        (ValidatorData memory validatorData, ) = avsManager.getValidator(blsPubKeyHash);
+        assertEq(validatorData.delegatePubKey, newDelegateKey, "Delegate key should be updated");
+    }
+
+    function testModifyValidatorDelegateKey_NotOperator() public {
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (
+            bytes32 blsPubKeyHash,
+            ValidatorRegistrationParams memory params
+        ) = _registerValidator(
+                privateKey,
+                delegatePubKey,
+                true, // setupOperator
+                true, // registerOperator
+                true, // setupValidator
+                false // don't modify params
+            );
+
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
+
+        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+        
+        address notOperator = address(0x123);
+        vm.prank(notOperator);
+        vm.expectRevert(IUniFiAVSManager.NotValidatorOperator.selector);
+        avsManager.modifyValidatorDelegateKey(blsPubKeyHash, newDelegateKey);
+    }
 }

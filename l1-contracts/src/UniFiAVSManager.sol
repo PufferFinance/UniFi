@@ -248,6 +248,18 @@ contract UniFiAVSManager is
         return EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == operator;
     }
 
+    function modifyValidatorDelegateKey(bytes32 blsPubKeyHash, bytes memory newDelegateKey) external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        ValidatorData storage validator = $.validators[blsPubKeyHash];
+        
+        if (validator.operator != msg.sender) {
+            revert NotValidatorOperator();
+        }
+
+        validator.delegatePubKey = newDelegateKey;
+        emit ValidatorDelegateKeyModified(blsPubKeyHash, newDelegateKey);
+    }
+
     function _authorizeUpgrade(
         address newImplementation
     ) internal virtual override restricted {}
