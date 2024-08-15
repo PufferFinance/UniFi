@@ -72,7 +72,7 @@ contract UniFiAVSManager is
     ) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        if ($.operators[msg.sender].isRegistered) {
+        if ($.operators[msg.sender].registered) {
             revert OperatorAlreadyRegistered();
         }
 
@@ -88,7 +88,7 @@ contract UniFiAVSManager is
 
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
-        $.operators[msg.sender].isRegistered = true;
+        $.operators[msg.sender].registered = true;
 
         emit OperatorRegistered(msg.sender);
     }
@@ -99,7 +99,7 @@ contract UniFiAVSManager is
     ) podIsDelegated(podOwner) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        if (!$.operators[msg.sender].isRegistered) {
+        if (!$.operators[msg.sender].registered) {
             revert OperatorNotRegistered();
         }
 
@@ -138,7 +138,7 @@ contract UniFiAVSManager is
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
 
-        if (!operator.isRegistered) {
+        if (!operator.registered) {
             revert OperatorNotRegistered();
         }
 
@@ -162,7 +162,7 @@ contract UniFiAVSManager is
 
         OperatorData storage operator = $.operators[msg.sender];
 
-        if (!operator.isRegistered) {
+        if (!operator.registered) {
             revert OperatorNotRegistered();
         }
 
