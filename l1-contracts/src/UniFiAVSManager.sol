@@ -115,7 +115,7 @@ contract UniFiAVSManager is
 
         BN254.G1Point memory messageHash = blsMessageHash(
             VALIDATOR_REGISTRATION_TYPEHASH,
-            params.ecdsaPubKeyHash,
+            params.delegatePubKey,
             params.salt,
             params.expiry
         );
