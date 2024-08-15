@@ -216,27 +216,41 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerOperator(operatorSignature);
     }
 
-    function testRegisterOperator_InvalidSignature() public {
+    function testRegisterOperator_ReusedSalt() public {
         _setupOperator();
 
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+
         ISignatureUtils.SignatureWithSaltAndExpiry
-            memory operatorSignature = _registerOperatorParams({
-                salt: bytes32(uint256(1)),
-                expiry: uint256(block.timestamp - 1) // expired timestamp
-            });
+            memory operatorSignature = _registerOperatorParams(salt, expiry);
 
-        // Tamper with the signature
-        operatorSignature.signature = abi.encodePacked(
-            bytes32(0),
-            bytes32(0),
-            uint8(0)
-        );
-
+        // First registration should succeed
         vm.prank(operator);
-        vm.expectRevert(
-            "AVSDirectory.registerOperatorToAVS: invalid operator signature"
-        );
         avsManager.registerOperator(operatorSignature);
+
+        // Create a new operator
+        address newOperator = address(0x456);
+        uint256 newOperatorPrivateKey = 789;
+        vm.prank(newOperator);
+        mockDelegationManager.setOperator(newOperator, true);
+
+        // Try to register the new operator with the same salt
+        (
+            ,
+            ISignatureUtils.SignatureWithSaltAndExpiry
+                memory newOperatorSignature
+        ) = _getOperatorSignature(
+                newOperatorPrivateKey,
+                newOperator,
+                address(avsManager),
+                salt,
+                expiry
+            );
+
+        vm.prank(newOperator);
+        vm.expectRevert(IUniFiAVSManager.InvalidOperatorSalt.selector);
+        avsManager.registerOperator(newOperatorSignature);
     }
 
     function testRegisterValidator() public {
