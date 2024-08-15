@@ -60,7 +60,7 @@ interface IUniFiAVSManager {
         address operator
     ) external view returns (OperatorData memory);
 
-    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorInfo memory);
+    function getValidator(bytes32 blsPubKeyHash) external view returns (PreConferInfo memory);
 
     function setOperatorDelegateKey(bytes memory newDelegateKey) external;
 }
