@@ -7,6 +7,7 @@ import "../src/interfaces/IUniFiAVSManager.sol";
 import "../src/structs/ValidatorRegistrationParams.sol";
 import "../src/structs/ValidatorData.sol";
 import "../src/structs/OperatorData.sol";
+import "../src/structs/ValidatorInfo.sol";
 import "./mocks/MockEigenPodManager.sol";
 import "./mocks/MockDelegationManager.sol";
 import "./mocks/MockAVSDirectory.sol";
@@ -258,10 +259,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(operatorData.delegateKey, delegatePubKey);
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
-            ValidatorData memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
-            assertEq(validatorData.operator, operator);
-            assertTrue(validatorData.registered);
+            ValidatorInfo memory validatorInfo = avsManager.getValidator(blsPubKeyHashes[i]);
+            assertEq(validatorInfo.data.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
+            assertEq(validatorInfo.data.operator, operator);
+            assertTrue(validatorInfo.data.registered);
+            assertTrue(validatorInfo.backedByStake);
         }
     }
 

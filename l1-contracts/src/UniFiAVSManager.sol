@@ -16,6 +16,7 @@ import {UniFiAVSManagerStorage} from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorRegistrationParams.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
+import "./structs/ValidatorInfo.sol";
 
 error InvalidOperator();
 error OperatorAlreadyRegistered();
@@ -190,14 +191,21 @@ contract UniFiAVSManager is
         return $.operators[operator];
     }
 
-    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory, uint64, IEigenPod.VALIDATOR_STATUS) {
+    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorInfo memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         ValidatorData memory validatorData = $.validators[blsPubKeyHash];
         
         IEigenPod eigenPod = IEigenPod(validatorData.eigenPod);
         IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHash);
         
-        return (validatorData, validatorInfo.validatorIndex, validatorInfo.status);
+        bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(validatorData.operator) == validatorData.operator;
+        
+        return ValidatorInfo({
+            data: validatorData,
+            validatorIndex: validatorInfo.validatorIndex,
+            status: validatorInfo.status,
+            backedByStake: backedByStake
+        });
     }
 
     function setOperatorDelegateKey(bytes memory newDelegateKey) external {
