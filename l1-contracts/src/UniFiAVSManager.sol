@@ -114,6 +114,17 @@ contract UniFiAVSManager is
                 revert ValidatorNotActive();
             }
 
+            // Check if the validator already exists
+            if ($.validators[blsPubkeyHash].eigenPod != address(0)) {
+                revert ValidatorAlreadyExists();
+            }
+
+            $.validators[blsPubkeyHash] = ValidatorData({
+                eigenPod: address(eigenPod),
+                validatorIndex: validatorInfo.validatorIndex,
+                operator: msg.sender
+            });
+
             $.operators[msg.sender].validatorPubKeyHashes.push(blsPubkeyHash);
             $.operators[msg.sender].validatorCount++;
 
