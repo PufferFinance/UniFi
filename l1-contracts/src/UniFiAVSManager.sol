@@ -10,7 +10,7 @@ import {IEigenPodManager} from "eigenlayer/interfaces/IEigenPodManager.sol";
 import {IEigenPod} from "eigenlayer/interfaces/IEigenPod.sol";
 import {BN254} from "eigenlayer-middleware/libraries/BN254.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import {BLSSingatureCheckerLib} from "./lib/BLSSingatureCheckerLib.sol";
+import {BLSSignatureCheckerLib} from "./lib/BLSSingatureCheckerLib.sol";
 import {IUniFiAVSManager} from "./interfaces/IUniFiAVSManager.sol";
 import {UniFiAVSManagerStorage} from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorRegistrationParams.sol";
@@ -39,11 +39,6 @@ contract UniFiAVSManager is
             "BN254ValidatorRegistration(bytes32 ecdsaPubKeyHash,bytes32 salt,uint256 expiry)"
         );
 
-    modifier onlyPodOwner() {
-        require(EIGEN_POD_MANAGER.hasPod(msg.sender), "Not a pod owner");
-        _;
-    }
-
     modifier podIsDelegated(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
             revert NotOperator();
@@ -53,14 +48,6 @@ contract UniFiAVSManager is
         }
         if (EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) != msg.sender) {
             revert NotDelegatedToOperator();
-        }
-        _;
-    }
-
-    modifier isRegisteredOperator() {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        if (!$.operators[msg.sender].isRegistered) {
-            revert OperatorNotRegistered();
         }
         _;
     }
@@ -99,14 +86,18 @@ contract UniFiAVSManager is
     function registerValidator(
         address podOwner,
         ValidatorRegistrationParams calldata params
-    ) podIsDelegated(podOwner) isRegisteredOperator external {
+    ) podIsDelegated(podOwner) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
+        if (!$.operators[msg.sender].isRegistered) {
+            revert OperatorNotRegistered();
+        }
+
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
-        bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
+        bytes32 blsPubkeyHash = BN254.hashG1Point(params.pubkeyG1);
 
         IEigenPod.ValidatorInfo memory validatorInfo = eigenPod
-            .validatorPubkeyHashToInfo(pubkeyHash);
+            .validatorPubkeyHashToInfo(blsPubkeyHash);
 
         if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
             revert ValidatorNotActive();
@@ -130,7 +121,7 @@ contract UniFiAVSManager is
         );
 
         if (
-            !BLSSingatureCheckerLib.isBlsSignatureValid(
+            !BLSSignatureCheckerLib.isBlsSignatureValid(
                 params.pubkeyG1,
                 params.pubkeyG2,
                 params.registrationSignature,
@@ -140,14 +131,14 @@ contract UniFiAVSManager is
             revert InvalidSignature();
         }
 
-        $.validatorIndexes[validatorInfo.validatorIndex] = pubkeyHash;
-        $.validators[pubkeyHash] = ValidatorData({
+        $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
+        $.validators[blsPubkeyHash] = ValidatorData({
             ecdsaPubKeyHash: params.ecdsaPubKeyHash,
             eigenPod: address(eigenPod)
         });
         $.operators[msg.sender].validatorCount++;
 
-        emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, pubkeyHash);
+        emit ValidatorRegistered(podOwner, params.ecdsaPubKeyHash, blsPubkeyHash);
     }
 
     function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external {

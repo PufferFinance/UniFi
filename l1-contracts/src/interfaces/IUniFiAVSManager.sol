@@ -60,7 +60,7 @@ interface IUniFiAVSManager {
 
     function getOperator(
         address operator
-    ) external view returns (address operatorAddress, bool isRegistered, uint256 validatorCount);
+    ) external view returns (OperatorData memory);
 
     function isDelegatedPodOwner(address operator, address podOwner) external view returns (bool);
 }
