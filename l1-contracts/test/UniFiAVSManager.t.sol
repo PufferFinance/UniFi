@@ -260,10 +260,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             PreConferInfo memory preConferInfo = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorInfo.data.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
-            assertEq(validatorInfo.data.operator, operator);
-            assertTrue(validatorInfo.data.registered);
-            assertTrue(validatorInfo.backedByStake);
+            assertEq(preConferInfo.data.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
+            assertEq(preConferInfo.data.operator, operator);
+            assertTrue(preConferInfo.data.registered);
+            assertTrue(preConferInfo.backedByStake);
         }
     }
 
