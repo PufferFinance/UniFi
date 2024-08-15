@@ -381,7 +381,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.deregisterValidators(blsPubKeyHashes);
     }
 
-    function testDeregisterValidators_UnauthorizedCaller() public {
+    function testDeregisterValidators_NotValidatorOperator() public {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
 
