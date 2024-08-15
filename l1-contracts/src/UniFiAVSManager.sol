@@ -79,10 +79,10 @@ contract UniFiAVSManager is
 
         // address podOwner = RestakingOperator(msg.sender).owner();
         address podOwner = msg.sender;
-        if ($.operators[podOwner].operatorContract != msg.sender) {
+        if ($.operators[msg.sender].operatorAddress != msg.sender) {
             revert InvalidOperator();
         }
-        if ($.operators[podOwner].isRegistered) {
+        if ($.operators[msg.sender].isRegistered) {
             revert OperatorAlreadyRegistered();
         }
         if (!EIGEN_POD_MANAGER.hasPod(podOwner)) {
@@ -91,7 +91,9 @@ contract UniFiAVSManager is
 
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
-        $.operators[podOwner].isRegistered = true;
+        $.operators[msg.sender].operatorAddress = msg.sender;
+        $.operators[msg.sender].isRegistered = true;
+        $.operators[msg.sender].delegatedPodOwners[podOwner] = true;
 
         emit OperatorRegistered(msg.sender, podOwner);
     }
@@ -103,9 +105,11 @@ contract UniFiAVSManager is
 
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
-        $.operators[msg.sender] = //todo;
+        $.operators[msg.sender].operatorAddress = msg.sender;
+        $.operators[msg.sender].isRegistered = true;
+        $.operators[msg.sender].delegatedPodOwners[msg.sender] = true;
 
-        emit OperatorRegistered(msg.sender, podOwner);
+        emit OperatorRegistered(msg.sender, msg.sender);
     }
 
     function registerValidator(

@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 struct OperatorData {
-    address operatorContract;
+    address operatorAddress;
     bool isRegistered;
-    bool isDelegated;
+    mapping(address => bool) delegatedPodOwners;
     uint256 validatorCount;
 }

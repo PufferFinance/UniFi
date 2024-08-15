@@ -145,8 +145,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.startPrank(operator);
         avsManager.deregisterValidator(pubkeyHashes);
 
-        OperatorData memory operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.validatorCount, 0);
+        (address operatorAddress, bool isRegistered, uint256 validatorCount) = avsManager.getOperator(operator);
+        assertEq(validatorCount, 0);
     }
 
     function testDeregisterOperator() public {
