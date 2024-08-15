@@ -176,9 +176,28 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testRegisterOperator_AlreadyRegistered() public {
         _setupOperator();
         _registerOperator();
+        assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
         
+        // vm.expectRevert(IUniFiAVSManager.OperatorAlreadyRegistered.selector);
+        // vm.expectRevert();
+        // _registerOperator();
+
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        (
+            bytes32 digestHash,
+            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+        ) = _getOperatorSignature(
+                operatorPrivateKey,
+                operator,
+                address(avsManager),
+                salt,
+                expiry
+            );
+
+        vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.OperatorAlreadyRegistered.selector);
-        _registerOperator();
+        avsManager.registerOperator(operatorSignature);
     }
 
     function testRegisterOperator_ExpiredSignature() public {
