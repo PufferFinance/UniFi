@@ -153,8 +153,12 @@ contract UniFiAVSManager is
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
             ValidatorData storage validator = $.validators[blsPubKeyHash];
             
-            if (!validator.registered || validator.operator != msg.sender) {
+            if (!validator.registered) {
                 revert ValidatorNotFound();
+            }
+
+            if (validator.operator != msg.sender) {
+                revert NotValidatorOperator();
             }
 
             validator.registered = false;
