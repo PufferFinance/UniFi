@@ -115,7 +115,7 @@ contract UniFiAVSManager is
             }
 
             // Check if the validator already exists
-            if ($.validators[blsPubkeyHash].eigenPod != address(0)) {
+            if ($.validators[blsPubkeyHash].operator != address(0)) {
                 revert ValidatorAlreadyExists();
             }
 
