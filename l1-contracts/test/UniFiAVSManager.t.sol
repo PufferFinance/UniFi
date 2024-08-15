@@ -259,8 +259,13 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(operatorData.delegateKey, delegatePubKey);
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
-            PreConferInfo memory preConferInfo = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(preConferInfo.data.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
+            PreConferInfo memory preConferInfo = avsManager.getValidator(
+                blsPubKeyHashes[i]
+            );
+            assertEq(
+                preConferInfo.data.eigenPod,
+                address(mockEigenPodManager.getPod(podOwner))
+            );
             assertEq(preConferInfo.data.operator, operator);
             assertTrue(preConferInfo.data.registered);
             assertTrue(preConferInfo.backedByStake);
@@ -355,7 +360,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(operatorData.validatorCount, 0);
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
-            PreConferInfo memory preConferInfo = avsManager.getValidator(blsPubKeyHashes[i]);
+            PreConferInfo memory preConferInfo = avsManager.getValidator(
+                blsPubKeyHashes[i]
+            );
             assertFalse(preConferInfo.data.registered);
         }
     }
@@ -399,10 +406,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(secondOperator);
         mockDelegationManager.setOperator(secondOperator, true);
 
-        ISignatureUtils.SignatureWithSaltAndExpiry memory secondOperatorSignature = _registerOperatorParams({
-            salt: bytes32(uint256(2)),
-            expiry: uint256(block.timestamp + 1 days)
-        });
+        ISignatureUtils.SignatureWithSaltAndExpiry
+            memory secondOperatorSignature = _registerOperatorParams({
+                salt: bytes32(uint256(2)),
+                expiry: uint256(block.timestamp + 1 days)
+            });
 
         vm.prank(secondOperator);
         avsManager.registerOperator(secondOperatorSignature);
@@ -418,6 +426,27 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testDeregisterOperator() public {
+        _setupOperator();
+        _registerOperator();
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](2);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+        blsPubKeyHashes[1] = keccak256(abi.encodePacked("validator2"));
+        _setupValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.deregisterValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.deregisterOperator();
+
+        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
+    }
+
+    function testDeregisterOperator_HasNoValidators() public {
         _setupOperator();
         ISignatureUtils.SignatureWithSaltAndExpiry
             memory operatorSignature = _registerOperatorParams({
@@ -456,27 +485,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.deregisterOperator();
     }
 
-    function testDeregisterOperator() public {
-        _setupOperator();
-        _registerOperator();
-
-        bytes32[] memory blsPubKeyHashes = new bytes32[](2);
-        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
-        blsPubKeyHashes[1] = keccak256(abi.encodePacked("validator2"));
-        _setupValidators(blsPubKeyHashes);
-
-        vm.prank(operator);
-        avsManager.registerValidators(podOwner, blsPubKeyHashes);
-
-        vm.prank(operator);
-        avsManager.deregisterValidators(blsPubKeyHashes);
-
-        vm.prank(operator);
-        avsManager.deregisterOperator();
-
-        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
-    }
-
     function testDeregisterOperator_UnauthorizedCaller() public {
         _setupOperator();
         ISignatureUtils.SignatureWithSaltAndExpiry
@@ -494,6 +502,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.deregisterOperator();
 
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
+    }
+
+    function testGetValidator_BackedByStakeFalse() public {
+
     }
 
     // function testGetValidator_BackedByStakeFalse() public {
