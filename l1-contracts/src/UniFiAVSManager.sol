@@ -57,6 +57,14 @@ contract UniFiAVSManager is
         _;
     }
 
+    modifier isRegisteredOperator() {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        if (!$.operators[msg.sender].isRegistered) {
+            revert OperatorNotRegistered();
+        }
+        _;
+    }
+
     constructor(
         IEigenPodManager eigenPodManager,
         IDelegationManager eigenDelegationManager,
@@ -93,7 +101,7 @@ contract UniFiAVSManager is
     function registerValidator(
         address podOwner,
         ValidatorRegistrationParams calldata params
-    ) podIsDelegated(podOwner) external {
+    ) podIsDelegated(podOwner) isRegisteredOperator external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);

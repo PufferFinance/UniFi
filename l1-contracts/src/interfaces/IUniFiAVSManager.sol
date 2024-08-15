@@ -22,6 +22,7 @@ interface IUniFiAVSManager {
     error ValidatorNotActive();
     error InvalidSignature();
     error OperatorAlreadyExists();
+    error OperatorNotRegistered();
 
     event OperatorCreated(address indexed operator, address indexed podOwner);
     event OperatorRegistered(
