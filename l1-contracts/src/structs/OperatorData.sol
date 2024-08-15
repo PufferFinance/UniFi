@@ -4,4 +4,6 @@ pragma solidity >=0.8.0 <0.9.0;
 struct OperatorData {
     bool isRegistered;
     uint256 validatorCount;
+    bytes delegateKey;
+    bytes32[] validatorPubKeyHashes;
 }

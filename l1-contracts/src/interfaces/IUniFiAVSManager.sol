@@ -44,22 +44,14 @@ interface IUniFiAVSManager {
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
     ) external;
 
-    function registerValidator(
+    function registerValidators(
         address podOwner,
-        ValidatorRegistrationParams calldata params
+        bytes32[] calldata blsPubKeyHashes
     ) external;
 
-    function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external;
+    function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external;
 
     function deregisterOperator() external;
-
-    function getValidator(
-        bytes32 blsPubKeyHash
-    ) external view returns (ValidatorData memory, bool backedByStake);
-
-    function getValidator(
-        uint256 validatorIndex
-    ) external view returns (ValidatorData memory, bool backedByStake);
 
     function getOperator(
         address operator
@@ -70,5 +62,5 @@ interface IUniFiAVSManager {
         address podOwner
     ) external view returns (bool);
 
-    function modifyValidatorDelegateKey(bytes32 blsPubKeyHash, bytes memory newDelegateKey) external;
+    function setOperatorDelegateKey(bytes memory newDelegateKey) external;
 }

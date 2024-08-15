@@ -93,9 +93,9 @@ contract UniFiAVSManager is
         emit OperatorRegistered(msg.sender);
     }
 
-    function registerValidator(
+    function registerValidators(
         address podOwner,
-        ValidatorRegistrationParams calldata params
+        bytes32[] calldata blsPubKeyHashes
     ) podIsDelegated(podOwner) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -104,75 +104,47 @@ contract UniFiAVSManager is
         }
 
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
-        bytes32 blsPubkeyHash = BN254.hashG1Point(params.pubkeyG1);
 
-        IEigenPod.ValidatorInfo memory validatorInfo = eigenPod
-            .validatorPubkeyHashToInfo(blsPubkeyHash);
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            bytes32 blsPubkeyHash = blsPubKeyHashes[i];
+            IEigenPod.ValidatorInfo memory validatorInfo = eigenPod
+                .validatorPubkeyHashToInfo(blsPubkeyHash);
 
-        if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
-            revert ValidatorNotActive();
-        }
-
-        if (params.expiry < block.timestamp) {
-            revert RegistrationExpired();
-        }
-
-        if ($.validatorSalts[params.salt]) {
-            revert InvalidRegistrationSalt();
-        }
-
-        $.validatorSalts[params.salt] = true;
-
-        BN254.G1Point memory messageHash = blsMessageHash(
-            VALIDATOR_REGISTRATION_TYPEHASH,
-            params.delegatePubKey,
-            params.salt,
-            params.expiry
-        );
-
-        if (
-            !BLSSignatureCheckerLib.isBlsSignatureValid(
-                params.pubkeyG1,
-                params.pubkeyG2,
-                params.registrationSignature,
-                messageHash
-            )
-        ) {
-            revert InvalidSignature();
-        }
-
-        $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
-        $.validators[blsPubkeyHash] = ValidatorData({
-            delegatePubKey: params.delegatePubKey,
-            eigenPod: address(eigenPod),
-            validatorIndex: validatorInfo.validatorIndex,
-            operator: msg.sender
-        });
-        $.operators[msg.sender].validatorCount++;
-
-        emit ValidatorRegistered(podOwner, params.delegatePubKey, blsPubkeyHash, validatorInfo.validatorIndex);
-    }
-
-    function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
-        for (uint256 i = 0; i < blsPubKeyHashs.length; i++) {
-            ValidatorData storage validator = $.validators[blsPubKeyHashs[i]];
-            IEigenPod eigenPod = IEigenPod(validator.eigenPod);
-
-            if (
-                EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) !=
-                msg.sender
-            ) {
-                revert NotDelegatedToOperator();
+            if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
+                revert ValidatorNotActive();
             }
 
-            OperatorData storage operator = $.operators[msg.sender];
+            $.operators[msg.sender].validatorPubKeyHashes.push(blsPubkeyHash);
+            $.operators[msg.sender].validatorCount++;
 
-            operator.validatorCount--;
-            delete $.validators[blsPubKeyHashs[i]];
+            emit ValidatorRegistered(podOwner, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex);
+        }
+    }
 
-            emit ValidatorDeregistered(blsPubKeyHashs[i]);
+    function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operator = $.operators[msg.sender];
+
+        if (!operator.isRegistered) {
+            revert OperatorNotRegistered();
+        }
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            bytes32 blsPubKeyHash = blsPubKeyHashes[i];
+            bool found = false;
+            for (uint256 j = 0; j < operator.validatorPubKeyHashes.length; j++) {
+                if (operator.validatorPubKeyHashes[j] == blsPubKeyHash) {
+                    operator.validatorPubKeyHashes[j] = operator.validatorPubKeyHashes[operator.validatorPubKeyHashes.length - 1];
+                    operator.validatorPubKeyHashes.pop();
+                    operator.validatorCount--;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                revert ValidatorNotFound();
+            }
+            emit ValidatorDeregistered(blsPubKeyHash);
         }
     }
 
@@ -196,68 +168,27 @@ contract UniFiAVSManager is
         emit OperatorDeregistered(msg.sender);
     }
 
-    function blsMessageHash(
-        bytes32 typeHash,
-        bytes memory delegatePubKey,
-        bytes32 salt,
-        uint256 expiry
-    ) public view returns (BN254.G1Point memory) {
-        return
-            BN254.hashToG1(
-                _hashTypedDataV4(
-                    keccak256(
-                        abi.encode(typeHash, keccak256(delegatePubKey), salt, expiry)
-                    )
-                )
-            );
-    }
-
-    function getValidator(
-        bytes32 blsPubKeyHash
-    ) external view returns (ValidatorData memory, bool backedByStake) {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
-        ValidatorData memory validator = $.validators[blsPubKeyHash];
-        address podOwner = IEigenPod(validator.eigenPod).podOwner();
-        backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == validator.operator; 
-
-        return (validator, backedByStake);
-    }
-
-    function getValidator(
-        uint256 validatorIndex
-    ) external view returns (ValidatorData memory, bool backedByStake) {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
-        ValidatorData memory validator = $.validators[$.validatorIndexes[validatorIndex]];
-        address podOwner = IEigenPod(validator.eigenPod).podOwner();
-        backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == validator.operator; 
-
-        return (validator, backedByStake);
-    }
-
     function getOperator(
         address operator
     ) external view returns (OperatorData memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        OperatorData memory operatorData = $.operators[operator];
-        return operatorData;
+        return $.operators[operator];
     }
 
     function isDelegatedPodOwner(address operator, address podOwner) external view returns (bool) {
         return EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == operator;
     }
 
-    function modifyValidatorDelegateKey(bytes32 blsPubKeyHash, bytes memory newDelegateKey) external {
+    function setOperatorDelegateKey(bytes memory newDelegateKey) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        ValidatorData storage validator = $.validators[blsPubKeyHash];
+        OperatorData storage operator = $.operators[msg.sender];
         
-        if (validator.operator != msg.sender) {
-            revert NotValidatorOperator();
+        if (!operator.isRegistered) {
+            revert OperatorNotRegistered();
         }
 
-        validator.delegatePubKey = newDelegateKey;
-        emit ValidatorDelegateKeyModified(blsPubKeyHash, newDelegateKey);
+        operator.delegateKey = newDelegateKey;
+        emit OperatorDelegateKeySet(msg.sender, newDelegateKey);
     }
 
     function _authorizeUpgrade(
