@@ -219,7 +219,7 @@ contract UniFiAVSManager is
 
         ValidatorData memory validator = $.validators[blsPubKeyHash];
         address podOwner = IEigenPod(validator.eigenPod).podOwner();
-        backedByStake = EIGEN_DELEGATION_MANAGER.isDelegated(podOwner);
+        backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == validator.operator; 
 
         return (validator, backedByStake);
     }
@@ -231,7 +231,7 @@ contract UniFiAVSManager is
 
         ValidatorData memory validator = $.validators[$.validatorIndexes[validatorIndex]];
         address podOwner = IEigenPod(validator.eigenPod).podOwner();
-        backedByStake = EIGEN_DELEGATION_MANAGER.isDelegated(podOwner);
+        backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == validator.operator; 
 
         return (validator, backedByStake);
     }
