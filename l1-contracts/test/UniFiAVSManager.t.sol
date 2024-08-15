@@ -385,6 +385,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
 
+        // Setup and register the first operator
         _setupOperator();
         _registerOperator();
         _setupValidators(blsPubKeyHashes);
@@ -392,11 +393,26 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
-        address unauthorizedCaller = address(0x123);
-        vm.prank(unauthorizedCaller);
+        // Setup and register the second operator
+        address secondOperator = address(0x456);
+        uint256 secondOperatorPrivateKey = 789;
+        vm.prank(secondOperator);
+        mockDelegationManager.setOperator(secondOperator, true);
+
+        ISignatureUtils.SignatureWithSaltAndExpiry memory secondOperatorSignature = _registerOperatorParams({
+            salt: bytes32(uint256(2)),
+            expiry: uint256(block.timestamp + 1 days)
+        });
+
+        vm.prank(secondOperator);
+        avsManager.registerOperator(secondOperatorSignature);
+
+        // Attempt to deregister validators with the second operator
+        vm.prank(secondOperator);
         vm.expectRevert(IUniFiAVSManager.NotValidatorOperator.selector);
         avsManager.deregisterValidators(blsPubKeyHashes);
 
+        // Verify that the validators are still registered to the first operator
         OperatorData memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 1);
     }
