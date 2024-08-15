@@ -227,6 +227,10 @@ contract UniFiAVSManager is
         return operatorData;
     }
 
+    function isDelegatedPodOwner(address operator, address podOwner) external view returns (bool) {
+        return EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == operator;
+    }
+
     function _authorizeUpgrade(
         address newImplementation
     ) internal virtual override restricted {}
