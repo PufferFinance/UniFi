@@ -39,7 +39,7 @@ interface IUniFiAVSManager {
         uint256 validatorIndex
     );
     event OperatorDeregistered(address indexed operator);
-    event ValidatorDeregistered(bytes32 blsPubKeyHash);
+    event ValidatorDeregistered(bytes32 blsPubKeyHash, uint64 validatorIndex, address podOwner, address operator);
 
     function registerOperator(
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature

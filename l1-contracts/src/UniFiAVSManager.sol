@@ -153,7 +153,7 @@ contract UniFiAVSManager is
             validator.registered = false;
             operator.validatorCount--;
 
-            emit ValidatorDeregistered(blsPubKeyHash);
+            emit ValidatorDeregistered(blsPubKeyHash, validator.validatorIndex, address(validator.eigenPod), msg.sender);
         }
     }
 
