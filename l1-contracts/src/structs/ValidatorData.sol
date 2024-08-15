@@ -5,4 +5,5 @@ struct ValidatorData {
     address eigenPod;
     uint64 validatorIndex;
     bytes delegatePubKey;
+    address operator;
 }
