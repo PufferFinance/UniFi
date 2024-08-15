@@ -394,7 +394,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         address unauthorizedCaller = address(0x123);
         vm.prank(unauthorizedCaller);
-        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
+        vm.expectRevert(IUniFiAVSManager.NotValidatorOperator.selector);
         avsManager.deregisterValidators(blsPubKeyHashes);
 
         OperatorData memory operatorData = avsManager.getOperator(operator);
