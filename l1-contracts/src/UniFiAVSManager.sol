@@ -44,6 +44,19 @@ contract UniFiAVSManager is
         _;
     }
 
+    modifier podDelegatedOperator(address podOwner) {
+        if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
+            revert NotOperator();
+        }
+        if (!EIGEN_POD_MANAGER.hasPod(podOwner)) {
+            revert NoEigenPod();
+        }
+        if (EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) != msg.sender) {
+            revert NotDelegatedToOperator();
+        }
+        _;
+    }
+
     constructor(
         IEigenPodManager eigenPodManager,
         IDelegationManager eigenDelegationManager,
@@ -57,37 +70,6 @@ contract UniFiAVSManager is
 
     function initialize(address accessManager) public initializer {
         __AccessManaged_init(accessManager);
-    }
-
-    function createOperator(
-        string calldata metadataURI,
-        address delegationApprover
-    ) external onlyPodOwner returns (address) {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
-        if ($.operators[msg.sender].operatorContract != address(0)) {
-            revert OperatorAlreadyExists();
-        }
-
-        IDelegationManager.OperatorDetails memory operatorDetails = IDelegationManager.OperatorDetails({
-            earningsReceiver: address(this),
-            delegationApprover: delegationApprover,
-            stakerOptOutWindowBlocks: uint32(65) // todo
-        });
-
-        // Register the operator with EigenLayer
-        EIGEN_DELEGATION_MANAGER.registerAsOperator(operatorDetails, metadataURI);
-
-        $.operators[msg.sender] = OperatorData({
-            operatorContract: msg.sender,
-            isRegistered: false,
-            isDelegated: false,
-            validatorCount: 0
-        });
-
-        emit OperatorCreated(msg.sender, msg.sender);
-
-        return msg.sender;
     }
 
     function registerOperator(
@@ -110,6 +92,18 @@ contract UniFiAVSManager is
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
         $.operators[podOwner].isRegistered = true;
+
+        emit OperatorRegistered(msg.sender, podOwner);
+    }
+
+    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
+        external
+    {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
+
+        $.operators[msg.sender] = //todo;
 
         emit OperatorRegistered(msg.sender, podOwner);
     }

@@ -36,11 +36,6 @@ interface IUniFiAVSManager {
     event OperatorDeregistered(address indexed operator);
     event ValidatorDeregistered(bytes32 blsPubKeyHash);
 
-    function createOperator(
-        string calldata metadataURI,
-        address delegationApprover
-    ) external returns (address);
-
     function registerOperator(
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
     ) external;
