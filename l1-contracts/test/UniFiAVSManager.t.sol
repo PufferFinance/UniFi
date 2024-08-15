@@ -173,6 +173,59 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
     }
 
+    function testRegisterOperator_AlreadyRegistered() public {
+        _setupOperator();
+        _registerOperator();
+        
+        vm.expectRevert(IUniFiAVSManager.OperatorAlreadyRegistered.selector);
+        _registerOperator();
+    }
+
+    function testRegisterOperator_ExpiredSignature() public {
+        _setupOperator();
+        
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp - 1; // Expired timestamp
+        (
+            bytes32 digestHash,
+            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+        ) = _getOperatorSignature(
+                operatorPrivateKey,
+                operator,
+                address(avsManager),
+                salt,
+                expiry
+            );
+
+        vm.prank(operator);
+        vm.expectRevert("AVSDirectory.registerOperatorToAVS: operator signature expired");
+        avsManager.registerOperator(operatorSignature);
+    }
+
+    function testRegisterOperator_InvalidSignature() public {
+        _setupOperator();
+        
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        (
+            bytes32 digestHash,
+            ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+        ) = _getOperatorSignature(
+                operatorPrivateKey,
+                operator,
+                address(avsManager),
+                salt,
+                expiry
+            );
+
+        // Tamper with the signature
+        operatorSignature.signature = abi.encodePacked(bytes32(0), bytes32(0), uint8(0));
+
+        vm.prank(operator);
+        vm.expectRevert("AVSDirectory.registerOperatorToAVS: invalid operator signature");
+        avsManager.registerOperator(operatorSignature);
+    }
+
     function testRegisterValidator() public {
         _setupOperator();
         _registerOperator();
