@@ -295,7 +295,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerValidator(podOwner, params);
 
         // Verify they registered
-        ValidatorData memory validatorData = avsManager.getValidator(
+        (ValidatorData memory validatorData, bool _backedByStake) = avsManager.getValidator(
             blsPubKeyHash
         );
         assertEq(validatorData.delegatePubKey, delegatePubKey);
