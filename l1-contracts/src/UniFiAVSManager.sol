@@ -125,6 +125,8 @@ contract UniFiAVSManager is
                 operator: msg.sender
             });
 
+            $validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
+
             $.operators[msg.sender].validatorPubKeyHashes.push(blsPubkeyHash);
             $.operators[msg.sender].validatorCount++;
 
