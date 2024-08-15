@@ -72,6 +72,34 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         return (digestHash, operatorSignature);
     }
 
+    function _setupOperator() internal {
+        mockDelegationManager.setOperator(operator, true);
+        mockEigenPodManager.createPod(podOwner);
+        mockDelegationManager.setDelegation(podOwner, operator);
+    }
+
+    function _setupValidator(uint256 privateKey) internal returns (ValidatorRegistrationParams memory, bytes32) {
+        IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
+
+        ValidatorRegistrationParams memory params;
+        params.pubkeyG1 = blsKeyPair.pubkeyG1;
+        params.pubkeyG2 = blsKeyPair.pubkeyG2;
+        params.delegatePubKey = abi.encodePacked(uint256(1));
+        params.salt = bytes32(uint256(2));
+        params.expiry = block.timestamp + 1 days;
+
+        BN254.G1Point memory messagePoint = avsManager.blsMessageHash(
+            avsManager.VALIDATOR_REGISTRATION_TYPEHASH(), params.delegatePubKey, params.salt, params.expiry
+        );
+        params.registrationSignature = messagePoint.scalar_mul(privateKey);
+
+        bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
+        mockEigenPodManager.createPod(podOwner);
+        mockEigenPodManager.setValidatorStatus(podOwner, pubkeyHash, IEigenPod.VALIDATOR_STATUS.ACTIVE);
+
+        return (params, pubkeyHash);
+    }
+
     // BEGIN TESTS
 
     function testInitialize() public {
@@ -80,18 +108,13 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testRegisterOperator() public {
-        // Setup
-        mockDelegationManager.setOperator(operator, true);
-        mockEigenPodManager.createPod(podOwner);
-        mockDelegationManager.setDelegation(podOwner, operator);
+        _setupOperator();
 
-        // Generate operator signature
         bytes32 salt = bytes32(uint256(1));
         uint256 expiry = block.timestamp + 1 days;
         (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) =
             _getOperatorSignature(operatorPrivateKey, operator, address(avsManager), salt, expiry);
 
-        // Test
         vm.prank(operator);
         avsManager.registerOperator(operatorSignature);
 
@@ -99,35 +122,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testRegisterValidator() public returns (bytes32) {
-        // Setup
-        mockDelegationManager.setOperator(operator, true);
-        MockEigenPod mockEigenPod = mockEigenPodManager.createPod(podOwner);
-        mockDelegationManager.setDelegation(podOwner, operator);
+        _setupOperator();
 
-        // Generate BLS key pair
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
-        IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
+        (ValidatorRegistrationParams memory params, bytes32 pubkeyHash) = _setupValidator(privateKey);
 
-        // Create ValidatorRegistrationParams
-        ValidatorRegistrationParams memory params;
-        params.pubkeyG1 = blsKeyPair.pubkeyG1;
-        params.pubkeyG2 = blsKeyPair.pubkeyG2;
-        params.delegatePubKey = abi.encodePacked(uint256(1));
-        params.salt = bytes32(uint256(2));
-        params.expiry = block.timestamp + 1 days;
-
-        // Generate a valid signature
-        BN254.G1Point memory messagePoint = avsManager.blsMessageHash(
-            avsManager.VALIDATOR_REGISTRATION_TYPEHASH(), params.delegatePubKey, params.salt, params.expiry
-        );
-        params.registrationSignature = messagePoint.scalar_mul(privateKey);
-
-        // Create a pod and set validator status
-        bytes32 pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
-        mockEigenPodManager.createPod(podOwner);
-        mockEigenPodManager.setValidatorStatus(podOwner, pubkeyHash, IEigenPod.VALIDATOR_STATUS.ACTIVE);
-
-        // Test
         vm.prank(operator);
         avsManager.registerValidator(podOwner, params);
 
