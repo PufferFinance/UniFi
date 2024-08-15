@@ -255,10 +255,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testRegisterValidator() public {
         _setupOperator();
-        bytes32 salt = bytes32(uint256(1));
-        uint256 expiry = block.timestamp + 1 days;
         ISignatureUtils.SignatureWithSaltAndExpiry
-            memory operatorSignature = _registerOperatorParams(salt, expiry);
+            memory operatorSignature = _registerOperatorParams({
+                salt: bytes32(uint256(1)),
+                expiry: uint256(block.timestamp + 1 days)
+            });
 
         vm.prank(operator);
         avsManager.registerOperator(operatorSignature);
