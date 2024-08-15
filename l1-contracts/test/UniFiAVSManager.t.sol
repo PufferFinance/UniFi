@@ -417,71 +417,50 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(operatorData.validatorCount, 1);
     }
 
-    // function testDeregisterOperator() public {
-    //     _setupOperator();
-    //     ISignatureUtils.SignatureWithSaltAndExpiry
-    //         memory operatorSignature = _registerOperatorParams({
-    //             salt: bytes32(uint256(1)),
-    //             expiry: uint256(block.timestamp + 1 days)
-    //         });
+    function testDeregisterOperator() public {
+        _setupOperator();
+        ISignatureUtils.SignatureWithSaltAndExpiry
+            memory operatorSignature = _registerOperatorParams({
+                salt: bytes32(uint256(1)),
+                expiry: uint256(block.timestamp + 1 days)
+            });
 
-    //     vm.prank(operator);
-    //     avsManager.registerOperator(operatorSignature);
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
 
-    //     vm.prank(operator);
-    //     avsManager.deregisterOperator();
+        vm.prank(operator);
+        avsManager.deregisterOperator();
 
-    //     assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
-    // }
+        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
+    }
 
-    // function testDeregisterOperator_NotRegistered() public {
-    //     vm.prank(operator);
-    //     vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-    //     avsManager.deregisterOperator();
-    // }
+    function testDeregisterOperator_NotRegistered() public {
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
+        avsManager.deregisterOperator();
+    }
 
-    // function testDeregisterOperator_HasValidators() public {
-    //     // Register a validator
-    //     uint256 privateKey = 123456;
-    //     bytes memory delegatePubKey = abi.encodePacked(uint256(1));
-    //     (
-    //         ,
-    //         ValidatorRegistrationParams memory params
-    //     ) = _registerValidator(
-    //             privateKey,
-    //             delegatePubKey,
-    //             true, // setupOperator
-    //             true, // registerOperator
-    //             true, // setupValidator
-    //             false // don't modify params
-    //         );
+    function testDeregisterOperator_HasValidators() public {
+    }
 
-    //     vm.prank(operator);
-    //     avsManager.registerValidator(podOwner, params);
+    function testDeregisterOperator_UnauthorizedCaller() public {
+        _setupOperator();
+        ISignatureUtils.SignatureWithSaltAndExpiry
+            memory operatorSignature = _registerOperatorParams({
+                salt: bytes32(uint256(1)),
+                expiry: uint256(block.timestamp + 1 days)
+            });
 
-    //     vm.prank(operator);
-    //     vm.expectRevert(IUniFiAVSManager.OperatorHasValidators.selector);
-    //     avsManager.deregisterOperator();
-    // }
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
 
-    // function testDeregisterOperator_UnauthorizedCaller() public {
-    //     _setupOperator();
-    //     ISignatureUtils.SignatureWithSaltAndExpiry
-    //         memory operatorSignature = _registerOperatorParams({
-    //             salt: bytes32(uint256(1)),
-    //             expiry: uint256(block.timestamp + 1 days)
-    //         });
+        address unauthorizedCaller = address(0x123);
+        vm.prank(unauthorizedCaller);
+        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
+        avsManager.deregisterOperator();
 
-    //     vm.prank(operator);
-    //     avsManager.registerOperator(operatorSignature);
-
-    //     address unauthorizedCaller = address(0x123);
-    //     vm.prank(unauthorizedCaller);
-    //     vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-    //     avsManager.deregisterOperator();
-
-    //     assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
-    // }
+        assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
+    }
 
     // function testGetValidator_BackedByStakeFalse() public {
     //     uint256 privateKey = 123456;
