@@ -16,7 +16,7 @@ struct PreConferInfo {
     uint64 validatorIndex;
     /// @notice The current status of the validator in the EigenPod.
     IEigenPod.VALIDATOR_STATUS status;
-    /// @notice Indicates whether the validator is backed by staked ETH.
+    /// @notice Indicates whether the validator's EigenPod is delegated to the operator.
     bool backedByStake;
     /// @notice The delegate key associated with the validator's operator.
     bytes delegateKey;

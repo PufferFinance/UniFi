@@ -526,52 +526,24 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertFalse(preConferInfo.backedByStake, "backedByStake should be false when delegated to a different address");
     }
 
-    // function testGetValidator_BackedByStakeFalse() public {
-    //     uint256 privateKey = 123456;
-    //     bytes memory delegatePubKey = abi.encodePacked(uint256(1));
-    //     (
-    //         bytes32 blsPubKeyHash,
-    //         ValidatorRegistrationParams memory params
-    //     ) = _registerValidator(
-    //             privateKey,
-    //             delegatePubKey,
-    //             true, // setupOperator
-    //             true, // registerOperator
-    //             true, // setupValidator
-    //             false // don't modify params
-    //         );
+    function testSetOperatorDelegateKey() public {
+        _setupOperator();
+        _registerOperator();
 
-    //     vm.prank(operator);
-    //     avsManager.registerValidator(podOwner, params);
+        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
 
-    //     // Change delegation to a different address
-    //     address randomAddress = makeAddr("random");
-    //     mockDelegationManager.setDelegation(podOwner, randomAddress);
+        vm.prank(operator);
+        avsManager.setOperatorDelegateKey(newDelegateKey);
 
-    //     (ValidatorData memory validatorData, bool backedByStake) = avsManager.getValidator(blsPubKeyHash);
+        OperatorData memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.delegateKey, newDelegateKey, "Delegate key should be updated");
+    }
 
-    //     assertEq(validatorData.delegatePubKey, delegatePubKey);
-    //     assertFalse(backedByStake, "backedByStake should be false when delegated to a different address");
-    // }
+    function testSetOperatorDelegateKey_NotRegistered() public {
+        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
 
-    // function testSetOperatorDelegateKey() public {
-    //     _setupOperator();
-    //     _registerOperator();
-
-    //     bytes memory newDelegateKey = abi.encodePacked(uint256(2));
-
-    //     vm.prank(operator);
-    //     avsManager.setOperatorDelegateKey(newDelegateKey);
-
-    //     OperatorData memory operatorData = avsManager.getOperator(operator);
-    //     assertEq(operatorData.delegateKey, newDelegateKey, "Delegate key should be updated");
-    // }
-
-    // function testSetOperatorDelegateKey_NotRegistered() public {
-    //     bytes memory newDelegateKey = abi.encodePacked(uint256(2));
-
-    //     vm.prank(operator);
-    //     vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-    //     avsManager.setOperatorDelegateKey(newDelegateKey);
-    // }
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
+        avsManager.setOperatorDelegateKey(newDelegateKey);
+    }
 }
