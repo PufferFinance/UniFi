@@ -197,8 +197,8 @@ contract UniFiAVSManager is
         
         IEigenPod eigenPod = IEigenPod(validatorData.eigenPod);
         IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHash);
-        
-        bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(validatorData.operator) == validatorData.operator;
+
+        bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
         
         return PreConferInfo({
             data: validatorData,

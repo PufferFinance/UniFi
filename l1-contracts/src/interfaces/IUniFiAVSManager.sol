@@ -7,6 +7,7 @@ import {ISignatureUtils} from "eigenlayer/interfaces/ISignatureUtils.sol";
 import "../structs/ValidatorRegistrationParams.sol";
 import "../structs/ValidatorData.sol";
 import "../structs/OperatorData.sol";
+import "../structs/PreConferInfo.sol";
 
 /**
  * @title IUniFiAVSManager
