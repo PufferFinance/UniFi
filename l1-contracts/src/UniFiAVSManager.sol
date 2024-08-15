@@ -91,9 +91,7 @@ contract UniFiAVSManager is
 
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
-        $.operators[msg.sender].operatorAddress = msg.sender;
         $.operators[msg.sender].isRegistered = true;
-        $.operators[msg.sender].delegatedPodOwners[msg.sender] = true;
 
         emit OperatorRegistered(msg.sender, msg.sender);
     }
