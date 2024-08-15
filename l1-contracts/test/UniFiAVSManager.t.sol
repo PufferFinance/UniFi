@@ -389,7 +389,17 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
         bytes memory delegatePubKey = abi.encodePacked(uint256(1));
-        bytes32 blsPubKeyHash = _registerValidator(privateKey, delegatePubKey);
+        (bytes32 blsPubKeyHash, ValidatorRegistrationParams memory params) = _registerValidator(
+            privateKey,
+            delegatePubKey,
+            true,  // setupOperator
+            true,  // registerOperator
+            true,  // setupValidator
+            false  // don't modify params
+        );
+
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
         pubkeyHashes[0] = blsPubKeyHash;
 
         vm.startPrank(operator);
