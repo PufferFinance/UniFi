@@ -44,7 +44,7 @@ contract UniFiAVSManager is
         _;
     }
 
-    modifier podDelegatedOperator(address podOwner) {
+    modifier podIsDelegated(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
             revert NotOperator();
         }
@@ -93,7 +93,7 @@ contract UniFiAVSManager is
     function registerValidator(
         address podOwner,
         ValidatorRegistrationParams calldata params
-    ) external {
+    ) podIsDelegated(podOwner) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
