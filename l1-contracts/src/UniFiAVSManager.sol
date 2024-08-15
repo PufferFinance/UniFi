@@ -194,7 +194,7 @@ contract UniFiAVSManager is
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
         
-        if (!operator.isRegistered) {
+        if (!operator.registered) {
             revert OperatorNotRegistered();
         }
 

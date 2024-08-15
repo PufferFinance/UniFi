@@ -60,10 +60,5 @@ interface IUniFiAVSManager {
         address operator
     ) external view returns (OperatorData memory);
 
-    function isDelegatedPodOwner(
-        address operator,
-        address podOwner
-    ) external view returns (bool);
-
     function setOperatorDelegateKey(bytes memory newDelegateKey) external;
 }
