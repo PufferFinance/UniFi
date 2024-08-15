@@ -8,7 +8,7 @@ import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol
 import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-contract DeployAVSManager is BaseScript {
+contract DeployUniFiAVSManager is BaseScript {
     UniFiAVSManager public uniFiAVSManagerProxy;
 
     function run(
@@ -31,6 +31,9 @@ contract DeployAVSManager is BaseScript {
                 )
             )
         );
+
+        // console.log("UniFiAVSManager proxy:", address(uniFiAVSManagerProxy));
+        // console.log("UniFiAVSManager implementation:", address(uniFiAVSManagerImplementation));
 
         return (address(uniFiAVSManagerImplementation), address(uniFiAVSManagerProxy));
     }

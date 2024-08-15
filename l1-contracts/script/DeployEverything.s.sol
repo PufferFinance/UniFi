@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import { BaseScript } from "script/BaseScript.s.sol";
-import { DeployAVSManager } from "script/DeployAVSManager.s.sol";
-import { SetupAccess } from "script/SetupAccess.s.sol";
-import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import {BaseScript} from "script/BaseScript.s.sol";
+import {DeployUniFiAVSManager} from "script/DeployUniFiAVSManager.s.sol";
+import {SetupAccess} from "script/SetupAccess.s.sol";
+import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import {AVSDeployment} from "script/DeploymentStructs.sol";
 
 /**
  * @title Deploy all protocol contracts
@@ -25,15 +26,18 @@ contract DeployEverything is BaseScript {
         AVSDeployment memory deployment;
 
         // 1. Deploy AVSManager
-        (address avsManagerImplementation, address avsManagerProxy) = new DeployAVSManager().run(
-            accessManager,
-            eigenPodManager,
-            eigenDelegationManager,
-            avsDirectory
-        );
+        (
+            address avsManagerImplementation,
+            address avsManagerProxy
+        ) = new DeployUniFiAVSManager().run(
+                accessManager,
+                eigenPodManager,
+                eigenDelegationManager,
+                avsDirectory
+            );
 
         deployment.avsManagerImplementation = avsManagerImplementation;
-        deployment.avsManager = avsManagerProxy;
+        deployment.avsManagerProxy = avsManagerProxy;
         deployment.accessManager = accessManager;
 
         // `anvil` in the terminal
@@ -47,7 +51,7 @@ contract DeployEverything is BaseScript {
             DAO = _broadcaster;
         }
 
-        new SetupAccess().run(deployment, DAO, _broadcaster);
+        new SetupAccess().run(deployment, DAO);
 
         _writeJson(deployment);
 
@@ -57,10 +61,14 @@ contract DeployEverything is BaseScript {
     function _writeJson(AVSDeployment memory deployment) internal {
         string memory obj = "";
 
-        vm.serializeAddress(obj, "avsManagerImplementation", deployment.avsManagerImplementation);
-        vm.serializeAddress(obj, "avsManager", deployment.avsManager);
-        vm.serializeAddress(obj, "dao", DAO);
+        vm.serializeAddress(
+            obj,
+            "avsManagerImplementation",
+            deployment.avsManagerImplementation
+        );
+        vm.serializeAddress(obj, "avsManagerProxy", deployment.avsManagerProxy);
         vm.serializeAddress(obj, "accessManager", deployment.accessManager);
+        vm.serializeAddress(obj, "dao", DAO);
 
         string memory finalJson = vm.serializeString(obj, "", "");
         vm.writeJson(finalJson, "./output/avsDeployment.json");

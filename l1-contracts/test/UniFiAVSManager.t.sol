@@ -13,42 +13,13 @@ import "./mocks/MockAVSDirectory.sol";
 import "eigenlayer-middleware/libraries/BN254.sol";
 import "eigenlayer-middleware/interfaces/IBLSApkRegistry.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { UnitTestHelper } from "../test/helpers/UnitTestHelper.sol";
 
-contract UniFiAVSManagerTest is Test {
+contract UniFiAVSManagerTest is UnitTestHelper {
     using BN254 for BN254.G1Point;
     using Strings for uint256;
 
-    UniFiAVSManager public avsManager;
-    MockEigenPodManager public mockEigenPodManager;
-    MockDelegationManager public mockDelegationManager;
-    MockAVSDirectory public mockAVSDirectory;
-
-    address public operator;
-    address public podOwner;
-    uint256 public operatorPrivateKey;
-
-    function setUp() public {
-        mockEigenPodManager = new MockEigenPodManager();
-        mockDelegationManager = new MockDelegationManager();
-        mockAVSDirectory = new MockAVSDirectory();
-
-        address mockRestakingOperatorBeacon = address(0x1234); // Mock address for RESTAKING_OPERATOR_BEACON
-
-        avsManager = new UniFiAVSManager(
-            IEigenPodManager(address(mockEigenPodManager)),
-            IDelegationManager(address(mockDelegationManager)),
-            IAVSDirectory(address(mockAVSDirectory)),
-            mockRestakingOperatorBeacon
-        );
-        avsManager.initialize(address(this));
-
-        operatorPrivateKey = 0xA11CE;
-        operator = vm.addr(operatorPrivateKey);
-        podOwner = address(0x2);
-
-        vm.label(operator, "Operator");
-        vm.label(podOwner, "Pod Owner");
-    }
+    // TEST HELPERS
 
     function _generateBlsPubkeyParams(uint256 privKey)
         internal
@@ -62,8 +33,8 @@ contract UniFiAVSManagerTest is Test {
 
     function _mulGo(uint256 x) internal returns (BN254.G2Point memory g2Point) {
         string[] memory inputs = new string[](3);
-        inputs[0] = "./test/go2mul-mac"; // lib/eigenlayer-middleware/test/ffi/go/g2mul.go binary
-        // inputs[0] = "./test/go2mul"; // lib/eigenlayer-middleware/test/ffi/go/g2mul.go binary
+        inputs[0] = "./test/helpers/go2mul-mac"; // lib/eigenlayer-middleware/test/ffi/go/g2mul.go binary
+        // inputs[0] = "./test/helpers/go2mul"; // lib/eigenlayer-middleware/test/ffi/go/g2mul.go binary
         inputs[1] = x.toString();
 
         inputs[2] = "1";
@@ -100,6 +71,8 @@ contract UniFiAVSManagerTest is Test {
         }
         return (digestHash, operatorSignature);
     }
+
+    // BEGIN TESTS
 
     function testInitialize() public {
         // Add appropriate initialization checks here

@@ -95,7 +95,8 @@ contract UniFiAVSManager is
     ) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        address podOwner = RestakingOperator(msg.sender).owner();
+        // address podOwner = RestakingOperator(msg.sender).owner();
+        address podOwner = msg.sender;
         if ($.operators[podOwner].operatorContract != msg.sender) {
             revert InvalidOperator();
         }

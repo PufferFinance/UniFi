@@ -13,8 +13,6 @@ import "../structs/OperatorData.sol";
  * @notice Interface for the UniFiAVSManager contract.
  */
 interface IUniFiAVSManager {
-
-
     error RegistrationExpired();
     error InvalidRegistrationSalt();
     error OperatorHasValidators();
@@ -38,30 +36,33 @@ interface IUniFiAVSManager {
     event OperatorDeregistered(address indexed operator);
     event ValidatorDeregistered(bytes32 blsPubKeyHash);
 
-    function createOperator() external returns (address);
+    function createOperator(
+        string calldata metadataURI,
+        address delegationApprover
+    ) external returns (address);
+
     function registerOperator(
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
     ) external;
+
     function registerValidator(
         address podOwner,
         ValidatorRegistrationParams calldata params
     ) external;
+
     function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external;
+
     function deregisterOperator() external;
+
     function getValidator(
         bytes32 blsPubKeyHash
     ) external view returns (ValidatorData memory);
+
     function getValidator(
         uint256 validatorIndex
     ) external view returns (ValidatorData memory);
+
     function getOperator(
         address operator
     ) external view returns (OperatorData memory);
-    function registerOperatorToAVS(
-        bytes calldata quorumNumbers,
-        string calldata socket,
-        IBLSApkRegistry.PubkeyRegistrationParams calldata params,
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
-    ) external;
-    function deregisterOperatorFromAVS(bytes calldata quorumNumbers) external;
 }
