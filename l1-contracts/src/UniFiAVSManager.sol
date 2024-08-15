@@ -184,10 +184,6 @@ contract UniFiAVSManager is
         return $.operators[operator];
     }
 
-    function isDelegatedPodOwner(address operator, address podOwner) external view returns (bool) {
-        return EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) == operator;
-    }
-
     function setOperatorDelegateKey(bytes memory newDelegateKey) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
