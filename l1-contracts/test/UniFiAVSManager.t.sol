@@ -415,6 +415,72 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(operatorData.validatorCount, 0);
     }
 
+    function testDeregisterValidator_NotDelegatedToOperator() public {
+        bytes32[] memory pubkeyHashes = new bytes32[](1);
+
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (
+            bytes32 blsPubKeyHash,
+            ValidatorRegistrationParams memory params
+        ) = _registerValidator(
+                privateKey,
+                delegatePubKey,
+                true,
+                true,
+                true,
+                false
+            );
+
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
+        pubkeyHashes[0] = blsPubKeyHash;
+
+        // Change delegation to a different operator
+        address newOperator = address(0x789);
+        mockDelegationManager.setDelegation(podOwner, newOperator);
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.NotDelegatedToOperator.selector);
+        avsManager.deregisterValidator(pubkeyHashes);
+    }
+
+    function testDeregisterValidator_NonExistentValidator() public {
+        bytes32[] memory pubkeyHashes = new bytes32[](1);
+        pubkeyHashes[0] = bytes32(uint256(1)); // Non-existent validator
+
+        vm.prank(operator);
+        vm.expectRevert(); // Expect a revert, but the exact error message depends on the implementation
+        avsManager.deregisterValidator(pubkeyHashes);
+    }
+
+    function testDeregisterValidator_UnauthorizedCaller() public {
+        bytes32[] memory pubkeyHashes = new bytes32[](1);
+
+        uint256 privateKey = 123456;
+        bytes memory delegatePubKey = abi.encodePacked(uint256(1));
+        (
+            bytes32 blsPubKeyHash,
+            ValidatorRegistrationParams memory params
+        ) = _registerValidator(
+                privateKey,
+                delegatePubKey,
+                true,
+                true,
+                true,
+                false
+            );
+
+        vm.prank(operator);
+        avsManager.registerValidator(podOwner, params);
+        pubkeyHashes[0] = blsPubKeyHash;
+
+        address unauthorizedCaller = address(0x123);
+        vm.prank(unauthorizedCaller);
+        vm.expectRevert(IUniFiAVSManager.NotDelegatedToOperator.selector);
+        avsManager.deregisterValidator(pubkeyHashes);
+    }
+
     function testDeregisterOperator() public {
         _setupOperator();
         ISignatureUtils.SignatureWithSaltAndExpiry
