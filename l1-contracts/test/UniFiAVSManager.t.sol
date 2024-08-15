@@ -377,7 +377,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _registerOperator();
 
         vm.prank(operator);
-        vm.expectRevert(IUniFiAVSManager.ValidatorNotFound.selector);
+        vm.expectRevert(ValidatorNotFound.selector);
         avsManager.deregisterValidators(blsPubKeyHashes);
     }
 
