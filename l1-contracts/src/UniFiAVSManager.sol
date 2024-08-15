@@ -80,7 +80,7 @@ contract UniFiAVSManager is
 
         $.operators[msg.sender].isRegistered = true;
 
-        emit OperatorRegistered(msg.sender, msg.sender);
+        emit OperatorRegistered(msg.sender);
     }
 
     function registerValidator(

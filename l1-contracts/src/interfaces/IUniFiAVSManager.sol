@@ -26,10 +26,7 @@ interface IUniFiAVSManager {
     error OperatorAlreadyRegistered();
 
     event OperatorCreated(address indexed operator, address indexed podOwner);
-    event OperatorRegistered(
-        address indexed operator,
-        address indexed podOwner
-    );
+    event OperatorRegistered(address indexed operator);
     event ValidatorRegistered(
         address indexed podOwner,
         bytes delegatePubKey,
@@ -64,5 +61,8 @@ interface IUniFiAVSManager {
         address operator
     ) external view returns (OperatorData memory);
 
-    function isDelegatedPodOwner(address operator, address podOwner) external view returns (bool);
+    function isDelegatedPodOwner(
+        address operator,
+        address podOwner
+    ) external view returns (bool);
 }
