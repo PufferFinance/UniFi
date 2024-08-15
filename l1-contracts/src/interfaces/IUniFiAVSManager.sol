@@ -15,6 +15,8 @@ import "../structs/OperatorData.sol";
 interface IUniFiAVSManager {
     error RegistrationExpired();
     error InvalidRegistrationSalt();
+    error SignatureExpired();
+    error InvalidOperatorSalt();
     error OperatorHasValidators();
     error NotOperator();
     error NoEigenPod();

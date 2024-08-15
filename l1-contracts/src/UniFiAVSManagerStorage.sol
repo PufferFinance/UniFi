@@ -14,7 +14,8 @@ abstract contract UniFiAVSManagerStorage {
         mapping(bytes32 => ValidatorData) validators;
         mapping(uint256 => bytes32) validatorIndexes;
         mapping(address => OperatorData) operators; // podOwner => OperatorData
-        mapping(bytes32 => bool) salts;
+        mapping(bytes32 => bool) validatorSalts;
+        mapping(bytes32 => bool) operatorSalts;
     }
 
     /**

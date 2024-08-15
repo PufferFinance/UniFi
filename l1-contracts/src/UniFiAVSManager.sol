@@ -76,6 +76,16 @@ contract UniFiAVSManager is
             revert OperatorAlreadyRegistered();
         }
 
+        if (operatorSignature.expiry < block.timestamp) {
+            revert SignatureExpired();
+        }
+
+        if ($.operatorSalts[operatorSignature.salt]) {
+            revert InvalidOperatorSalt();
+        }
+
+        $.operatorSalts[operatorSignature.salt] = true;
+
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
         $.operators[msg.sender].isRegistered = true;
@@ -107,11 +117,11 @@ contract UniFiAVSManager is
             revert RegistrationExpired();
         }
 
-        if ($.salts[params.salt]) {
+        if ($.validatorSalts[params.salt]) {
             revert InvalidRegistrationSalt();
         }
 
-        $.salts[params.salt] = true;
+        $.validatorSalts[params.salt] = true;
 
         BN254.G1Point memory messageHash = blsMessageHash(
             VALIDATOR_REGISTRATION_TYPEHASH,
