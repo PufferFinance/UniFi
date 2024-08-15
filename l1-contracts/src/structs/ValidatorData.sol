@@ -3,6 +3,6 @@ pragma solidity >=0.8.0 <0.9.0;
 
 struct ValidatorData {
     address eigenPod;
-    uint256 validatorIndex;
+    uint64 validatorIndex;
     bytes delegatePubKey;
 }
