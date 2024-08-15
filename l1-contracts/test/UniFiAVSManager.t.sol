@@ -441,6 +441,40 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testDeregisterOperator_HasValidators() public {
+        _setupOperator();
+        _registerOperator();
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+        _setupValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.OperatorHasValidators.selector);
+        avsManager.deregisterOperator();
+    }
+
+    function testDeregisterOperator() public {
+        _setupOperator();
+        _registerOperator();
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](2);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+        blsPubKeyHashes[1] = keccak256(abi.encodePacked("validator2"));
+        _setupValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.deregisterValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.deregisterOperator();
+
+        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
     }
 
     function testDeregisterOperator_UnauthorizedCaller() public {
