@@ -6,6 +6,7 @@ import {DeployUniFiAVSManager} from "script/DeployUniFiAVSManager.s.sol";
 import {SetupAccess} from "script/SetupAccess.s.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {AVSDeployment} from "script/DeploymentStructs.sol";
+import {console} from "forge-std/console.sol";
 
 /**
  * @title Deploy all protocol contracts
@@ -51,8 +52,10 @@ contract DeployEverything is BaseScript {
             DAO = _broadcaster;
         }
 
-        new SetupAccess().run(deployment, DAO);
+        // TODO turn back on
+        // new SetupAccess().run(deployment, DAO);
 
+        console.log("Deployment completed");
         _writeJson(deployment);
 
         return deployment;

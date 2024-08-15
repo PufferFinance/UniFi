@@ -36,7 +36,7 @@ contract SetupAccess is BaseScript {
             Multicall.multicall,
             (calldatas)
         );
-        console.logBytes(multicallData);
+        // console.logBytes(multicallData);
         (bool s, ) = address(accessManager).call(multicallData);
         require(s, "failed setupAccess GenerateAccessManagerCallData 1");
 
@@ -44,7 +44,7 @@ contract SetupAccess is BaseScript {
         bytes memory cd = new GenerateAccessManagerCallData().run(
             deployment.avsManagerProxy
         );
-        console.logBytes(cd);
+        // console.logBytes(cd);
 
         (s, ) = address(accessManager).call(cd);
         require(s, "failed setupAccess GenerateAccessManagerCallData");
