@@ -505,7 +505,25 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testGetValidator_BackedByStakeFalse() public {
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
 
+        _setupOperator();
+        _registerOperator();
+        _setupValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        // Change delegation to a different address
+        address randomAddress = makeAddr("random");
+        mockDelegationManager.setDelegation(podOwner, randomAddress);
+
+        PreConferInfo memory preConferInfo = avsManager.getValidator(blsPubKeyHashes[0]);
+
+        assertEq(preConferInfo.data.operator, operator);
+        assertTrue(preConferInfo.data.registered);
+        assertFalse(preConferInfo.backedByStake, "backedByStake should be false when delegated to a different address");
     }
 
     // function testGetValidator_BackedByStakeFalse() public {
