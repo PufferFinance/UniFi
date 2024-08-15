@@ -53,11 +53,11 @@ interface IUniFiAVSManager {
 
     function getValidator(
         bytes32 blsPubKeyHash
-    ) external view returns (ValidatorData memory);
+    ) external view returns (ValidatorData memory, bool backedByStake);
 
     function getValidator(
         uint256 validatorIndex
-    ) external view returns (ValidatorData memory);
+    ) external view returns (ValidatorData memory, bool backedByStake);
 
     function getOperator(
         address operator

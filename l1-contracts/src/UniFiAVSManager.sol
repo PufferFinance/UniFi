@@ -213,18 +213,26 @@ contract UniFiAVSManager is
 
     function getValidator(
         bytes32 blsPubKeyHash
-    ) external view returns (ValidatorData memory) {
+    ) external view returns (ValidatorData memory, bool backedByStake) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        return $.validators[blsPubKeyHash];
+        ValidatorData memory validator = $.validators[blsPubKeyHash];
+        address podOwner = IEigenPod(validator.eigenPod).podOwner();
+        backedByStake = EIGEN_DELEGATION_MANAGER.isDelegated(podOwner);
+
+        return (validator, backedByStake);
     }
 
     function getValidator(
         uint256 validatorIndex
-    ) external view returns (ValidatorData memory) {
+    ) external view returns (ValidatorData memory, bool backedByStake) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        return $.validators[$.validatorIndexes[validatorIndex]];
+        ValidatorData memory validator = $.validators[$.validatorIndexes[validatorIndex]];
+        address podOwner = IEigenPod(validator.eigenPod).podOwner();
+        backedByStake = EIGEN_DELEGATION_MANAGER.isDelegated(podOwner);
+
+        return (validator, backedByStake);
     }
 
     function getOperator(
