@@ -78,6 +78,16 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         mockDelegationManager.setDelegation(podOwner, operator);
     }
 
+    function _registerOperator() internal {
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+        (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) =
+            _getOperatorSignature(operatorPrivateKey, operator, address(avsManager), salt, expiry);
+
+        vm.prank(operator);
+        avsManager.registerOperator(operatorSignature);
+    }
+
     function _setupValidator(uint256 privateKey, bytes memory delegatePubKey) internal returns (ValidatorRegistrationParams memory, bytes32) {
         IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(privateKey);
 
@@ -123,6 +133,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testRegisterValidator() public returns (bytes32) {
         _setupOperator();
+        _registerOperator();
 
         uint256 privateKey = 123456; // This is a dummy private key for testing purposes
         bytes memory delegatePubKey = abi.encodePacked(uint256(1));
