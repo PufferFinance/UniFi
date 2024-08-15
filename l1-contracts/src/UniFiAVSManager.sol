@@ -144,7 +144,8 @@ contract UniFiAVSManager is
         $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
         $.validators[blsPubkeyHash] = ValidatorData({
             delegatePubKey: params.delegatePubKey,
-            eigenPod: address(eigenPod)
+            eigenPod: address(eigenPod),
+            validatorIndex: validatorInfo.validatorIndex
         });
         $.operators[msg.sender].validatorCount++;
 
