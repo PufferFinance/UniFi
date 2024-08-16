@@ -76,7 +76,33 @@ This design choice prioritizes efficiency and simplicity. While it limits the gr
 
 ### Validator Registration
 
-After the initial operator registration and delegate key registration, the next step is to register individual validators. This process allows the UniFi AVS to maintain a mapping between validators and their authorized pre-confirmation signing key, ensuring that only active restaked validators can be registered to the AVS.
+Before any validators can be registered, the `UniFiAVSManager` contract performs a crucial check using the `podIsDelegated` modifier. This check demonstrates the mutual trust between the operator and the podOwner. Here's the code snippet for the modifier:
+
+```solidity
+modifier podIsDelegated(address podOwner) {
+    if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
+        revert NotOperator();
+    }
+    if (!EIGEN_POD_MANAGER.hasPod(podOwner)) {
+        revert NoEigenPod();
+    }
+    if (EIGEN_DELEGATION_MANAGER.delegatedTo(podOwner) != msg.sender) {
+        revert NotDelegatedToOperator();
+    }
+    _;
+}
+```
+
+This modifier ensures that:
+1. The caller (msg.sender) is a registered operator in the EigenLayer system.
+2. The podOwner has an EigenPod.
+3. The podOwner has delegated their stake to the operator (msg.sender).
+
+By delegating to the Operator, the podOwner is effectively giving permission for the Operator to set the delegate key. Since this key is used by the validator or in conjunction with their operations, it implies that the operator has some level of control over the validators in the EigenPod. This relationship underscores the importance of trust between the podOwner and the Operator in the UniFi AVS system.
+
+After this check, the Operator can proceed to register their individual validators that will engage in pre-confs. This process involves delegating pre-confirmation rights from a validator's BLS key to an ECDSA key, which will be used for signing pre-confirmations.
+
+> **Aside on Neutrality**: In the spirit of neutrality, it is important to keep pre-conf registrations credibly neutral. As such, the Ethereum Foundation is working to launch a permissionless registry contract that exists outside of any protocols (i.e., outside of Puffer or EigenLayer). To prevent fragmentation, the UniFi AVS registry contract will look to this registry as a primary source when validators register. Once the neutral registry contract is available, an additional check can be added.
 
 The validator registration process consists of the following steps:
 
