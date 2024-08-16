@@ -1,6 +1,6 @@
 # Rewards Distribution
 
-The rewards distribution mechanism in UniFi AVS is designed to provide a consistent and attractive incentive structure for participating validators.
+The rewards distribution mechanism in UniFi AVS is designed to smoothen out volatility in rewards to provide consistent and sustainable revenue for validators that potentially surpasses revenue from the standard PBS pipeline.
 
 ## Key Features
 
