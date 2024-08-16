@@ -76,7 +76,7 @@ This design choice prioritizes efficiency and simplicity. While it limits the gr
 
 ### Validator Registration
 
-After the initial operator registration and delegate key registration, the next step is to register individual validators. This process allows the UniFi AVS to maintain a mapping between validators and their authorized pre-confirmation signing keys, ensuring that only legitimate validators can participate in the pre-confirmation process.
+After the initial operator registration and delegate key registration, the next step is to register individual validators. This process allows the UniFi AVS to maintain a mapping between validators and their authorized pre-confirmation signing key, ensuring that only active restaked validators can be registered to the AVS.
 
 The validator registration process consists of the following steps:
 
