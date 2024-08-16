@@ -173,7 +173,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
             assertEq(validatorData.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
             assertEq(validatorData.operator, operator);
-            assertTrue(validatorData.isRegistered);
             assertTrue(validatorData.backedByStake);
         }
     }
@@ -263,7 +262,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertFalse(validatorData.isRegistered);
+            assertEq(validatorData.operator, address(0));
         }
     }
 
@@ -432,7 +431,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[0]);
 
         assertEq(validatorData.operator, operator);
-        assertTrue(validatorData.isRegistered);
         assertFalse(validatorData.backedByStake, "backedByStake should be false when delegated to a different address");
     }
 

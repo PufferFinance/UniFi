@@ -29,7 +29,6 @@ struct ValidatorDataExtended {
     /// @notice The current status of the validator in the EigenPod.
     IEigenPod.VALIDATOR_STATUS status;
     
-    bool isRegistered;
     /// @notice Indicates whether the validator's EigenPod is delegated to the operator.
     bool backedByStake;
     /// @notice The address of the operator managing this validator.
