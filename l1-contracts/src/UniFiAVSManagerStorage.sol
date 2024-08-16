@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
+import "./structs/ValidatorData.sol";
+import "./structs/OperatorData.sol";
 
 /**
  * @title UniFiAVSManagerStorage
@@ -10,10 +11,10 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
  */
 abstract contract UniFiAVSManagerStorage {
     struct UniFiAVSStorage {
-        mapping(bytes32 => IUniFiAVSManager.ValidatorData) validators;
+        mapping(bytes32 => ValidatorData) validators;
         mapping(uint256 => bytes32) validatorIndexes;
-        mapping(address => IUniFiAVSManager.OperatorData) operators;
-        mapping(bytes32 => bool) salts;
+        mapping(address => OperatorData) operators; // operator => OperatorData
+        mapping(bytes32 => bool) operatorSalts;
     }
 
     /**

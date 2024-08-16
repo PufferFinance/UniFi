@@ -3,7 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
 
-library BLSSingatureCheckerLib {
+library BLSSignatureCheckerLib {
     using BN254 for BN254.G1Point;
 
     function isBlsSignatureValid(

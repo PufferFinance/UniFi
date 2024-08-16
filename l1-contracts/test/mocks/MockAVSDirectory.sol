@@ -7,6 +7,16 @@ import "eigenlayer/interfaces/ISignatureUtils.sol";
 contract MockAVSDirectory {
     mapping(address => bool) public registeredOperators;
 
+    function avsOperatorStatus(address, address operator)
+        external
+        view
+        returns (IAVSDirectory.OperatorAVSRegistrationStatus)
+    {
+        return registeredOperators[operator]
+            ? IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
+            : IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED;
+    }
+
     function registerOperatorToAVS(
         address operator,
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature

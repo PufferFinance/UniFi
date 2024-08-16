@@ -57,11 +57,11 @@ contract MockEigenPod is IEigenPod {
     function stake(bytes calldata, bytes calldata, bytes32) external payable { }
 
     function validatorPubkeyHashToInfo(bytes32 pubkeyHash) external view returns (ValidatorInfo memory) {
-        return ValidatorInfo(0, 0, 0, validatorStatuses[pubkeyHash]);
+        return ValidatorInfo(1, 0, 0, validatorStatuses[pubkeyHash]);
     }
 
     function validatorPubkeyToInfo(bytes calldata) external pure returns (ValidatorInfo memory) {
-        return ValidatorInfo(0, 0, 0, VALIDATOR_STATUS.INACTIVE);
+        return ValidatorInfo(1, 0, 0, VALIDATOR_STATUS.INACTIVE);
     }
 
     function validatorStatus(bytes calldata) external pure returns (VALIDATOR_STATUS) {

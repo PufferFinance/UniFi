@@ -2,151 +2,191 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
+import { IBLSApkRegistry } from "eigenlayer-middleware/interfaces/IRegistryCoordinator.sol";
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
+import "../structs/ValidatorData.sol";
+import "../structs/OperatorData.sol";
 
 /**
  * @title IUniFiAVSManager
- * @notice Interface for the UniFiAVSManager contract.
+ * @notice Interface for the UniFiAVSManager contract, which manages operators and validators in the UniFi AVS system.
+ * @dev This interface defines the main functions and events for operator and validator management.
  */
 interface IUniFiAVSManager {
     /**
-     * @notice Struct used when registering a new ECDSA key
-     * @param registrationSignature The registration message signed by the private key of the validator
-     * @param pubkeyG1 The corresponding G1 public key of the validator
-     * @param pubkeyG2 The corresponding G2 public key of the validator
-     * @param ecdsaPubKeyHash The hash of the ECDSA public key to be registered
-     * @param salt The salt used to generate the signature
-     * @param expiry The expiration timestamp (UTC) of the signature
+     * @notice Thrown when an operator registration has expired.
      */
-    struct ValidatorRegistrationParams {
-        BN254.G1Point registrationSignature;
-        BN254.G1Point pubkeyG1;
-        BN254.G2Point pubkeyG2;
-        bytes32 ecdsaPubKeyHash;
-        bytes32 salt;
-        uint256 expiry;
-    }
-
-    /**
-     * @notice Struct to hold validator data
-     * @param ecdsaPubKeyHash The hash of the ECDSA public key
-     * @param eigenPod The address of the associated EigenPod
-     */
-    struct ValidatorData {
-        bytes32 ecdsaPubKeyHash;
-        address eigenPod;
-    }
-
-    /**
-     * @notice Struct to hold operator data
-     * @param validatorCount The count of validators associated with the operator
-     */
-    struct OperatorData {
-        uint32 validatorCount;
-    }
-
     error RegistrationExpired();
 
-    error InvalidRegistrationSalt();
+    /**
+     * @notice Thrown when an operator registration salt is reused.
+     */
+    error InvalidOperatorSalt();
 
+    /**
+     * @notice Thrown when an operator registration signature has expired.
+     */
+    error SignatureExpired();
+
+    /**
+     * @notice Thrown when an operator with remaining validators attempts to deregister.
+     */
     error OperatorHasValidators();
 
     /**
-     * @notice Error thrown when the sender is not an operator
+     * @notice Thrown when a non-operator attempts an operator-only action.
      */
     error NotOperator();
 
     /**
-     * @notice Error thrown when the pod owner does not have an EigenPod
+     * @notice Thrown when an EigenPod does not exist for a given address.
      */
     error NoEigenPod();
 
     /**
-     * @notice Error thrown when the pod owner has not delegated to the operator
+     * @notice Thrown when an address is not delegated to the expected operator.
      */
     error NotDelegatedToOperator();
 
     /**
-     * @notice Error thrown when the validator is not active
+     * @notice Thrown when a validator is not in the active state in an EigenPod.
      */
     error ValidatorNotActive();
 
     /**
-     * @notice Error thrown when the signature is invalid
+     * @notice Thrown when an operator already exists.
      */
-    error InvalidSignature();
+    error OperatorAlreadyExists();
 
     /**
-     * @notice Event emitted when an operator is registered to AVS
-     * @param operator The address of the registered operator
-     * @param podOwner The address of the pod owner
+     * @notice Thrown when an operator is not registered.
      */
-    event OperatorRegistered(address indexed operator, address indexed podOwner);
+    error OperatorNotRegistered();
 
     /**
-     * @notice Event emitted when a validator is registered
-     * @param podOwner The address of the pod owner
-     * @param ecdsaPubKeyHash The hash of the ECDSA public key
-     * @param blsPubKeyHash The hash of the BLS public key
+     * @notice Thrown when an operator is already registered.
      */
-    event ValidatorRegistered(address indexed podOwner, bytes32 indexed ecdsaPubKeyHash, bytes32 blsPubKeyHash);
+    error OperatorAlreadyRegistered();
 
     /**
-     * @notice Event emitted when an operator is deregistered from AVS
-     * @param operator The address of the deregistered operator
+     * @notice Thrown when a non-operator attempts to deregister a validator.
+     */
+    error NotValidatorOperator();
+
+    /**
+     * @notice Thrown when a validator is already registered to an operator.
+     */
+    error ValidatorAlreadyRegistered();
+
+    /**
+     * @notice Thrown when an operator's delegate key is not set.
+     */
+    error DelegateKeyNotSet();
+    error InvalidOperator();
+    error NotPodOwner();
+    error ValidatorNotFound();
+
+    /**
+     * @notice Emitted when a new operator is registered in the UniFi AVS system.
+     * @param operator The address of the registered operator.
+     */
+    event OperatorRegistered(address indexed operator);
+
+    /**
+     * @notice Emitted when a validator's delegate key is modified.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param newDelegateKey The new delegate key for the validator.
+     */
+    event ValidatorDelegateKeyModified(bytes32 indexed blsPubKeyHash, bytes newDelegateKey);
+
+    /**
+     * @notice Emitted when a new validator is registered in the UniFi AVS system.
+     * @param podOwner The address of the validator's EigenPod owner.
+     * @param delegatePubKey The delegate public key for the validator.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param validatorIndex The beacon chain validator index.
+     */
+    event ValidatorRegistered(
+        address indexed podOwner, bytes delegatePubKey, bytes32 blsPubKeyHash, uint256 validatorIndex
+    );
+
+    /**
+     * @notice Emitted when an operator is deregistered from the UniFi AVS system.
+     * @param operator The address of the deregistered operator.
      */
     event OperatorDeregistered(address indexed operator);
 
     /**
-     * @notice Event emitted when a validator is deregistered
-     * @param blsPubKeyHash The hash of the BLS public key
+     * @notice Emitted when a validator is deregistered from the UniFi AVS system.
+     * @param blsPubKeyHash The BLS public key hash of the deregistered validator.
+     * @param validatorIndex The index of the deregistered validator.
+     * @param podOwner The address of the EigenPod owner.
+     * @param operator The address of the operator managing the validator.
      */
-    event ValidatorDeregistered(bytes32 blsPubKeyHash);
+    event ValidatorDeregistered(bytes32 blsPubKeyHash, uint64 validatorIndex, address podOwner, address operator);
 
     /**
-     * @notice Registers an operator to AVS
-     * @param podOwner The address of the pod owner
-     * @param operatorSignature The signature of the operator with salt and expiry
+     * @notice Emitted when an operator's delegate key is set or updated.
+     * @param operator The address of the operator.
+     * @param newDelegateKey The new delegate key for the operator.
      */
-    function registerOperator(address podOwner, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
-        external;
+    event OperatorDelegateKeySet(address indexed operator, bytes newDelegateKey);
 
     /**
-     * @notice Registers a validator
-     * @param podOwner The address of the pod owner
-     * @param params The parameters for validator registration
+     * @notice Registers a new operator in the UniFi AVS system.
+     * @param operatorSignature The signature and associated data for operator registration.
      */
-    function registerValidator(address podOwner, ValidatorRegistrationParams calldata params) external;
+    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external;
 
     /**
-     * @notice Deregisters a validator
-     * @param blsPubKeyHashs The hashes of the BLS public keys to deregister
+     * @notice Registers validators for a given pod owner.
+     * @param podOwner The address of the pod owner.
+     * @param blsPubKeyHashes The BLS public key hashes of the validators to register.
      */
-    function deregisterValidator(bytes32[] calldata blsPubKeyHashs) external;
+    function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes) external;
 
     /**
-     * @notice Deregisters an operator from AVS
+     * @notice Deregisters validators from the UniFi AVS system.
+     * @param blsPubKeyHashes The BLS public key hashes of the validators to deregister.
+     */
+    function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external;
+
+    /**
+     * @notice Deregisters an operator from the UniFi AVS system.
      */
     function deregisterOperator() external;
 
     /**
-     * @notice Returns validator data for the given BLS public key hash.
-     * @param blsPubKeyHash The hash of the BLS public key.
-     * @return ValidatorData The data associated with the validator.
-     */
-    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorData memory);
-
-    /**
-     * @notice Returns validator data for the given the validator index.
-     * @param validatorIndex The index of the validator.
-     * @return ValidatorData The data associated with the validator.
-     */
-    function getValidator(uint256 validatorIndex) external view returns (ValidatorData memory);
-
-    /**
-     * @notice Returns operator data for the given address.
+     * @notice Retrieves information about a specific operator.
      * @param operator The address of the operator.
-     * @return OperatorData The data associated with the operator.
+     * @return OperatorDataExtended struct containing information about the operator.
      */
-    function getOperator(address operator) external view returns (OperatorData memory);
+    function getOperator(address operator) external view returns (OperatorDataExtended memory);
+
+    /**
+     * @notice Retrieves information about a validator using its BLS public key hash.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @return ValidatorDataExtended struct containing information about the validator.
+     */
+    function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorDataExtended memory);
+
+    /**
+     * @notice Retrieves information about a validator using its validator index.
+     * @param validatorIndex The index of the validator.
+     * @return ValidatorDataExtended struct containing information about the validator.
+     */
+    function getValidator(uint256 validatorIndex) external view returns (ValidatorDataExtended memory);
+
+    /**
+     * @notice Retrieves information about multiple validators.
+     * @param blsPubKeyHashes The BLS public key hashes of the validators.
+     * @return An array of ValidatorDataExtended structs containing information about the validators.
+     */
+    function getValidators(bytes32[] calldata blsPubKeyHashes) external view returns (ValidatorDataExtended[] memory);
+
+    /**
+     * @notice Sets the delegate key for an operator.
+     * @param newDelegateKey The new delegate key to set.
+     */
+    function setOperatorDelegateKey(bytes memory newDelegateKey) external;
 }
