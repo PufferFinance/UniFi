@@ -38,3 +38,39 @@ The registration process assumes that the `PodOwner` and the `Operator` mutually
 
 This process ensures that only legitimate operators with delegated stake from EigenPod owners can register with the UniFi AVS manager.
 
+### Delegate Key Registration
+
+After the initial registration, the Operator needs to register a delegate key. This key will be used for signing pre-confirmations and other operations related to the UniFi AVS.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Operator
+    participant UniFiAVSManager
+
+    Operator->>UniFiAVSManager: registerDelegateKey(delegateKey)
+    UniFiAVSManager-->>Operator: Delegate key registered
+```
+
+1. The `Operator` calls `registerDelegateKey()` on the `UniFiAVSManager`, providing the delegate key.
+2. The `UniFiAVSManager` registers the delegate key for the Operator.
+3. The `Operator` is notified that the delegate key registration was successful.
+
+#### Key Type Flexibility
+
+The type of key (e.g., ECDSA or BLS) is not specified in the registration process. This decision allows for flexibility in the future, accommodating different key types as needed without requiring changes to the core registration mechanism.
+
+#### Single Key for All Validators
+
+An important design decision is to use a single delegate key that applies to all of the Operator's registered validators. This approach comes with a trade-off:
+
+**Advantages:**
+- Significantly reduced gas costs for registration
+- Lower storage costs on-chain
+- Reduced complexity in key management and verification processes
+
+**Limitation:**
+- Only one entity can be delegated to at once for all of an Operator's validators
+
+This design choice prioritizes efficiency and simplicity, which are crucial for a system that needs to operate at Ethereum's scale. While it limits the granularity of delegation, it provides a streamlined experience for most operators who manage their own validators or delegate to a single entity.
+
