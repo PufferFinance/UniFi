@@ -18,8 +18,8 @@ struct ValidatorData {
 }
 
 /**
- * @title PreConferInfo
- * @notice Struct to store comprehensive information about a validator before conferring.
+ * @title ValidatorDataExtended
+ * @notice Struct to store comprehensive information about a validator.
  * @dev This struct combines ValidatorData with additional status information.
  */
 struct ValidatorDataExtended {
@@ -28,8 +28,9 @@ struct ValidatorDataExtended {
     uint64 validatorIndex;
     /// @notice The current status of the validator in the EigenPod.
     IEigenPod.VALIDATOR_STATUS status;
-    /// @notice Indicates whether the validator's EigenPod is delegated to the operator.
+    
     bool isRegistered;
+    /// @notice Indicates whether the validator's EigenPod is delegated to the operator.
     bool backedByStake;
     /// @notice The address of the operator managing this validator.
     address operator;
