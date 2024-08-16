@@ -193,18 +193,6 @@ If an EigenPod owner has delegated their stake to the `Operator`, then their val
 
 > **Aside on Neutrality**: In the spirit of neutrality, it is important to keep pre-conf registrations credibly neutral. As such, the Ethereum Foundation is working to launch a permissionless registry contract that exists outside of any protocols (i.e., outside of Puffer or EigenLayer). To prevent fragmentation, the `UniFiAVSManager` contract will look to this registry as a primary source when validators register. Once the neutral registry contract is available, an additional check can be added.
 
-
-### Slashing Mechanism
-
-UniFi AVS implements a robust slashing mechanism to ensure the integrity of the pre-confirmation process. This mechanism is designed to penalize validators who break their pre-confirmation promises or fail to fulfill their duties.
-
-The slashing mechanism consists of two main components:
-
-1. Safety Faults: Penalties for breaking pre-confirmation promises.
-2. Liveness Faults: Penalties for missing block proposals.
-
-For a detailed explanation of the slashing mechanism, including the types of faults, the slashing process, and future developments, please refer to the [Slashing Mechanism](slashing.md) document.
-
 ### Rewards Distribution
 
 The rewards distribution in UniFi AVS is designed to provide a consistent and attractive incentive structure for participating validators. Key features of the rewards system include:
@@ -216,6 +204,19 @@ The rewards distribution in UniFi AVS is designed to provide a consistent and at
 
 For a comprehensive overview of the rewards distribution system, including its key features, benefits, and impact on the Ethereum ecosystem, please see the [Rewards Distribution](rewards.md) document.
 
+### Slashing Mechanism
+
+UniFi AVS implements slashing to ensure the integrity of the pre-confirmation process. This mechanism is designed to penalize validators who break their pre-confirmation promises or fail to fulfill their duties.
+
+The slashing mechanism consists of two main components:
+
+1. Safety Faults: Penalties for breaking pre-confirmation promises.
+2. Liveness Faults: Penalties for missing block proposals.
+3. Rewards Stealing: Penalties for 'Rug-Pooling'.
+
+For a detailed explanation of the slashing mechanism, including the types of faults, the slashing process, and future developments, please refer to the [Slashing Mechanism](slashing.md) document.
+
+
 ### Node Software
  UniFi AVS has a tight coupling with Commit-Boost, allowing validators to seamlessly participate in the pre-confirmation process while maintaining their regular validation duties. Validators will run Commit-Boost alongside their standard validator stack. When they are ready to propose a block, they have the flexibility to choose how they want to handle their pre-confirmation responsibilities. Options include:
 
@@ -223,8 +224,7 @@ For a comprehensive overview of the rewards distribution system, including its k
 2. Delegate: The validator can use Commit-Boost to delegate their pre-confirmation duties to another entity e.g., a sophisticated Gateway.
 
 ## Conclusion
-
- UniFi AVS aims to advance Ethereum's proposer commitment ecosystem, offering substantial benefits to users, validators, and the network as a whole. By leveraging EigenLayer's infrastructure, this solution addresses critical challenges in the pre-confirmation supply chain while maintaining Ethereum's core principles of decentralization and security.
+UniFi AVS aims to advance Ethereum's proposer commitment ecosystem, offering substantial benefits to users, validators, and the network as a whole. By leveraging EigenLayer's infrastructure, this solution addresses critical challenges in the pre-confirmation supply chain while maintaining Ethereum's core principles of decentralization and security.
 
 For Ethereum users,  UniFi AVS promises a dramatically improved transaction experience. By enabling near-instant transaction confirmations (~100ms), it brings Ethereum's user experience on par with, or even surpassing, that of alt L1s with shorter block times. This improvement in speed and reliability can significantly enhance user satisfaction and potentially drive greater adoption of Ethereum-based applications.
 

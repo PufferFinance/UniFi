@@ -23,7 +23,7 @@ sequenceDiagram
     UniFiAVSManager-->>Operator: Operator registered
 ```
 
-## Registration Process Explanation
+## Operator Registration Process
 The registration process assumes that the `PodOwner` and the `Operator` mutually trust each other, i.e., are the same party. The reason for separating them is for more flexibility and compatibility with existing operators today.  
 
 1. The `Operator` registers either an EOA or smart contract as an operator with the `DelegationManager`.
@@ -134,11 +134,9 @@ sequenceDiagram
 3. The `UniFiAVSManager` verifies that the operator has set a delegate key.
 
 4. For each BLS public key hash in the provided array:
-   a. The `UniFiAVSManager` retrieves the validator information from the `EigenPod`.
-   b. It checks if the validator is active in the EigenPod.
-   c. It verifies that the validator is not already registered in the UniFi AVS.
-   d. If all checks pass, it registers the validator, associating it with the operator and storing relevant information.
+    - The `UniFiAVSManager` retrieves the validator information from the `EigenPod`.
+    - It checks if the validator is active in the EigenPod.
+    - It verifies that the validator is not already registered in the UniFi AVS.
+    - If all checks pass, it registers the validator, associating it with the operator and storing relevant information.
 
-5. Once all validators are processed, the `UniFiAVSManager` confirms to the `Operator` that the validators have been registered.
-
-This process ensures that only active, unregistered validators associated with the operator's EigenPod can be registered with the UniFi AVS. It maintains the integrity of the validator set and prevents duplicate registrations.
+This process ensures that only active, unregistered validators associated with the operator's EigenPod can be registered with the UniFi AVS. Note that since each validator shares the delegate key, we save signficant gas costs validaing signatures and saving keys for each. 
