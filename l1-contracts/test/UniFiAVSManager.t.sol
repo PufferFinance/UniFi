@@ -336,7 +336,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertFalse(validatorData.isRegistered);
+            assertTrue(validatorData.validatorIndex == 0);
         }
     }
 

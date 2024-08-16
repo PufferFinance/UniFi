@@ -237,8 +237,7 @@ contract UniFiAVSManager is
                 status: validatorInfo.status,
                 backedByStake: backedByStake,
                 delegateKey: $.operators[validatorData.operator].delegateKey,
-                operator: validatorData.operator,
-                isRegistered: validatorData.index != 0
+                operator: validatorData.operator
             });
         }
     }
