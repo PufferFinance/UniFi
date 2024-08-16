@@ -94,58 +94,10 @@ modifier podIsDelegated(address podOwner) {
 ```
 
 This modifier ensures that:
-1. The caller (msg.sender) is a registered operator in the EigenLayer system.
-2. The podOwner has an EigenPod.
-3. The podOwner has delegated their stake to the operator (msg.sender).
+1. The `Operator` (msg.sender) is a registered operator in the EigenLayer system.
+2. The `podOwner` has an EigenPod.
+3. The `podOwner` has delegated their stake to the `Operator`.
 
-By delegating to the Operator, the podOwner is effectively giving permission for the Operator to set the delegate key. Since this key is used by the validator or in conjunction with their operations, it implies that the operator has some level of control over the validators in the EigenPod. This relationship underscores the importance of trust between the podOwner and the Operator in the UniFi AVS system.
+By delegating to the `Operator`, the `podOwner` is effectively giving permission for the `Operator` to set the delegate key. Since this key is used by the validator or in conjunction with their operations, it implies that the operator has some level of control over the validators in the EigenPod. This relationship underscores the importance of trust between the podOwner and the Operator.
 
-After this check, the Operator can proceed to register their individual validators that will engage in pre-confs. This process involves delegating pre-confirmation rights from a validator's BLS key to an ECDSA key, which will be used for signing pre-confirmations.
-
-> **Aside on Neutrality**: In the spirit of neutrality, it is important to keep pre-conf registrations credibly neutral. As such, the Ethereum Foundation is working to launch a permissionless registry contract that exists outside of any protocols (i.e., outside of Puffer or EigenLayer). To prevent fragmentation, the UniFi AVS registry contract will look to this registry as a primary source when validators register. Once the neutral registry contract is available, an additional check can be added.
-
-The validator registration process consists of the following steps:
-
-1. **Key Generation**: The validator generates an ECDSA key pair for signing pre-confirmations.
-
-2. **Message Creation**: The validator creates a message containing:
-   - The validator's public key (BLS)
-   - The ECDSA public key to which pre-conf rights are being delegated
-   - A nonce or timestamp to prevent replay attacks
-
-3. **Message Signing**: The validator signs this message using their BLS private key.
-
-4. **Registration Submission**: The signed message is submitted to the `UnifiValidatorManager` contract.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Operator
-    participant UnifiValidatorManager
-    participant NeutralRegistry
-    participant EigenPodManager
-    participant EigenPod
-
-    Operator->>Operator: Generate ECDSA key pair
-    Operator->>Operator: Create delegation message
-    Operator->>Operator: Sign message with BLS private key
-    Operator->>UnifiValidatorManager: registerValidator(podOwner, validatorPubKey, blsPubKey, ecdsaPubKey, nonce, signature)
-    UnifiValidatorManager->>NeutralRegistry: validatorRegistered(validatorPubKey)
-    UnifiValidatorManager->>EigenPodManager: getPod(podOwner)
-    EigenPodManager-->>UnifiValidatorManager: Return EigenPod
-    UnifiValidatorManager->>EigenPod: activeValidatorCount()
-    EigenPod-->>UnifiValidatorManager: Return active validator count
-    UnifiValidatorManager->>EigenPod: validatorStatus(validatorPubKey)
-    EigenPod-->>UnifiValidatorManager: Return validator status
-    UnifiValidatorManager->>UnifiValidatorManager: Verify BLS signature
-    UnifiValidatorManager-->>Operator: Validator registered
-```
-
-The on-chain registration process ensures that only the rightful owner of the `EigenPod` and therefore the validator can delegate pre-confirmation rights. The `registerValidator` function in the `UnifiValidatorManager` contract performs several checks:
-
-1. Verifies that the validator is registered in the neutral registry.
-2. Confirms that the validator exists in EigenLayer and is active.
-3. Validates the BLS signature to ensure the delegation is authorized.
-
-This process allows for a secure and verifiable registration of validators, maintaining the integrity of the UniFi AVS pre-confirmation system.
-
+After this check, the Operator can proceed to register the individual validators that will engage in pre-confs. 
