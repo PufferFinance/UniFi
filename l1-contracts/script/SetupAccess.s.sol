@@ -2,25 +2,29 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Script.sol";
-import {console} from "forge-std/console.sol";
-import {BaseScript} from "script/BaseScript.s.sol";
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
-import {UniFiAVSManager} from "../src/UniFiAVSManager.sol";
-import {GenerateAccessManagerCallData} from "../script/GenerateAccessManagerCallData.sol";
-import {AVSDeployment} from "script/DeploymentStructs.sol";
+import { console } from "forge-std/console.sol";
+import { BaseScript } from "script/BaseScript.s.sol";
+import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
+import { UniFiAVSManager } from "../src/UniFiAVSManager.sol";
+import { GenerateAccessManagerCallData } from "../script/GenerateAccessManagerCallData.sol";
+import { AVSDeployment } from "script/DeploymentStructs.sol";
 
-import {ROLE_ID_OPERATIONS_MULTISIG, ROLE_ID_OPERATIONS_PAYMASTER, ROLE_ID_PUFFER_PROTOCOL, ROLE_ID_DAO, ROLE_ID_OPERATIONS_COORDINATOR, ROLE_ID_VT_PRICER} from "../script/Roles.sol";
+import {
+    ROLE_ID_OPERATIONS_MULTISIG,
+    ROLE_ID_OPERATIONS_PAYMASTER,
+    ROLE_ID_PUFFER_PROTOCOL,
+    ROLE_ID_DAO,
+    ROLE_ID_OPERATIONS_COORDINATOR,
+    ROLE_ID_VT_PRICER
+} from "../script/Roles.sol";
 
 contract SetupAccess is BaseScript {
     AccessManager internal accessManager;
 
     AVSDeployment internal avsDeployment;
 
-    function run(
-        AVSDeployment memory deployment,
-        address DAO
-    ) external broadcast {
+    function run(AVSDeployment memory deployment, address DAO) external broadcast {
         avsDeployment = deployment;
         accessManager = AccessManager(payable(deployment.accessManager));
 
@@ -32,21 +36,16 @@ contract SetupAccess is BaseScript {
             roleLabels: _labelRoles()
         });
 
-        bytes memory multicallData = abi.encodeCall(
-            Multicall.multicall,
-            (calldatas)
-        );
+        bytes memory multicallData = abi.encodeCall(Multicall.multicall, (calldatas));
         // console.logBytes(multicallData);
-        (bool s, ) = address(accessManager).call(multicallData);
+        (bool s,) = address(accessManager).call(multicallData);
         require(s, "failed setupAccess GenerateAccessManagerCallData 1");
 
         // This will be executed by the operations multisig on mainnet
-        bytes memory cd = new GenerateAccessManagerCallData().run(
-            deployment.avsManagerProxy
-        );
+        bytes memory cd = new GenerateAccessManagerCallData().run(deployment.avsManagerProxy);
         // console.logBytes(cd);
 
-        (s, ) = address(accessManager).call(cd);
+        (s,) = address(accessManager).call(cd);
         require(s, "failed setupAccess GenerateAccessManagerCallData");
     }
 
@@ -72,12 +71,7 @@ contract SetupAccess is BaseScript {
     function _grantRoles(address DAO) internal view returns (bytes[] memory) {
         bytes[] memory calldatas = new bytes[](1);
 
-        calldatas[0] = abi.encodeWithSelector(
-            AccessManager.grantRole.selector,
-            ROLE_ID_DAO,
-            DAO,
-            0
-        );
+        calldatas[0] = abi.encodeWithSelector(AccessManager.grantRole.selector, ROLE_ID_DAO, DAO, 0);
 
         return calldatas;
     }
@@ -85,20 +79,12 @@ contract SetupAccess is BaseScript {
     function _labelRoles() internal pure returns (bytes[] memory) {
         bytes[] memory calldatas = new bytes[](1);
 
-        calldatas[0] = abi.encodeWithSelector(
-            AccessManager.labelRole.selector,
-            ROLE_ID_DAO,
-            "Puffer DAO"
-        );
+        calldatas[0] = abi.encodeWithSelector(AccessManager.labelRole.selector, ROLE_ID_DAO, "Puffer DAO");
 
         return calldatas;
     }
 
-    function _setupUniFiAVSManagerRoles()
-        internal
-        view
-        returns (bytes[] memory)
-    {
+    function _setupUniFiAVSManagerRoles() internal view returns (bytes[] memory) {
         bytes[] memory calldatas = new bytes[](2);
 
         bytes4[] memory daoSelectors = new bytes4[](0);
@@ -106,7 +92,7 @@ contract SetupAccess is BaseScript {
 
         calldatas[0] = abi.encodeWithSelector(
             AccessManager.setTargetFunctionRole.selector,
-        address(avsDeployment.avsManagerProxy),
+            address(avsDeployment.avsManagerProxy),
             daoSelectors,
             ROLE_ID_DAO
         );
@@ -124,11 +110,7 @@ contract SetupAccess is BaseScript {
         return calldatas;
     }
 
-    function _setupUniFiAVSManagerAccess()
-        internal
-        view
-        returns (bytes[] memory)
-    {
+    function _setupUniFiAVSManagerAccess() internal view returns (bytes[] memory) {
         bytes[] memory calldatas = new bytes[](3);
 
         // Dao selectors
@@ -136,10 +118,7 @@ contract SetupAccess is BaseScript {
         // daoSelectors[0] = UniFiAVSManager.TODO.selector;
 
         calldatas[0] = abi.encodeWithSelector(
-            AccessManager.setTargetFunctionRole.selector,
-            avsDeployment.avsManagerProxy,
-            daoSelectors,
-            ROLE_ID_DAO
+            AccessManager.setTargetFunctionRole.selector, avsDeployment.avsManagerProxy, daoSelectors, ROLE_ID_DAO
         );
 
         // Operations selectors

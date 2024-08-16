@@ -11,23 +11,19 @@ import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy
 contract DeployUniFiAVSManager is BaseScript {
     UniFiAVSManager public uniFiAVSManagerProxy;
 
-    function run(
-        address accessManager,
-        address eigenPodManager,
-        address eigenDelegationManager,
-        address avsDirectory
-    ) public broadcast returns (address, address) {
+    function run(address accessManager, address eigenPodManager, address eigenDelegationManager, address avsDirectory)
+        public
+        broadcast
+        returns (address, address)
+    {
         UniFiAVSManager uniFiAVSManagerImplementation = new UniFiAVSManager(
-            IEigenPodManager(eigenPodManager),
-            IDelegationManager(eigenDelegationManager),
-            IAVSDirectory(avsDirectory)
+            IEigenPodManager(eigenPodManager), IDelegationManager(eigenDelegationManager), IAVSDirectory(avsDirectory)
         );
 
         uniFiAVSManagerProxy = UniFiAVSManager(
             address(
                 new ERC1967Proxy{ salt: bytes32("UniFiAVSManager") }(
-                    address(uniFiAVSManagerImplementation),
-                    abi.encodeCall(UniFiAVSManager.initialize, (accessManager))
+                    address(uniFiAVSManagerImplementation), abi.encodeCall(UniFiAVSManager.initialize, (accessManager))
                 )
             )
         );

@@ -14,7 +14,6 @@ import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessMana
 import "forge-std/console.sol";
 
 contract UnitTestHelper is Test, BaseScript {
-
     address public constant ADDRESS_ZERO = address(0);
     address public constant ADDRESS_ONE = address(1);
     address public constant ADDRESS_CHEATS = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D;
@@ -85,5 +84,4 @@ contract UnitTestHelper is Test, BaseScript {
         timelock = avsDeployment.timelock;
         avsManager = UniFiAVSManager(avsDeployment.avsManagerProxy);
     }
-
 }

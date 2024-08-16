@@ -6,7 +6,6 @@ import "../src/UniFiAVSManager.sol";
 import "../src/interfaces/IUniFiAVSManager.sol";
 import "../src/structs/ValidatorData.sol";
 import "../src/structs/OperatorData.sol";
-import "../src/structs/ValidatorDataExtended.sol";
 import "./mocks/MockEigenPodManager.sol";
 import "./mocks/MockDelegationManager.sol";
 import "./mocks/MockAVSDirectory.sol";
@@ -114,7 +113,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _registerOperator();
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
 
-        OperatorData memory operatorData = avsManager.getOperator(operator);
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.delegateKey, delegatePubKey);
     }
 
@@ -166,7 +165,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
-        OperatorData memory operatorData = avsManager.getOperator(operator);
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 2);
         assertEq(operatorData.delegateKey, delegatePubKey);
 
@@ -253,7 +252,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
-        OperatorData memory operatorData = avsManager.getOperator(operator);
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 2);
 
         vm.prank(operator);
@@ -266,15 +265,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
             assertFalse(validatorData.isRegistered);
         }
-    }
-
-    function testDeregisterValidators_OperatorNotRegistered() public {
-        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
-        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
-
-        vm.prank(operator);
-        vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-        avsManager.deregisterValidators(blsPubKeyHashes);
     }
 
     function testDeregisterValidators_ValidatorNotFound() public {
@@ -319,8 +309,36 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.deregisterValidators(blsPubKeyHashes);
 
         // Verify that the validators are still registered to the first operator
-        OperatorData memory operatorData = avsManager.getOperator(operator);
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 1);
+    }
+
+    function testDeregisterValidators_NotActiveValidator() public {
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+
+        // Setup and register the first operator
+        _setupOperator();
+        _registerOperator();
+        _setupValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+        mockEigenPodManager.setValidatorStatus(podOwner, blsPubKeyHashes[0], IEigenPod.VALIDATOR_STATUS.WITHDRAWN);
+
+        // Setup and register a radnom address
+        address randomAddress = address(0x456);
+
+        vm.prank(randomAddress);
+        avsManager.deregisterValidators(blsPubKeyHashes);
+
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 0);
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
+            assertFalse(validatorData.isRegistered);
+        }
     }
 
     function testDeregisterOperator() public {
@@ -427,7 +445,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.setOperatorDelegateKey(newDelegateKey);
 
-        OperatorData memory operatorData = avsManager.getOperator(operator);
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.delegateKey, newDelegateKey, "Delegate key should be updated");
     }
 

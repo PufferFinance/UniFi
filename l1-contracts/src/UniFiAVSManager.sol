@@ -17,7 +17,6 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
-import "./structs/ValidatorDataExtended.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -126,32 +125,30 @@ contract UniFiAVSManager is
 
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        OperatorData storage operator = $.operators[msg.sender];
-
-        if (
-            AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
-                == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
-        ) {
-            revert OperatorNotRegistered();
-        }
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
             ValidatorData memory validator = $.validators[blsPubKeyHash];
+            OperatorData storage operator = $.operators[validator.operator];
 
             if (validator.index == 0) {
                 revert ValidatorNotFound();
             }
 
             if (validator.operator != msg.sender) {
-                revert NotValidatorOperator();
+                // eject if no longer active
+                IEigenPod eigenPod = IEigenPod(validator.eigenPod);
+                IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHashes[i]);
+                if (validatorInfo.status == IEigenPod.VALIDATOR_STATUS.ACTIVE) {
+                    revert NotValidatorOperator();
+                }
             }
 
             delete $.validatorIndexes[validator.index];
             delete $.validators[blsPubKeyHash];
             operator.validatorCount--;
 
-            emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), msg.sender);
+            emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
         }
     }
 
@@ -178,9 +175,15 @@ contract UniFiAVSManager is
         emit OperatorDeregistered(msg.sender);
     }
 
-    function getOperator(address operator) external view returns (OperatorData memory) {
+    function getOperator(address operator) external view returns (OperatorDataExtended memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        return $.operators[operator];
+
+        return OperatorDataExtended({
+            validatorCount: $.operators[operator].validatorCount,
+            delegateKey: $.operators[operator].delegateKey,
+            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
+                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
+        });
     }
 
     function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorDataExtended memory) {

@@ -6,7 +6,6 @@ import { IBLSApkRegistry } from "eigenlayer-middleware/interfaces/IRegistryCoord
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
 import "../structs/ValidatorData.sol";
 import "../structs/OperatorData.sol";
-import "../structs/ValidatorDataExtended.sol";
 
 /**
  * @title IUniFiAVSManager
@@ -160,9 +159,9 @@ interface IUniFiAVSManager {
     /**
      * @notice Retrieves information about a specific operator.
      * @param operator The address of the operator.
-     * @return OperatorData struct containing information about the operator.
+     * @return OperatorDataExtended struct containing information about the operator.
      */
-    function getOperator(address operator) external view returns (OperatorData memory);
+    function getOperator(address operator) external view returns (OperatorDataExtended memory);
 
     /**
      * @notice Retrieves information about a validator using its BLS public key hash.
