@@ -101,3 +101,44 @@ This modifier ensures that:
 By delegating to the `Operator`, the `podOwner` is effectively giving permission for the `Operator` to set the delegate key. Since this key is used by the validator or in conjunction with their operations, it implies that the operator has some level of control over the validators in the EigenPod. This relationship underscores the importance of trust between the podOwner and the Operator.
 
 After this check, the Operator can proceed to register the individual validators that will engage in pre-confs. 
+
+The process for registering validators is illustrated in the following sequence diagram:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Operator
+    participant UniFiAVSManager
+    participant EigenPod
+    participant AVSDirectory
+
+    Operator->>UniFiAVSManager: registerValidators(podOwner, blsPubKeyHashes[])
+    UniFiAVSManager->>AVSDirectory: Check operator registration
+    UniFiAVSManager->>UniFiAVSManager: Check delegate key is set
+    loop For each blsPubKeyHash
+        UniFiAVSManager->>EigenPod: Get validator info
+        EigenPod-->>UniFiAVSManager: Return validator info
+        UniFiAVSManager->>UniFiAVSManager: Check validator is active
+        UniFiAVSManager->>UniFiAVSManager: Check validator not already registered
+        UniFiAVSManager->>UniFiAVSManager: Register validator
+    end
+    UniFiAVSManager-->>Operator: Validators registered
+```
+
+### Validator Registration Process Explanation
+
+1. The `Operator` calls `registerValidators()` on the `UniFiAVSManager`, providing the `podOwner` address and an array of BLS public key hashes for the validators to be registered.
+
+2. The `UniFiAVSManager` checks if the operator is registered with the AVS using the `AVSDirectory`.
+
+3. The `UniFiAVSManager` verifies that the operator has set a delegate key.
+
+4. For each BLS public key hash in the provided array:
+   a. The `UniFiAVSManager` retrieves the validator information from the `EigenPod`.
+   b. It checks if the validator is active in the EigenPod.
+   c. It verifies that the validator is not already registered in the UniFi AVS.
+   d. If all checks pass, it registers the validator, associating it with the operator and storing relevant information.
+
+5. Once all validators are processed, the `UniFiAVSManager` confirms to the `Operator` that the validators have been registered.
+
+This process ensures that only active, unregistered validators associated with the operator's EigenPod can be registered with the UniFi AVS. It maintains the integrity of the validator set and prevents duplicate registrations.
