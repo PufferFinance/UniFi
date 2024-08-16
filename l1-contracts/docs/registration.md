@@ -67,10 +67,10 @@ An important design decision is to use a single delegate key that applies to all
 **Advantages:**
 - Significantly reduced gas costs for registration
 - Lower storage costs on-chain
-- Reduced complexity in key management and verification processes
+- Reduced complexity in key management
 
 **Limitation:**
 - Only one entity can be delegated to at once for all of an Operator's validators
 
-This design choice prioritizes efficiency and simplicity, which are crucial for a system that needs to operate at Ethereum's scale. While it limits the granularity of delegation, it provides a streamlined experience for most operators who manage their own validators or delegate to a single entity.
+This design choice prioritizes efficiency and simplicity. While it limits the granularity of delegation, it provides a streamlined experience for what will likely be the common case: delegating to a single Gateway.
 
