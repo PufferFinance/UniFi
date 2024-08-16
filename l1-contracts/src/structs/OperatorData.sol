@@ -10,7 +10,7 @@ struct OperatorData {
     /// @notice A boolean indicating whether the operator is currently registered.
     bool registered;
     /// @notice The number of validators associated with this operator.
-    uint256 validatorCount;
+    uint128 validatorCount;
     /// @notice The delegate key for the operator.
     bytes delegateKey;
 }

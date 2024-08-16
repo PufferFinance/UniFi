@@ -10,9 +10,7 @@ struct ValidatorData {
     /// @notice The address of the EigenPod associated with this validator.
     address eigenPod;
     /// @notice The beacon chain validator index.
-    uint64 validatorIndex;
+    uint64 index;
     /// @notice The address of the operator managing this validator.
     address operator;
-    /// @notice A boolean indicating whether the validator is currently registered.
-    bool registered;
 }

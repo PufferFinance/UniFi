@@ -9,17 +9,17 @@ import "eigenlayer/interfaces/IEigenPod.sol";
  * @notice Struct to store comprehensive information about a validator before conferring.
  * @dev This struct combines ValidatorData with additional status information.
  */
-struct PreConferInfo {
-    /// @notice The core data of the validator.
-    ValidatorData data;
+struct ValidatorDataExtended {
+    address eigenPod;
     /// @notice The index of the validator in the beacon chain.
     uint64 validatorIndex;
     /// @notice The current status of the validator in the EigenPod.
     IEigenPod.VALIDATOR_STATUS status;
     /// @notice Indicates whether the validator's EigenPod is delegated to the operator.
+    bool isRegistered;
     bool backedByStake;
-    /// @notice The delegate key associated with the validator's operator.
-    bytes delegateKey;
     /// @notice The address of the operator managing this validator.
     address operator;
+    /// @notice The delegate key associated with the validator's operator.
+    bytes delegateKey;
 }
