@@ -1,6 +1,6 @@
-# UniFi AVS Registration Documentation
+# UniFi AVS Documentation
 
-This directory contains documentation related to the registration process for the UniFi AVS.
+This directory contains documentation related to the UniFi AVS (Autonomous Validation Service).
 
 ## Table of Contents
 1. [AVS Overview](overview.md)
@@ -8,3 +8,5 @@ This directory contains documentation related to the registration process for th
    - Operator Registration
    - Delegate Key Registration
    - Validator Registration
+3. [Slashing Mechanism](slashing.md)
+4. [Rewards Distribution](rewards.md)
