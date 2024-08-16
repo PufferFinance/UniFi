@@ -74,3 +74,52 @@ An important design decision is to use a single delegate key that applies to all
 
 This design choice prioritizes efficiency and simplicity. While it limits the granularity of delegation, it provides a streamlined experience for what will likely be the common case: delegating to a single Gateway.
 
+### Validator Registration
+
+After the initial operator registration and delegate key registration, the next step is to register individual validators. This process allows the UniFi AVS to maintain a mapping between validators and their authorized pre-confirmation signing keys, ensuring that only legitimate validators can participate in the pre-confirmation process.
+
+The validator registration process consists of the following steps:
+
+1. **Key Generation**: The validator generates an ECDSA key pair for signing pre-confirmations.
+
+2. **Message Creation**: The validator creates a message containing:
+   - The validator's public key (BLS)
+   - The ECDSA public key to which pre-conf rights are being delegated
+   - A nonce or timestamp to prevent replay attacks
+
+3. **Message Signing**: The validator signs this message using their BLS private key.
+
+4. **Registration Submission**: The signed message is submitted to the `UnifiValidatorManager` contract.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Operator
+    participant UnifiValidatorManager
+    participant NeutralRegistry
+    participant EigenPodManager
+    participant EigenPod
+
+    Operator->>Operator: Generate ECDSA key pair
+    Operator->>Operator: Create delegation message
+    Operator->>Operator: Sign message with BLS private key
+    Operator->>UnifiValidatorManager: registerValidator(podOwner, validatorPubKey, blsPubKey, ecdsaPubKey, nonce, signature)
+    UnifiValidatorManager->>NeutralRegistry: validatorRegistered(validatorPubKey)
+    UnifiValidatorManager->>EigenPodManager: getPod(podOwner)
+    EigenPodManager-->>UnifiValidatorManager: Return EigenPod
+    UnifiValidatorManager->>EigenPod: activeValidatorCount()
+    EigenPod-->>UnifiValidatorManager: Return active validator count
+    UnifiValidatorManager->>EigenPod: validatorStatus(validatorPubKey)
+    EigenPod-->>UnifiValidatorManager: Return validator status
+    UnifiValidatorManager->>UnifiValidatorManager: Verify BLS signature
+    UnifiValidatorManager-->>Operator: Validator registered
+```
+
+The on-chain registration process ensures that only the rightful owner of the `EigenPod` and therefore the validator can delegate pre-confirmation rights. The `registerValidator` function in the `UnifiValidatorManager` contract performs several checks:
+
+1. Verifies that the validator is registered in the neutral registry.
+2. Confirms that the validator exists in EigenLayer and is active.
+3. Validates the BLS signature to ensure the delegation is authorized.
+
+This process allows for a secure and verifiable registration of validators, maintaining the integrity of the UniFi AVS pre-confirmation system.
+
