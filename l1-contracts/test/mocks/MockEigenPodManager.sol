@@ -28,6 +28,11 @@ contract MockEigenPodManager {
         pods[podOwner].setValidatorStatus(pubkeyHash, status);
     }
 
+    function setValidator(address podOwner, bytes32 pubkeyHash, IEigenPod.ValidatorInfo calldata validator) external {
+        require(address(pods[podOwner]) != address(0), "Pod does not exist");
+        pods[podOwner].setValidator(pubkeyHash, validator);
+    }
+
     // Remove the setPod function as it's no longer needed
 
     // Implement other functions from IEigenPodManager as needed for testing

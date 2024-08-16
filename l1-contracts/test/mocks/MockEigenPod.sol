@@ -4,16 +4,25 @@ pragma solidity >=0.8.0 <0.9.0;
 import "eigenlayer/interfaces/IEigenPod.sol";
 
 contract MockEigenPod is IEigenPod {
-    mapping(bytes32 => VALIDATOR_STATUS) public validatorStatuses;
     mapping(bytes32 => mapping(uint64 => bool)) public provenWithdrawals;
+    mapping(bytes32 => ValidatorInfo) public validators;
     address owner;
 
+    function setValidator(bytes32 pubkeyHash, ValidatorInfo calldata validator) external {
+        validators[pubkeyHash].validatorIndex = validator.validatorIndex;
+        validators[pubkeyHash].restakedBalanceGwei = validator.restakedBalanceGwei;
+        validators[pubkeyHash].mostRecentBalanceUpdateTimestamp = validator.mostRecentBalanceUpdateTimestamp;
+        validators[pubkeyHash].status = validator.status;
+    }
+
     function setValidatorStatus(bytes32 pubkeyHash, VALIDATOR_STATUS status) external {
-        validatorStatuses[pubkeyHash] = status;
+        validators[pubkeyHash].validatorIndex =
+            validators[pubkeyHash].validatorIndex == 0 ? 1 : validators[pubkeyHash].validatorIndex;
+        validators[pubkeyHash].status = status;
     }
 
     function validatorStatus(bytes32 pubkeyHash) external view returns (VALIDATOR_STATUS) {
-        return validatorStatuses[pubkeyHash];
+        return validators[pubkeyHash].status;
     }
 
     constructor(address _owner) {
@@ -57,7 +66,7 @@ contract MockEigenPod is IEigenPod {
     function stake(bytes calldata, bytes calldata, bytes32) external payable { }
 
     function validatorPubkeyHashToInfo(bytes32 pubkeyHash) external view returns (ValidatorInfo memory) {
-        return ValidatorInfo(1, 0, 0, validatorStatuses[pubkeyHash]);
+        return validators[pubkeyHash];
     }
 
     function validatorPubkeyToInfo(bytes calldata) external pure returns (ValidatorInfo memory) {

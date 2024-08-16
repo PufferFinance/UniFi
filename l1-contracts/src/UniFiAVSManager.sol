@@ -61,8 +61,6 @@ contract UniFiAVSManager is
     }
 
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
