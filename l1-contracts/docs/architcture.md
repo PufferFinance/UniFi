@@ -7,39 +7,81 @@ The following diagram highlights how these components interact with each other:
 
 ## Preconf Flow
 
-The preconfirmation (preconf) flow in UniFi AVS involves several steps and interactions between different components of the system. The following sequence diagram illustrates this process:
+The preconf flow in UniFi AVS involves several steps and interactions between different components of the system. The following sequence diagram illustrates this process:
 
-![Preconf Flow Sequence Diagram](images/preconf-flow-sequence.mermaid)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Users
+    participant O as Operator
+    participant UAM as UniFiAVSManager
+    participant G as Gateway
+    participant BN as Beacon Node
+    participant CB as Commit-Boost
+    participant RM as RewardsManager
+    participant L1 as Ethereum L1
+
+    O->>UAM: Set delegate key to Gateway
+    G->>BN: Query lookahead window
+    BN-->>G: Return upcoming proposer indices
+    loop For each validator
+        G->>UAM: getValidator(validatorIndex)
+        UAM-->>G: Validator registration status
+    end
+    Note over G: confirm Gateway is delegated to
+    U->>G: Send transactions to preconf RPC / router
+    G-->>U: Return Gateway-signed pre-confs
+    CB->>CB: wait for slot...
+    CB->>G: Request L1 block
+    G-->>CB: Provide L1 block
+    CB->>L1: Propose L1 block
+    L1->>G: gateway fee
+    O->>RM: Claim AVS rewards
+```
 
 Here's a detailed description of the preconf flow:
 
-1. **Delegate Key Setup**: 
+0. **Registration (Not Shown)**: 
+    - The `Operator` is assumed to already be [registered](registration.md#operator-registration-process) to the UniFi AVS.
+
+1) **Delegate Key Setup**: 
    - The operator sets their delegate key to point to a Gateway. This allows the Gateway to act on behalf of the operator for preconfirmation duties.
 
-2. **Lookahead Window Query**:
-   - The Gateway queries their associated BeaconNode to check the lookahead window.
-   - The BeaconNode returns the validator indices of the upcoming proposers.
+2. **Lookahead Window Request**:
+   - The Gateway queries their Beacon node to check the lookahead window 
+   
+3. **Lookahead Window Response**:
+    - The Gateway learns the validator indices of the upcoming proposers.
 
-3. **Validator Registration Check**:
+4. **getValidator call**:
    - For each validator index received, the Gateway queries the UniFiAVSManager contract using the `getValidator` function.
-   - This check confirms if the validators are registered to the AVS and if they have delegated to the Gateway.
 
-4. **Preconf Processing**:
-   - If the validators are registered and delegated, the Gateway starts receiving preconf transactions.
-   - The Gateway signs preconfs with their delegate key.
+5. **getValidator response**:
+   - The contract returns information if the validator is registered on the AVS. The Gateway can confirm that the validator has delegated to them via the `delegateKey` field.
 
-5. **Block Proposal**:
-   - When it's time to propose a block, the user (via Commit-Boost) requests the final L1 from the Gateway.
-   - The Gateway provides the final L1 to Commit-Boost.
-   - Commit-Boost uses this information to help the operator propose the block.
+6. **User Transactions**:
+   - Users can begin sending transactions to the Gateway via the Gateway's RPC or a Router. 
+   
+7. **Gateway Response**:
+   - The Gateway signs preconfs with their delegate key and returns the signatures to the Users.
 
-6. **Reward Distribution**:
-   - After the block is proposed, the block rewards are split:
-     - A portion is sent directly to the Gateway as compensation for their services.
-     - The rest is sent to the RewardsManager contract.
-   - The RewardsManager smooths out the rewards from multiple validators, ensuring a more consistent distribution over time.
+8. **Validator Operations**:
+    - The validator's Commit-Boost client will wait until the block proposal slot.
 
-This flow ensures that the preconfirmation process is efficient, secure, and properly incentivized. It leverages the strengths of different components in the UniFi AVS ecosystem, from the Gateway's ability to handle preconf duties to the RewardsManager's role in fair reward distribution.
+9. **L1 Block Request**:
+   - When it's time to propose a block, the validator (via Commit-Boost) requests the final L1 block from the Gateway.
+   
+10. **L1 Block Response**:
+   - The Gateway returns an L1 block containing the pre-conf'd transactions.
+
+11. **L1 Block Proposal**:
+   - The validator broadcasts the L1 block to the rest of the validators, adding it to the L1 state.
+
+12. **Gateway Reward**:
+    - A flat fee is awarded to the Gateway for their coordination services.
+
+13. **AVS Reward**:
+    - The rest of the block rewards are deposited into the `RewardsManager` contract. Here the RewardsManager smooths out the rewards from the participating validators, ensuring a more consistent distribution over time.
 
 ## Node Software
 The following diagram highlights system's main software components:
