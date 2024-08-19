@@ -7,6 +7,39 @@ The following diagram highlights how these components interact with each other:
 
 ## Preconf Flow
 
+The preconfirmation (preconf) flow in UniFi AVS involves several steps and interactions between different components of the system. The following sequence diagram illustrates this process:
+
+![Preconf Flow Sequence Diagram](images/preconf-flow-sequence.mermaid)
+
+Here's a detailed description of the preconf flow:
+
+1. **Delegate Key Setup**: 
+   - The operator sets their delegate key to point to a Gateway. This allows the Gateway to act on behalf of the operator for preconfirmation duties.
+
+2. **Lookahead Window Query**:
+   - The Gateway queries their associated BeaconNode to check the lookahead window.
+   - The BeaconNode returns the validator indices of the upcoming proposers.
+
+3. **Validator Registration Check**:
+   - For each validator index received, the Gateway queries the UniFiAVSManager contract using the `getValidator` function.
+   - This check confirms if the validators are registered to the AVS and if they have delegated to the Gateway.
+
+4. **Preconf Processing**:
+   - If the validators are registered and delegated, the Gateway starts receiving preconf transactions.
+   - The Gateway signs preconfs with their delegate key.
+
+5. **Block Proposal**:
+   - When it's time to propose a block, the user (via Commit-Boost) requests the final L1 from the Gateway.
+   - The Gateway provides the final L1 to Commit-Boost.
+   - Commit-Boost uses this information to help the operator propose the block.
+
+6. **Reward Distribution**:
+   - After the block is proposed, the block rewards are split:
+     - A portion is sent directly to the Gateway as compensation for their services.
+     - The rest is sent to the RewardsManager contract.
+   - The RewardsManager smooths out the rewards from multiple validators, ensuring a more consistent distribution over time.
+
+This flow ensures that the preconfirmation process is efficient, secure, and properly incentivized. It leverages the strengths of different components in the UniFi AVS ecosystem, from the Gateway's ability to handle preconf duties to the RewardsManager's role in fair reward distribution.
 
 ## Node Software
 The following diagram highlights system's main software components:
