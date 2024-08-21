@@ -143,15 +143,18 @@ contract UniFiAVSManager is
                 if (validatorInfo.status == IEigenPod.VALIDATOR_STATUS.ACTIVE) {
                     revert NotValidatorOperator();
                 }
+
+                // update the actual operator's validator count
+                $.operators[validator.operator].validatorCount -= 1;
+            } else {
+                $.operators[msg.sender].validatorCount -= 1;
             }
 
             delete $.validatorIndexes[validator.index];
             delete $.validators[blsPubKeyHash];
-            operator.validatorCount--;
 
             emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
         }
-
         $.operators[msg.sender].lastDeregisterBlock = block.number;
     }
 
