@@ -254,6 +254,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 2);
 
+        uint256 initialBlockNumber = block.number;
         vm.prank(operator);
         avsManager.deregisterValidators(blsPubKeyHashes);
 
@@ -262,8 +263,32 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.registeredUntil, block.number + DEREGISTRATION_DELAY);
+            assertEq(validatorData.registeredUntil, initialBlockNumber + DEREGISTRATION_DELAY);
             assertTrue(validatorData.registered);
+        }
+
+        // Advance block number to just before the deregistration delay
+        vm.roll(initialBlockNumber + DEREGISTRATION_DELAY - 1);
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
+            assertTrue(validatorData.registered);
+        }
+
+        // Advance block number to the deregistration delay
+        vm.roll(initialBlockNumber + DEREGISTRATION_DELAY);
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
+            assertFalse(validatorData.registered);
+        }
+
+        // Advance block number past the deregistration delay
+        vm.roll(initialBlockNumber + DEREGISTRATION_DELAY + 1);
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
+            assertFalse(validatorData.registered);
         }
     }
 
