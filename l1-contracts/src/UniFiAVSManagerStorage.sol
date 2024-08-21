@@ -2,12 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "./structs/ValidatorData.sol";
-
-struct OperatorData {
-    uint128 validatorCount;
-    bytes delegateKey;
-    uint256 lastDeregisterBlock;
-}
+import "./structs/OperatorData.sol";
 
 /**
  * @title UniFiAVSManagerStorage

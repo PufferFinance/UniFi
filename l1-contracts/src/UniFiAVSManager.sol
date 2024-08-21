@@ -16,6 +16,7 @@ import { BLSSignatureCheckerLib } from "./lib/BLSSignatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
+import "./structs/OperatorData.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -183,7 +184,8 @@ contract UniFiAVSManager is
         return OperatorDataExtended({
             validatorCount: $.operators[operator].validatorCount,
             delegateKey: $.operators[operator].delegateKey,
-            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
+            lastDeregisterBlock: $.operators[operator].lastDeregisterBlock,
+            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
         });
     }
