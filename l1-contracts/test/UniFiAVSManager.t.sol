@@ -262,7 +262,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.operator, address(0));
+            assertEq(validatorData.registeredUntil, block.number + DEREGISTRATION_DELAY);
+            assertTrue(validatorData.registered);
         }
     }
 
@@ -325,7 +326,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
         mockEigenPodManager.setValidatorStatus(podOwner, blsPubKeyHashes[0], IEigenPod.VALIDATOR_STATUS.WITHDRAWN);
 
-        // Setup and register a radnom address
+        // Setup and register a random address
         address randomAddress = address(0x456);
 
         vm.prank(randomAddress);
@@ -336,7 +337,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertTrue(validatorData.validatorIndex == 0);
+            assertEq(validatorData.registeredUntil, block.number + DEREGISTRATION_DELAY);
+            assertTrue(validatorData.registered);
         }
     }
 
@@ -476,9 +478,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.deregisterValidators(deregister1);
 
-        uint256 firstDeregisterBlock = block.number;
         OperatorDataExtended memory operatorData1 = avsManager.getOperator(operator);
-        assertEq(operatorData1.lastDeregisterBlock, firstDeregisterBlock, "lastDeregisterBlock should be updated after first deregistration");
+        assertEq(operatorData1.lastDeregisterBlock, initialBlock, "lastDeregisterBlock should be updated after first deregistration");
+        assertEq(operatorData1.validatorCount, 2, "validatorCount should be decremented after first deregistration");
 
         // Advance block number
         vm.roll(block.number + 10);
@@ -489,10 +491,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.deregisterValidators(deregister2);
 
-        uint256 secondDeregisterBlock = block.number;
         OperatorDataExtended memory operatorData2 = avsManager.getOperator(operator);
-        assertEq(operatorData2.lastDeregisterBlock, secondDeregisterBlock, "lastDeregisterBlock should be updated after second deregistration");
-        assertTrue(operatorData2.lastDeregisterBlock > operatorData1.lastDeregisterBlock, "Second deregister block should be greater than first");
+        assertEq(operatorData2.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated after second deregistration");
+        assertEq(operatorData2.lastDeregisterBlock, initialBlock + 10, "Second deregister block should be 10 blocks later");
+        assertEq(operatorData2.validatorCount, 1, "validatorCount should be decremented after second deregistration");
 
         // Advance block number
         vm.roll(block.number + 10);
@@ -503,10 +505,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.deregisterValidators(deregister3);
 
-        OperatorDataExtended memory finalOperatorData = avsManager.getOperator(operator);
-        assertEq(finalOperatorData.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated to latest block number");
-        assertTrue(finalOperatorData.lastDeregisterBlock > secondDeregisterBlock, "Final deregister block should be greater than second");
-        assertTrue(finalOperatorData.lastDeregisterBlock > initialBlock, "Final deregister block should be greater than initial block");
+        OperatorDataExtended memory operatorData3 = avsManager.getOperator(operator);
+        assertEq(operatorData3.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated after second deregistration");
+        assertEq(operatorData3.lastDeregisterBlock, initialBlock + 20, "Third deregister block should be 20 blocks later");
+        assertEq(operatorData3.validatorCount, 0, "validatorCount should be decremented after second deregistration");
     }
 
     function testGetValidator_BackedByStakeFalse() public {
