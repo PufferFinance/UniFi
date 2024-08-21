@@ -34,6 +34,8 @@ contract UniFiAVSManager is
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
         keccak256("BN254ValidatorRegistration(bytes delegatePubKey,bytes32 salt,uint256 expiry)");
 
+    mapping(address => uint256) public lastDeregisterBlock;
+
     modifier podIsDelegated(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
             revert NotOperator();
@@ -151,6 +153,8 @@ contract UniFiAVSManager is
 
             emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
         }
+
+        lastDeregisterBlock[msg.sender] = block.number;
     }
 
     function deregisterOperator() external {
