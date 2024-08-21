@@ -16,7 +16,6 @@ import { BLSSignatureCheckerLib } from "./lib/BLSSignatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
-import "./structs/OperatorData.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -152,7 +151,7 @@ contract UniFiAVSManager is
             emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
         }
 
-        operator.lastDeregisterBlock = block.number;
+        $.operators[msg.sender].lastDeregisterBlock = block.number;
     }
 
     function deregisterOperator() external {
