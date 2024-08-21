@@ -131,6 +131,7 @@ interface IUniFiAVSManager {
      * @param newDelegateKey The new delegate key for the operator.
      */
     event OperatorDelegateKeySet(address indexed operator, bytes newDelegateKey);
+    event DeregistrationDelaySet(uint64 newDelay);
 
     /**
      * @notice Registers a new operator in the UniFi AVS system.
