@@ -94,7 +94,8 @@ contract UniFiAVSManager is
 
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
 
-        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+        uint256 newValidatorCount = blsPubKeyHashes.length;
+        for (uint256 i = 0; i < newValidatorCount; i++) {
             bytes32 blsPubkeyHash = blsPubKeyHashes[i];
             IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubkeyHash);
 
@@ -115,12 +116,12 @@ contract UniFiAVSManager is
 
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
-            $.operators[msg.sender].validatorCount++;
-
             emit ValidatorRegistered(
                 podOwner, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
             );
         }
+        
+        $.operators[msg.sender].validatorCount += newValidatorCount;
     }
 
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
