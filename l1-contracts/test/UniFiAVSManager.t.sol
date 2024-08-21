@@ -456,37 +456,57 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _setupOperator();
         _registerOperator();
 
-        bytes32[] memory blsPubKeyHashes1 = new bytes32[](1);
-        blsPubKeyHashes1[0] = keccak256(abi.encodePacked("validator1"));
-        _setupValidators(blsPubKeyHashes1);
+        // Setup multiple validators
+        bytes32[] memory blsPubKeyHashes = new bytes32[](3);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+        blsPubKeyHashes[1] = keccak256(abi.encodePacked("validator2"));
+        blsPubKeyHashes[2] = keccak256(abi.encodePacked("validator3"));
+        _setupValidators(blsPubKeyHashes);
 
         vm.prank(operator);
-        avsManager.registerValidators(podOwner, blsPubKeyHashes1);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
-        // advance so test non-zero
+        // Advance block number
         vm.roll(100);
-        uint256 initBlock = block.number;
+        uint256 initialBlock = block.number;
 
+        // Deregister first validator
+        bytes32[] memory deregister1 = new bytes32[](1);
+        deregister1[0] = blsPubKeyHashes[0];
         vm.prank(operator);
-        avsManager.deregisterValidators(blsPubKeyHashes1);
+        avsManager.deregisterValidators(deregister1);
 
         uint256 firstDeregisterBlock = block.number;
+        OperatorDataExtended memory operatorData1 = avsManager.getOperator(operator);
+        assertEq(operatorData1.lastDeregisterBlock, firstDeregisterBlock, "lastDeregisterBlock should be updated after first deregistration");
 
-        bytes32[] memory blsPubKeyHashes2 = new bytes32[](1);
-        blsPubKeyHashes2[0] = keccak256(abi.encodePacked("validator2"));
-        _setupValidators(blsPubKeyHashes2);
+        // Advance block number
+        vm.roll(block.number + 10);
 
+        // Deregister second validator
+        bytes32[] memory deregister2 = new bytes32[](1);
+        deregister2[0] = blsPubKeyHashes[1];
         vm.prank(operator);
-        avsManager.registerValidators(podOwner, blsPubKeyHashes2);
+        avsManager.deregisterValidators(deregister2);
 
-        vm.roll(block.number + 1);
+        uint256 secondDeregisterBlock = block.number;
+        OperatorDataExtended memory operatorData2 = avsManager.getOperator(operator);
+        assertEq(operatorData2.lastDeregisterBlock, secondDeregisterBlock, "lastDeregisterBlock should be updated after second deregistration");
+        assertTrue(operatorData2.lastDeregisterBlock > operatorData1.lastDeregisterBlock, "Second deregister block should be greater than first");
 
+        // Advance block number
+        vm.roll(block.number + 10);
+
+        // Deregister third validator
+        bytes32[] memory deregister3 = new bytes32[](1);
+        deregister3[0] = blsPubKeyHashes[2];
         vm.prank(operator);
-        avsManager.deregisterValidators(blsPubKeyHashes2);
+        avsManager.deregisterValidators(deregister3);
 
         OperatorDataExtended memory finalOperatorData = avsManager.getOperator(operator);
         assertEq(finalOperatorData.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated to latest block number");
-        assertTrue(finalOperatorData.lastDeregisterBlock > firstDeregisterBlock, "lastDeregisterBlock should be greater than first deregister block");
+        assertTrue(finalOperatorData.lastDeregisterBlock > secondDeregisterBlock, "Final deregister block should be greater than second");
+        assertTrue(finalOperatorData.lastDeregisterBlock > initialBlock, "Final deregister block should be greater than initial block");
     }
 
     function testGetValidator_BackedByStakeFalse() public {
