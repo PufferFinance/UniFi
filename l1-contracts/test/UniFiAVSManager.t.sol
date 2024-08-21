@@ -413,6 +413,75 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
     }
 
+    function testLastDeregisterBlockUpdatesOnDeregister() public {
+        _setupOperator();
+        _registerOperator();
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+        _setupValidators(blsPubKeyHashes);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        OperatorDataExtended memory initialOperatorData = avsManager.getOperator(operator);
+        assertEq(initialOperatorData.lastDeregisterBlock, 0, "Initial lastDeregisterBlock should be 0");
+
+        vm.prank(operator);
+        avsManager.deregisterValidators(blsPubKeyHashes);
+
+        OperatorDataExtended memory updatedOperatorData = avsManager.getOperator(operator);
+        assertEq(updatedOperatorData.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated to current block number");
+    }
+
+    function testLastDeregisterBlockDoesNotUpdateOnOtherOperations() public {
+        _setupOperator();
+        _registerOperator();
+
+        OperatorDataExtended memory initialOperatorData = avsManager.getOperator(operator);
+        assertEq(initialOperatorData.lastDeregisterBlock, 0, "Initial lastDeregisterBlock should be 0");
+
+        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+        vm.prank(operator);
+        avsManager.setOperatorDelegateKey(newDelegateKey);
+
+        OperatorDataExtended memory updatedOperatorData = avsManager.getOperator(operator);
+        assertEq(updatedOperatorData.lastDeregisterBlock, 0, "lastDeregisterBlock should not change for other operations");
+    }
+
+    function testLastDeregisterBlockUpdatesOnMultipleDeregistrations() public {
+        _setupOperator();
+        _registerOperator();
+
+        bytes32[] memory blsPubKeyHashes1 = new bytes32[](1);
+        blsPubKeyHashes1[0] = keccak256(abi.encodePacked("validator1"));
+        _setupValidators(blsPubKeyHashes1);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes1);
+
+        vm.prank(operator);
+        avsManager.deregisterValidators(blsPubKeyHashes1);
+
+        uint256 firstDeregisterBlock = block.number;
+
+        bytes32[] memory blsPubKeyHashes2 = new bytes32[](1);
+        blsPubKeyHashes2[0] = keccak256(abi.encodePacked("validator2"));
+        _setupValidators(blsPubKeyHashes2);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes2);
+
+        vm.roll(block.number + 1);
+
+        vm.prank(operator);
+        avsManager.deregisterValidators(blsPubKeyHashes2);
+
+        OperatorDataExtended memory finalOperatorData = avsManager.getOperator(operator);
+        assertEq(finalOperatorData.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated to latest block number");
+        assertTrue(finalOperatorData.lastDeregisterBlock > firstDeregisterBlock, "lastDeregisterBlock should be greater than first deregister block");
+    }
+
     function testGetValidator_BackedByStakeFalse() public {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
