@@ -427,11 +427,12 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         OperatorDataExtended memory initialOperatorData = avsManager.getOperator(operator);
         assertEq(initialOperatorData.lastDeregisterBlock, 0, "Initial lastDeregisterBlock should be 0");
 
+        vm.roll(20);
         vm.prank(operator);
         avsManager.deregisterValidators(blsPubKeyHashes);
 
         OperatorDataExtended memory updatedOperatorData = avsManager.getOperator(operator);
-        assertEq(updatedOperatorData.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated to current block number");
+        assertEq(updatedOperatorData.lastDeregisterBlock, 20, "lastDeregisterBlock should be updated to current block number");
     }
 
     function testLastDeregisterBlockDoesNotUpdateOnOtherOperations() public {
@@ -440,6 +441,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         OperatorDataExtended memory initialOperatorData = avsManager.getOperator(operator);
         assertEq(initialOperatorData.lastDeregisterBlock, 0, "Initial lastDeregisterBlock should be 0");
+
+        vm.roll(20);
 
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
         vm.prank(operator);
@@ -459,6 +462,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes1);
+
+        // advance so test non-zero
+        vm.roll(100);
+        uint256 initBlock = block.number;
 
         vm.prank(operator);
         avsManager.deregisterValidators(blsPubKeyHashes1);
