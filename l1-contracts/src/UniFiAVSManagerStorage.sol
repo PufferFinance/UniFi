@@ -15,6 +15,7 @@ abstract contract UniFiAVSManagerStorage {
         mapping(uint256 => bytes32) validatorIndexes;
         mapping(address => OperatorData) operators; // operator => OperatorData
         mapping(bytes32 => bool) operatorSalts;
+        uint64 deregistrationDelay;
     }
 
     /**

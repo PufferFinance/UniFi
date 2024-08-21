@@ -111,7 +111,8 @@ contract UniFiAVSManager is
             $.validators[blsPubkeyHash] = ValidatorData({
                 eigenPod: address(eigenPod),
                 index: validatorInfo.validatorIndex,
-                operator: msg.sender
+                operator: msg.sender,
+                registeredUntil: type(uint64).max
             });
 
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
@@ -120,7 +121,7 @@ contract UniFiAVSManager is
                 podOwner, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
             );
         }
-        
+    
         $.operators[msg.sender].validatorCount += uint128(newValidatorCount);
     }
 
@@ -129,7 +130,7 @@ contract UniFiAVSManager is
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
-            ValidatorData memory validator = $.validators[blsPubKeyHash];
+            ValidatorData storage validator = $.validators[blsPubKeyHash];
             OperatorData storage operator = $.operators[validator.operator];
 
             if (validator.index == 0) {
@@ -150,8 +151,7 @@ contract UniFiAVSManager is
                 $.operators[msg.sender].validatorCount -= 1;
             }
 
-            delete $.validatorIndexes[validator.index];
-            delete $.validators[blsPubKeyHash];
+            validator.registeredUntil = uint64(block.number) + $.deregistrationDelay;
 
             emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
         }
