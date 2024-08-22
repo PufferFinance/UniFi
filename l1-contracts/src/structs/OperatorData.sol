@@ -11,8 +11,8 @@ struct OperatorData {
     uint128 validatorCount;
     /// @notice The delegate key for the operator.
     bytes delegateKey;
-    /// @notice The last block number when the operator deregistered validators.
-    uint256 lastDeregisterBlock;
+    /// @notice The block number when the operator started the deregistration process.
+    uint256 startOperatorDeregisterBlock;
 }
 
 /**

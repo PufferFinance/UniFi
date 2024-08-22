@@ -47,6 +47,8 @@ interface IUniFiAVSManager {
      * @notice Thrown when trying to finish deregistering an operator before the deregistration delay has elapsed.
      */
     error DeregistrationDelayNotElapsed();
+    error DeregistrationAlreadyStarted();
+    error DeregistrationNotStarted();
 
     /**
      * @notice Thrown when an address is not delegated to the expected operator.

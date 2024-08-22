@@ -174,7 +174,11 @@ contract UniFiAVSManager is
             revert OperatorHasValidators();
         }
 
-        operator.lastDeregisterBlock = block.number;
+        if (operator.startOperatorDeregisterBlock != 0) {
+            revert DeregistrationAlreadyStarted();
+        }
+
+        operator.startOperatorDeregisterBlock = block.number;
 
         emit OperatorDeregisterStarted(msg.sender);
     }
@@ -191,7 +195,11 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
-        if (operator.validatorCount > 0 && block.number < operator.lastDeregisterBlock + $.deregistrationDelay) {
+        if (operator.startOperatorDeregisterBlock == 0) {
+            revert DeregistrationNotStarted();
+        }
+
+        if (block.number < operator.startOperatorDeregisterBlock + $.deregistrationDelay) {
             revert DeregistrationDelayNotElapsed();
         }
 
