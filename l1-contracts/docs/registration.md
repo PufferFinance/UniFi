@@ -5,38 +5,37 @@ The following sequence diagram illustrates the process of an operator registerin
 ```mermaid
 sequenceDiagram
     autonumber
-    participant PodOwner
     participant Operator
     participant UniFiAVSManager
-    participant DelegationManager
-    participant EigenPodManager
     participant AVSDirectory
 
-    Operator->>DelegationManager: registerAsOperator()
-    PodOwner->>EigenPodManager: createPod()
-    PodOwner->>DelegationManager: delegateTo(operator)
-    Operator->>UniFiAVSManager: registerOperator(podOwner)
-    UniFiAVSManager->>DelegationManager: isOperator(operator)
-    UniFiAVSManager->>EigenPodManager: hasPod(podOwner)
-    UniFiAVSManager->>DelegationManager: delegatedTo(podOwner)
-    UniFiAVSManager->>AVSDirectory: registerOperatorToAVS()
-    UniFiAVSManager-->>Operator: Operator registered
+    Operator->>UniFiAVSManager: registerOperator(operatorSignature)
+    UniFiAVSManager->>AVSDirectory: Check operator status
+    alt Operator not registered
+        UniFiAVSManager->>AVSDirectory: registerOperatorToAVS(operator, operatorSignature)
+        UniFiAVSManager-->>Operator: Operator registered
+    else Operator already registered
+        UniFiAVSManager-->>Operator: Error: OperatorAlreadyRegistered
+    end
 ```
 
 ## Operator Registration Process
-The registration process assumes that the `PodOwner` and the `Operator` mutually trust each other, i.e., are the same party. The reason for separating them is for more flexibility and compatibility with existing operators today.  
+The registration process is simplified compared to the previous version, focusing on the interaction between the Operator, UniFiAVSManager, and AVSDirectory.
 
-1. The `Operator` registers either an EOA or smart contract as an operator with the `DelegationManager`.
-2. The `PodOwner` creates an EigenPod by calling `createPod()` on the `EigenPodManager`. They can then deploy validators and restake them.
-3. The `PodOwner` delegates their stake to the `Operator` using the `delegateTo()` function in the `DelegationManager`.
-4. The `Operator` calls `registerOperator()` on the `UniFiAVSManager`, supplying an ECDSA or EIP-1271 signature signaling their intent to opt-in to the AVS.
-5. The `UniFiAVSManager` checks if the caller (`Operator`) is registered as an operator in the `DelegationManager`.
-6. The `UniFiAVSManager` verifies that the `PodOwner` has created an EigenPod.
-7. The `UniFiAVSManager` confirms that the `PodOwner` has delegated to the `Operator`.
-8. If all checks pass, the `UniFiAVSManager` registers the operator with the global `AVSDirectory`. From the POV of EigenLayer, the `Operator` has officially joined the AVS.
-9. The `Operator` is notified that the registration was successful.
+1. The `Operator` calls `registerOperator()` on the `UniFiAVSManager`, providing a signature (`operatorSignature`) that signals their intent to opt-in to the AVS.
 
-This process ensures that only legitimate operators with delegated stake from EigenPod owners can register with the UniFi AVS manager.
+2. The `UniFiAVSManager` checks the operator's status with the `AVSDirectory` to ensure they are not already registered.
+
+3. If the operator is not registered:
+   - The `UniFiAVSManager` calls `registerOperatorToAVS()` on the `AVSDirectory`, passing the operator's address and signature.
+   - The operator is successfully registered with the AVS.
+
+4. If the operator is already registered:
+   - The `UniFiAVSManager` reverts the transaction with an `OperatorAlreadyRegistered` error.
+
+This streamlined process ensures that operators can register directly with the UniFi AVS manager, which then handles the interaction with the AVSDirectory. The process is more straightforward and aligns with the actual implementation in the `UniFiAVSManager` contract.
+
+Note: The previous steps involving the PodOwner, EigenPodManager, and DelegationManager are not part of the direct registration process in the `UniFiAVSManager` contract. These steps may be prerequisites handled separately before an operator attempts to register with the UniFi AVS.
 
 ### Delegate Key Registration
 
