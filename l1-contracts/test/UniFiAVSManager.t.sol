@@ -367,48 +367,24 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         }
     }
 
-    function testDeregisterOperator() public {
+    function testStartDeregisterOperator() public {
         _setupOperator();
         _registerOperator();
 
-        bytes32[] memory blsPubKeyHashes = new bytes32[](2);
-        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
-        blsPubKeyHashes[1] = keccak256(abi.encodePacked("validator2"));
-        _setupValidators(blsPubKeyHashes);
-
         vm.prank(operator);
-        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+        avsManager.startDeregisterOperator();
 
-        vm.prank(operator);
-        avsManager.deregisterValidators(blsPubKeyHashes);
-
-        vm.prank(operator);
-        avsManager.deregisterOperator();
-
-        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.startOperatorDeregisterBlock, block.number);
     }
 
-    function testDeregisterOperator_HasNoValidators() public {
-        _setupOperator();
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature =
-            _registerOperatorParams({ salt: bytes32(uint256(1)), expiry: uint256(block.timestamp + 1 days) });
-
-        vm.prank(operator);
-        avsManager.registerOperator(operatorSignature);
-
-        vm.prank(operator);
-        avsManager.deregisterOperator();
-
-        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
-    }
-
-    function testDeregisterOperator_NotRegistered() public {
+    function testStartDeregisterOperator_NotRegistered() public {
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-        avsManager.deregisterOperator();
+        avsManager.startDeregisterOperator();
     }
 
-    function testDeregisterOperator_HasValidators() public {
+    function testStartDeregisterOperator_HasValidators() public {
         _setupOperator();
         _registerOperator();
 
@@ -421,23 +397,63 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.OperatorHasValidators.selector);
-        avsManager.deregisterOperator();
+        avsManager.startDeregisterOperator();
     }
 
-    function testDeregisterOperator_UnauthorizedCaller() public {
+    function testStartDeregisterOperator_AlreadyStarted() public {
         _setupOperator();
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature =
-            _registerOperatorParams({ salt: bytes32(uint256(1)), expiry: uint256(block.timestamp + 1 days) });
+        _registerOperator();
 
         vm.prank(operator);
-        avsManager.registerOperator(operatorSignature);
+        avsManager.startDeregisterOperator();
 
-        address unauthorizedCaller = address(0x123);
-        vm.prank(unauthorizedCaller);
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.DeregistrationAlreadyStarted.selector);
+        avsManager.startDeregisterOperator();
+    }
+
+    function testFinishDeregisterOperator() public {
+        _setupOperator();
+        _registerOperator();
+
+        vm.prank(operator);
+        avsManager.startDeregisterOperator();
+
+        vm.roll(block.number + DEREGISTRATION_DELAY);
+
+        vm.prank(operator);
+        avsManager.finishDeregisterOperator();
+
+        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
+    }
+
+    function testFinishDeregisterOperator_NotStarted() public {
+        _setupOperator();
+        _registerOperator();
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.DeregistrationNotStarted.selector);
+        avsManager.finishDeregisterOperator();
+    }
+
+    function testFinishDeregisterOperator_DelayNotElapsed() public {
+        _setupOperator();
+        _registerOperator();
+
+        vm.prank(operator);
+        avsManager.startDeregisterOperator();
+
+        vm.roll(block.number + DEREGISTRATION_DELAY - 1);
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.DeregistrationDelayNotElapsed.selector);
+        avsManager.finishDeregisterOperator();
+    }
+
+    function testFinishDeregisterOperator_NotRegistered() public {
+        vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-        avsManager.deregisterOperator();
-
-        assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
+        avsManager.finishDeregisterOperator();
     }
 
     function testLastDeregisterBlockUpdatesOnDeregister() public {
