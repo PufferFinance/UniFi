@@ -59,7 +59,7 @@ sequenceDiagram
 3. After the deregistration delay has passed, the `Operator` calls `updateOperatorDelegateKey()`.
 4. The `UniFiAVSManager` updates the delegate key for the Operator.
 
-#### Key Change Process
+#### Key Rotation Process
 
 The delegate key change process involves a delay mechanism to ensure security and prevent rapid changes:
 
@@ -72,7 +72,7 @@ The delegate key change process involves a delay mechanism to ensure security an
    - If so, it updates the delegate key to the pending new key.
    - The pending key and validation block are then reset.
 
-This two-step process with a delay provides a security measure, allowing time for any potential issues to be identified before the change is finalized.
+This two-step process with a delay prevents a malicious Operator from switching their delegateKey during the lookahead window. If they were to do so they could sign preconfs, and break promises by switching their key without facing penalities.
 
 #### Key Type Flexibility
 
