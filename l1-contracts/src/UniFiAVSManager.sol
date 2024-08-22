@@ -158,7 +158,7 @@ contract UniFiAVSManager is
         $.operators[msg.sender].lastDeregisterBlock = block.number;
     }
 
-    function deregisterOperator() external {
+    function startDeregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         OperatorData storage operator = $.operators[msg.sender];
@@ -172,6 +172,27 @@ contract UniFiAVSManager is
 
         if (operator.validatorCount > 0) {
             revert OperatorHasValidators();
+        }
+
+        operator.lastDeregisterBlock = block.number;
+
+        emit OperatorDeregisterStarted(msg.sender);
+    }
+
+    function finishDeregisterOperator() external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        OperatorData storage operator = $.operators[msg.sender];
+
+        if (
+            AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
+                == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
+        ) {
+            revert OperatorNotRegistered();
+        }
+
+        if (operator.validatorCount > 0 && block.number < operator.lastDeregisterBlock + $.deregistrationDelay) {
+            revert DeregistrationDelayNotElapsed();
         }
 
         AVS_DIRECTORY.deregisterOperatorFromAVS(msg.sender);

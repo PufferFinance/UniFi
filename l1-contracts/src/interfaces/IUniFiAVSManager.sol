@@ -44,6 +44,11 @@ interface IUniFiAVSManager {
     error NoEigenPod();
 
     /**
+     * @notice Thrown when trying to finish deregistering an operator before the deregistration delay has elapsed.
+     */
+    error DeregistrationDelayNotElapsed();
+
+    /**
      * @notice Thrown when an address is not delegated to the expected operator.
      */
     error NotDelegatedToOperator();
@@ -111,6 +116,12 @@ interface IUniFiAVSManager {
     );
 
     /**
+     * @notice Emitted when an operator starts the deregistration process.
+     * @param operator The address of the operator starting deregistration.
+     */
+    event OperatorDeregisterStarted(address indexed operator);
+
+    /**
      * @notice Emitted when an operator is deregistered from the UniFi AVS system.
      * @param operator The address of the deregistered operator.
      */
@@ -153,9 +164,14 @@ interface IUniFiAVSManager {
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external;
 
     /**
-     * @notice Deregisters an operator from the UniFi AVS system.
+     * @notice Starts the process of deregistering an operator from the UniFi AVS system.
      */
-    function deregisterOperator() external;
+    function startDeregisterOperator() external;
+
+    /**
+     * @notice Finishes the process of deregistering an operator from the UniFi AVS system.
+     */
+    function finishDeregisterOperator() external;
 
     /**
      * @notice Retrieves information about a specific operator.
