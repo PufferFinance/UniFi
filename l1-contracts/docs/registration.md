@@ -39,7 +39,7 @@ Note: The previous steps involving the PodOwner, EigenPodManager, and Delegation
 
 ### Delegate Key Registration
 
-After the initial registration, the Operator needs to register a delegate key. This key will be used for signing pre-confirmations and other operations related to the UniFi AVS.
+After the initial registration, the Operator needs to set a delegate key. This key will be used for signing pre-confirmations and other operations related to the UniFi AVS. The process involves two steps: initiating the change and then updating the key after a delay.
 
 ```mermaid
 sequenceDiagram
@@ -47,13 +47,32 @@ sequenceDiagram
     participant Operator
     participant UniFiAVSManager
 
-    Operator->>UniFiAVSManager: registerDelegateKey(delegateKey)
-    UniFiAVSManager-->>Operator: Delegate key registered
+    Operator->>UniFiAVSManager: setOperatorDelegateKey(newDelegateKey)
+    UniFiAVSManager-->>Operator: Delegate key change initiated
+    Note over Operator,UniFiAVSManager: Wait for deregistration delay
+    Operator->>UniFiAVSManager: updateOperatorDelegateKey()
+    UniFiAVSManager-->>Operator: Delegate key updated
 ```
 
-1. The `Operator` calls `registerDelegateKey()` on the `UniFiAVSManager`, providing the delegate key.
-2. The `UniFiAVSManager` registers the delegate key for the Operator.
-3. The `Operator` is notified that the delegate key registration was successful.
+1. The `Operator` calls `setOperatorDelegateKey()` on the `UniFiAVSManager`, providing the new delegate key.
+2. The `UniFiAVSManager` initiates the delegate key change process, setting a future block number when the change can be finalized.
+3. After the deregistration delay has passed, the `Operator` calls `updateOperatorDelegateKey()`.
+4. The `UniFiAVSManager` updates the delegate key for the Operator.
+
+#### Key Change Process
+
+The delegate key change process involves a delay mechanism to ensure security and prevent rapid changes:
+
+1. When `setOperatorDelegateKey()` is called:
+   - The new key is stored as a pending change.
+   - A block number is set for when the change can be finalized (current block + deregistration delay).
+
+2. After the delay period, `updateOperatorDelegateKey()` can be called to finalize the change:
+   - This function checks if the delay period has passed.
+   - If so, it updates the delegate key to the pending new key.
+   - The pending key and validation block are then reset.
+
+This two-step process with a delay provides a security measure, allowing time for any potential issues to be identified before the change is finalized.
 
 #### Key Type Flexibility
 
