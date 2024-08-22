@@ -7,7 +7,7 @@ The following diagram highlights how these components interact with each other:
 
 ## Preconf Flow
 
-The preconf flow in UniFi AVS involves several steps and interactions between different components of the system. The following sequence diagram illustrates this process:
+The preconf flow in UniFi AVS involves several interactions between different actors:
 
 ```mermaid
 sequenceDiagram
@@ -83,16 +83,16 @@ Here's a detailed description of the preconf flow:
 13. **AVS Reward**:
     - The rest of the block rewards are deposited into the `RewardsManager` contract. Here the RewardsManager smooths out the rewards from the participating validators, ensuring a more consistent distribution over time.
 
-## Node Software
-The following diagram highlights system's main software components:
-> ![alt text](images/component-overview.png)
+## Operator Software
+![alt text](images/software-stack.png)
+UniFi AVS has a tight coupling with Commit-Boost, allowing validators to seamlessly participate in the preconf process while maintaining their regular validation duties. 
 
-UniFi AVS has a tight coupling with Commit-Boost, allowing validators to seamlessly participate in the preconfirmation process while maintaining their regular validation duties. Validators will run Commit-Boost alongside their standard validator stack. When they are ready to propose a block, they have the flexibility to choose how they want to handle their preconfirmation responsibilities. Options include:
+Validators will run Commit-Boost alongside their standard validator stack. At configuration time, the they will register the same `delegateKey` that was set on-chain. This will allow a Gateway to issue preconfs on their behalf.
 
-1. Self-build: The validator can use Commit-Boost to directly handle their preconfirmation responsibilities.
-2. Delegate: The validator can use Commit-Boost to delegate their preconfirmation duties to another entity e.g., a sophisticated Gateway.
+When it is their turn to propose a block, Commit-Boost will request a complete L1 block from the Gateway and request a signature from the validator similar to the PBS flow today. 
 
 ## Smart Contracts
+![alt text](images/contracts-overview.png)
 ### `UniFiAVSManager` - AVS Registrations
 #### Operator Registration
 At a high level it is required for an `Operator` within the EigenLayer contracts to opt-in to the AVS. See the [Operator Registration Process](registration.md#operator-registration-process) section for more details.
