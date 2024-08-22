@@ -182,7 +182,7 @@ contract UniFiAVSManager is
 
         operator.startOperatorDeregisterBlock = block.number;
 
-        emit OperatorDeregisterStarted(msg.sender);
+        emit OperatorDeregisterStarted(msg.sender, block.number);
     }
 
     function finishDeregisterOperator() external {
@@ -209,7 +209,7 @@ contract UniFiAVSManager is
 
         delete $.operators[msg.sender];
 
-        emit OperatorDeregistered(msg.sender);
+        emit OperatorDeregistered(msg.sender, block.number);
     }
 
     function getOperator(address operator) external view returns (OperatorDataExtended memory) {

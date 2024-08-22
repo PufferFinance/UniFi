@@ -120,14 +120,16 @@ interface IUniFiAVSManager {
     /**
      * @notice Emitted when an operator starts the deregistration process.
      * @param operator The address of the operator starting deregistration.
+     * @param blockNumber The block number when the deregistration process started.
      */
-    event OperatorDeregisterStarted(address indexed operator);
+    event OperatorDeregisterStarted(address indexed operator, uint256 blockNumber);
 
     /**
      * @notice Emitted when an operator is deregistered from the UniFi AVS system.
      * @param operator The address of the deregistered operator.
+     * @param blockNumber The block number when the operator was deregistered.
      */
-    event OperatorDeregistered(address indexed operator);
+    event OperatorDeregistered(address indexed operator, uint256 blockNumber);
 
     /**
      * @notice Emitted when a validator is deregistered from the UniFi AVS system.
