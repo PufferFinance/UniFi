@@ -116,7 +116,7 @@ This modifier ensures that:
 2. The `podOwner` has an EigenPod.
 3. The `podOwner` has delegated their stake to the `Operator`.
 
-By delegating to the `Operator`, the `podOwner` is effectively giving permission for the `Operator` to set the delegate key. Since this key is used by the validator or in conjunction with their operations, it implies that the operator has some level of control over the validators in the EigenPod. This relationship underscores the importance of trust between the podOwner and the Operator.
+By delegating to the `Operator`, the `podOwner` is effectively giving permission for the `Operator` to register validators associated with their EigenPod. This relationship underscores the importance of trust between the podOwner and the Operator.
 
 After this check, the Operator can proceed to register the individual validators that will engage in pre-confs. 
 
@@ -157,4 +157,71 @@ sequenceDiagram
     - It verifies that the validator is not already registered in the UniFi AVS.
     - If all checks pass, it registers the validator, associating it with the operator and storing relevant information.
 
-This process ensures that only active, unregistered validators associated with the operator's EigenPod can be registered with the UniFi AVS. Note that since each validator shares the delegate key, we save signficant gas costs validaing signatures and saving keys for each. 
+5. The `UniFiAVSManager` updates the operator's validator count and resets the deregistration start block.
+
+This process ensures that only active, unregistered validators associated with the operator's EigenPod can be registered with the UniFi AVS. The implementation also includes checks for the operator's registration status and the presence of a delegate key.
+
+Here's a more detailed look at the `registerValidators` function based on the `backup.sol` file:
+
+```solidity
+function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
+    external
+    podIsDelegated(podOwner)
+{
+    UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+    if (
+        AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
+            == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
+    ) {
+        revert OperatorNotRegistered();
+    }
+
+    if ($.operators[msg.sender].delegateKey.length == 0) {
+        revert DelegateKeyNotSet();
+    }
+
+    IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
+
+    uint256 newValidatorCount = blsPubKeyHashes.length;
+    for (uint256 i = 0; i < newValidatorCount; i++) {
+        bytes32 blsPubkeyHash = blsPubKeyHashes[i];
+        IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubkeyHash);
+
+        if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
+            revert ValidatorNotActive();
+        }
+
+        if ($.validators[blsPubkeyHash].index != 0) {
+            revert ValidatorAlreadyRegistered();
+        }
+
+        $.validators[blsPubkeyHash] = ValidatorData({
+            eigenPod: address(eigenPod),
+            index: validatorInfo.validatorIndex,
+            operator: msg.sender,
+            registeredUntil: type(uint64).max
+        });
+
+        $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
+
+        emit ValidatorRegistered(
+            podOwner, msg.sender, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
+        );
+    }
+
+    OperatorData storage operator = $.operators[msg.sender];
+    operator.validatorCount += uint128(newValidatorCount);
+    operator.startOperatorDeregisterBlock = 0; // Reset the deregistration start block
+}
+```
+
+This implementation includes additional checks and operations:
+- Verifies that the operator is registered with the AVS.
+- Ensures that the operator has set a delegate key.
+- Checks each validator's status and whether it's already registered.
+- Stores validator information and updates relevant mappings.
+- Emits events for each registered validator.
+- Updates the operator's validator count and resets the deregistration start block.
+
+These additional checks and operations provide a more robust and secure validator registration process.
