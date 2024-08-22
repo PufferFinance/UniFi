@@ -100,13 +100,6 @@ interface IUniFiAVSManager {
     event OperatorRegistered(address indexed operator);
 
     /**
-     * @notice Emitted when a validator's delegate key is modified.
-     * @param blsPubKeyHash The BLS public key hash of the validator.
-     * @param newDelegateKey The new delegate key for the validator.
-     */
-    event ValidatorDelegateKeyModified(bytes32 indexed blsPubKeyHash, bytes newDelegateKey);
-
-    /**
      * @notice Emitted when a new validator is registered in the UniFi AVS system.
      * @param podOwner The address of the validator's EigenPod owner.
      * @param delegatePubKey The delegate public key for the validator.
