@@ -164,7 +164,6 @@ contract UniFiAVSManager is
                 validator.index
             );
         }
-        $.operators[msg.sender].lastDeregisterBlock = block.number;
     }
 
     function startDeregisterOperator() external {
