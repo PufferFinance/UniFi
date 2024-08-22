@@ -16,29 +16,76 @@ interface IUniFiAVSManager {
     /**
      * @notice Thrown when an operator registration has expired.
      */
+    /// @notice Thrown when an operator's registration has expired
     error RegistrationExpired();
+
+    /// @notice Thrown when an invalid salt is used for operator registration
     error InvalidOperatorSalt();
+
+    /// @notice Thrown when a signature for registration has expired
     error SignatureExpired();
+
+    /// @notice Thrown when an operator attempts to deregister while still having validators
     error OperatorHasValidators();
+
+    /// @notice Thrown when a non-operator attempts an operator-only action
     error NotOperator();
+
+    /// @notice Thrown when an EigenPod does not exist for a given address
     error NoEigenPod();
+
+    /// @notice Thrown when trying to finish deregistering an operator before the delay has elapsed
     error DeregistrationDelayNotElapsed();
+
+    /// @notice Thrown when attempting to start deregistration for an operator that has already started
     error DeregistrationAlreadyStarted();
+
+    /// @notice Thrown when trying to finish deregistration for an operator that hasn't started
     error DeregistrationNotStarted();
+
+    /// @notice Thrown when an address is not delegated to the expected operator
     error NotDelegatedToOperator();
+
+    /// @notice Thrown when a validator is not in the active state
     error ValidatorNotActive();
+
+    /// @notice Thrown when attempting to register an operator that already exists
     error OperatorAlreadyExists();
+
+    /// @notice Thrown when an action requires a registered operator, but the operator is not registered
     error OperatorNotRegistered();
+
+    /// @notice Thrown when attempting to register an operator that is already registered
     error OperatorAlreadyRegistered();
+
+    /// @notice Thrown when a non-operator attempts to deregister a validator
     error NotValidatorOperator();
+
+    /// @notice Thrown when attempting to register a validator that is already registered
     error ValidatorAlreadyRegistered();
+
+    /// @notice Thrown when an operator's delegate key is not set
     error DelegateKeyNotSet();
+
+    /// @notice Thrown when an invalid operator address is provided
     error InvalidOperator();
+
+    /// @notice Thrown when an action is attempted by someone who is not the pod owner
     error NotPodOwner();
+
+    /// @notice Thrown when a validator cannot be found
     error ValidatorNotFound();
+
+    /// @notice Thrown when an unauthorized action is attempted
     error Unauthorized();
+
+    /// @notice Thrown when an invalid address is provided
     error InvalidAddress();
+
+    /// @notice Thrown when an invalid amount is provided
     error InvalidAmount();
+
+    /// @notice Thrown when trying to update a delegate key before the change delay has passed
     error DelegateKeyChangeNotReady();
 
     /**
