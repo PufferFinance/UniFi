@@ -17,6 +17,7 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
+import { DelegateKeyChangeNotReady } from "./Errors.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
