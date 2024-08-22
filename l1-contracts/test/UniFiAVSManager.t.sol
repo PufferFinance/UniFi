@@ -509,6 +509,30 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(updatedOperatorData.lastDeregisterBlock, 0, "lastDeregisterBlock should not change for other operations");
     }
 
+    function testSetDeregistrationDelay() public {
+        uint64 newDelay = 100;
+        uint64 oldDelay = avsManager.getDeregistrationDelay();
+
+        vm.expectEmit(true, true, false, true);
+        emit IUniFiAVSManager.DeregistrationDelaySet(oldDelay, newDelay);
+
+        vm.prank(DAO);
+        avsManager.setDeregistrationDelay(newDelay);
+
+        assertEq(avsManager.getDeregistrationDelay(), newDelay, "Deregistration delay should be updated");
+    }
+
+    function testSetDeregistrationDelay_Unauthorized() public {
+        uint64 newDelay = 100;
+        address unauthorizedUser = makeAddr("unauthorizedUser");
+
+        vm.prank(unauthorizedUser);
+        vm.expectRevert("AccessManaged: sender is not authorized");
+        avsManager.setDeregistrationDelay(newDelay);
+
+        assertEq(avsManager.getDeregistrationDelay(), DEREGISTRATION_DELAY, "Deregistration delay should not change");
+    }
+
     function testLastDeregisterBlockUpdatesOnMultipleDeregistrations() public {
         _setupOperator();
         _registerOperator();
