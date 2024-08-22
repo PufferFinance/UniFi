@@ -259,36 +259,36 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.deregisterValidators(blsPubKeyHashes);
 
         operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.validatorCount, 0);
+        assertEq(operatorData.validatorCount, 0, "all validators should be deregistered");
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.registeredUntil, initialBlockNumber + DEREGISTRATION_DELAY);
-            assertTrue(validatorData.registered);
+            assertEq(validatorData.registeredUntil, initialBlockNumber + avsManager.getDeregistrationDelay(), "registeredUntil should be the deregistrationDelay");
+            assertTrue(validatorData.registered, "Validator should be registered");
         }
 
         // Advance block number to just before the deregistration delay
-        vm.roll(initialBlockNumber + DEREGISTRATION_DELAY - 1);
+        vm.roll(initialBlockNumber + avsManager.getDeregistrationDelay() - 1);
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertTrue(validatorData.registered);
+            assertTrue(validatorData.registered, "Validator should be registered before deregistrationDelay blocks");
         }
 
         // Advance block number to the deregistration delay
-        vm.roll(initialBlockNumber + DEREGISTRATION_DELAY);
+        vm.roll(initialBlockNumber + avsManager.getDeregistrationDelay());
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertFalse(validatorData.registered);
+            assertFalse(validatorData.registered, "Validator should not be registered at deregistrationDelay blocks");
         }
 
         // Advance block number past the deregistration delay
-        vm.roll(initialBlockNumber + DEREGISTRATION_DELAY + 1);
+        vm.roll(initialBlockNumber + avsManager.getDeregistrationDelay() + 1);
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertFalse(validatorData.registered);
+            assertFalse(validatorData.registered, "Validator should not be registered after deregistrationDelay blocks");
         }
     }
 
@@ -362,7 +362,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.registeredUntil, block.number + DEREGISTRATION_DELAY);
+            assertEq(validatorData.registeredUntil, block.number + avsManager.getDeregistrationDelay());
             assertTrue(validatorData.registered);
         }
     }

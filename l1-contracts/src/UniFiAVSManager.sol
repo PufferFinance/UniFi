@@ -253,9 +253,14 @@ contract UniFiAVSManager is
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
 
-    function setDeregistrationDelay(uint64 newDelay) external restricted {
+    function setDeregistrationDelay(uint64 newDelay) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         $.deregistrationDelay = newDelay;
         emit DeregistrationDelaySet(newDelay);
+    }
+
+    function getDeregistrationDelay() external returns (uint64) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.deregistrationDelay;
     }
 }
