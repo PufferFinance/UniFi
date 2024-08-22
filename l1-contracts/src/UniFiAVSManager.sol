@@ -261,9 +261,28 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
+        operator.pendingDelegateKey = newDelegateKey;
+        operator.delegateKeyValidAfter = block.number + $.deregistrationDelay;
+
+        emit OperatorDelegateKeyChangeInitiated(msg.sender, operator.delegateKey, newDelegateKey, operator.delegateKeyValidAfter);
+    }
+
+    function updateOperatorDelegateKey() external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operator = $.operators[msg.sender];
+
+        if (operator.delegateKeyValidAfter == 0 || block.number < operator.delegateKeyValidAfter) {
+            revert DelegateKeyChangeNotReady();
+        }
+
         bytes memory oldDelegateKey = operator.delegateKey;
-        operator.delegateKey = newDelegateKey;
-        emit OperatorDelegateKeySet(msg.sender, oldDelegateKey, newDelegateKey);
+        operator.delegateKey = operator.pendingDelegateKey;
+        
+        // Reset pending data
+        operator.pendingDelegateKey = "";
+        operator.delegateKeyValidAfter = 0;
+
+        emit OperatorDelegateKeySet(msg.sender, oldDelegateKey, operator.delegateKey);
     }
 
     function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory) {
