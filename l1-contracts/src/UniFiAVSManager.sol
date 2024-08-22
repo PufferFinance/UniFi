@@ -292,6 +292,7 @@ contract UniFiAVSManager is
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
 
+    // Todo: restrict to DAO
     function setDeregistrationDelay(uint64 newDelay) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         uint64 oldDelay = $.deregistrationDelay;
