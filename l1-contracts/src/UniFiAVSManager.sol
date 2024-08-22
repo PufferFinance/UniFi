@@ -122,7 +122,9 @@ contract UniFiAVSManager is
             );
         }
     
-        $.operators[msg.sender].validatorCount += uint128(newValidatorCount);
+        OperatorData storage operator = $.operators[msg.sender];
+        operator.validatorCount += uint128(newValidatorCount);
+        operator.startOperatorDeregisterBlock = 0; // Reset the deregistration start block
     }
 
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
