@@ -403,6 +403,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testStartDeregisterOperator_AlreadyStarted() public {
         _setupOperator();
         _registerOperator();
+        vm.roll(1); // advance so not at block 0
 
         vm.prank(operator);
         avsManager.startDeregisterOperator();
@@ -415,21 +416,23 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testFinishDeregisterOperator() public {
         _setupOperator();
         _registerOperator();
+        vm.roll(1); // advance so not at block 0
 
         vm.prank(operator);
         avsManager.startDeregisterOperator();
 
-        vm.roll(block.number + DEREGISTRATION_DELAY);
+        vm.roll(block.number + avsManager.getDeregistrationDelay());
 
         vm.prank(operator);
         avsManager.finishDeregisterOperator();
 
-        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
+        assertFalse(mockAVSDirectory.isOperatorRegistered(operator), "Operator should be deregistered");
     }
 
     function testFinishDeregisterOperator_NotStarted() public {
         _setupOperator();
         _registerOperator();
+        vm.roll(1); // advance so not at block 0
 
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.DeregistrationNotStarted.selector);
@@ -439,11 +442,12 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testFinishDeregisterOperator_DelayNotElapsed() public {
         _setupOperator();
         _registerOperator();
+        vm.roll(1); // advance so not at block 0
 
         vm.prank(operator);
         avsManager.startDeregisterOperator();
 
-        vm.roll(block.number + DEREGISTRATION_DELAY - 1);
+        vm.roll(block.number + avsManager.getDeregistrationDelay() - 1);
 
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.DeregistrationDelayNotElapsed.selector);
@@ -452,6 +456,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testFinishDeregisterOperator_NotRegistered() public {
         vm.prank(operator);
+        vm.roll(1); // advance so not at block 0
         vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
         avsManager.finishDeregisterOperator();
     }
