@@ -230,7 +230,6 @@ contract UniFiAVSManager is
         return OperatorDataExtended({
             validatorCount: operatorData.validatorCount,
             delegateKey: activeDelegateKey,
-            lastDeregisterBlock: operatorData.lastDeregisterBlock,
             startOperatorDeregisterBlock: operatorData.startOperatorDeregisterBlock,
             pendingDelegateKey: operatorData.pendingDelegateKey,
             delegateKeyValidAfter: operatorData.delegateKeyValidAfter,
