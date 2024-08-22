@@ -102,7 +102,11 @@ interface IUniFiAVSManager {
      * @param validatorIndex The beacon chain validator index.
      */
     event ValidatorRegistered(
-        address indexed podOwner, address indexed operator, bytes delegatePubKey, bytes32 blsPubKeyHash, uint256 validatorIndex
+        address indexed podOwner,
+        address indexed operator,
+        bytes delegatePubKey,
+        bytes32 blsPubKeyHash,
+        uint256 validatorIndex
     );
 
     /**
@@ -126,7 +130,11 @@ interface IUniFiAVSManager {
      * @param validatorIndex The index of the deregistered validator.
      */
     event ValidatorDeregistered(
-        address indexed podOwner, address indexed operator, bytes delegatePubKey, bytes32 blsPubKeyHash, uint256 validatorIndex
+        address indexed podOwner,
+        address indexed operator,
+        bytes delegatePubKey,
+        bytes32 blsPubKeyHash,
+        uint256 validatorIndex
     );
 
     /**
@@ -136,7 +144,9 @@ interface IUniFiAVSManager {
      * @param newDelegateKey The new delegate key for the operator.
      */
     event OperatorDelegateKeySet(address indexed operator, bytes oldDelegateKey, bytes newDelegateKey);
-    event OperatorDelegateKeyChangeInitiated(address indexed operator, bytes oldDelegateKey, bytes newDelegateKey, uint256 validAfter);
+    event OperatorDelegateKeyChangeInitiated(
+        address indexed operator, bytes oldDelegateKey, bytes newDelegateKey, uint256 validAfter
+    );
 
     /**
      * @notice Emitted when the deregistration delay is updated.

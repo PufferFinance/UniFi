@@ -17,7 +17,6 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
-import { DelegateKeyChangeNotReady } from "./Errors.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -122,7 +121,7 @@ contract UniFiAVSManager is
                 podOwner, msg.sender, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
             );
         }
-    
+
         OperatorData storage operator = $.operators[msg.sender];
         operator.validatorCount += uint128(newValidatorCount);
         operator.startOperatorDeregisterBlock = 0; // Reset the deregistration start block
@@ -271,7 +270,9 @@ contract UniFiAVSManager is
         operator.pendingDelegateKey = newDelegateKey;
         operator.delegateKeyValidAfter = block.number + $.deregistrationDelay;
 
-        emit OperatorDelegateKeyChangeInitiated(msg.sender, operator.delegateKey, newDelegateKey, operator.delegateKeyValidAfter);
+        emit OperatorDelegateKeyChangeInitiated(
+            msg.sender, operator.delegateKey, newDelegateKey, operator.delegateKeyValidAfter
+        );
     }
 
     function updateOperatorDelegateKey() external {
@@ -284,7 +285,7 @@ contract UniFiAVSManager is
 
         bytes memory oldDelegateKey = operator.delegateKey;
         operator.delegateKey = operator.pendingDelegateKey;
-        
+
         // Reset pending data
         operator.pendingDelegateKey = "";
         operator.delegateKeyValidAfter = 0;
