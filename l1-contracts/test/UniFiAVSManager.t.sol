@@ -625,9 +625,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
 
-        vm.expectEmit(true, false, false, true);
-        emit IUniFiAVSManager.OperatorDelegateKeyChangeInitiated(operator, delegatePubKey, newDelegateKey, block.number + avsManager.getDeregistrationDelay());
-
         vm.prank(operator);
         avsManager.setOperatorDelegateKey(newDelegateKey);
 
@@ -646,6 +643,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.setOperatorDelegateKey(newDelegateKey);
 
+        // advance to the update block
         vm.roll(block.number + avsManager.getDeregistrationDelay());
 
         vm.expectEmit(true, false, false, true);

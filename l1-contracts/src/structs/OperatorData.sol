@@ -15,6 +15,8 @@ struct OperatorData {
     uint256 startOperatorDeregisterBlock;
     /// @notice The last block number when the operator deregistered validators.
     uint256 lastDeregisterBlock;
+    bytes pendingDelegateKey;
+    uint256 delegateKeyValidAfter;
 }
 
 /**
@@ -33,4 +35,6 @@ struct OperatorDataExtended {
     uint256 startOperatorDeregisterBlock;
     /// @notice Whether the operator is registered or not.
     bool isRegistered;
+    bytes pendingDelegateKey;
+    uint256 delegateKeyValidAfter;
 }
