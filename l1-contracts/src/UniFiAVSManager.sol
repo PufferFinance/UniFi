@@ -157,7 +157,7 @@ contract UniFiAVSManager is
 
             emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
         }
-        $.operators[msg.sender].lastDeregisterBlock = block.number;
+        operator.lastDeregisterBlock = block.number;
     }
 
     function startDeregisterOperator() external {
