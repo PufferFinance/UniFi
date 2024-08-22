@@ -221,14 +221,20 @@ contract UniFiAVSManager is
 
     function getOperator(address operator) external view returns (OperatorDataExtended memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operatorData = $.operators[operator];
+
+        bytes memory activeDelegateKey = operatorData.delegateKey;
+        if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
+            activeDelegateKey = operatorData.pendingDelegateKey;
+        }
 
         return OperatorDataExtended({
-            validatorCount: $.operators[operator].validatorCount,
-            delegateKey: $.operators[operator].delegateKey,
-            lastDeregisterBlock: $.operators[operator].lastDeregisterBlock,
-            startOperatorDeregisterBlock: $.operators[operator].startOperatorDeregisterBlock,
-            pendingDelegateKey: $.operators[operator].pendingDelegateKey,
-            delegateKeyValidAfter: $.operators[operator].delegateKeyValidAfter,
+            validatorCount: operatorData.validatorCount,
+            delegateKey: activeDelegateKey,
+            lastDeregisterBlock: operatorData.lastDeregisterBlock,
+            startOperatorDeregisterBlock: operatorData.startOperatorDeregisterBlock,
+            pendingDelegateKey: operatorData.pendingDelegateKey,
+            delegateKeyValidAfter: operatorData.delegateKeyValidAfter,
             isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
         });
@@ -299,12 +305,18 @@ contract UniFiAVSManager is
 
             bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
 
+            OperatorData storage operatorData = $.operators[validatorData.operator];
+            bytes memory activeDelegateKey = operatorData.delegateKey;
+            if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
+                activeDelegateKey = operatorData.pendingDelegateKey;
+            }
+
             return ValidatorDataExtended({
                 eigenPod: validatorData.eigenPod,
                 validatorIndex: validatorInfo.validatorIndex,
                 status: validatorInfo.status,
                 backedByStake: backedByStake,
-                delegateKey: $.operators[validatorData.operator].delegateKey,
+                delegateKey: activeDelegateKey,
                 operator: validatorData.operator,
                 registeredUntil: validatorData.registeredUntil,
                 registered: block.number < validatorData.registeredUntil
