@@ -116,6 +116,21 @@ The rewards distribution in UniFi AVS is designed to provide a consistent and at
 
 For a comprehensive overview of the rewards distribution system, including its key features, benefits, and impact on the Ethereum ecosystem, see the [Rewards Distribution](rewards.md) document.
 
+The following diagram illustrates the flow of rewards in the UniFi AVS system:
+
+```mermaid
+graph TD
+    A[User] -->|Pays preconf tips in priority fees| B[Gateway]
+    B -->|Aggregates transactions and produces blocks| C[Validators]
+    C -->|Publish blocks| D[Fee Recipient]
+    D -->|Sends block rewards| E[RewardsManager Contract]
+    E -->|Distribute rewards| F[Operators]
+    E -->|Distribute rewards| G[Validators]
+    E -->|Distribute rewards| H[Gateway]
+```
+
+This diagram shows how rewards flow from users through the system, ultimately being distributed to operators, validators, and the gateway.
+
 ### `DisputeManager` - Slashing
 UniFi AVS implements slashing to ensure the integrity of the preconfirmation process. This mechanism is designed to penalize validators who break their preconfirmation promises or fail to fulfill their duties.
 
