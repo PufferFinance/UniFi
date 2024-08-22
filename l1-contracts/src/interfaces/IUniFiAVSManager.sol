@@ -141,6 +141,12 @@ interface IUniFiAVSManager {
      * @param newDelegateKey The new delegate key for the operator.
      */
     event OperatorDelegateKeySet(address indexed operator, bytes oldDelegateKey, bytes newDelegateKey);
+
+    /**
+     * @notice Emitted when the deregistration delay is updated.
+     * @param oldDelay The previous deregistration delay value.
+     * @param newDelay The new deregistration delay value.
+     */
     event DeregistrationDelaySet(uint64 oldDelay, uint64 newDelay);
 
     /**
