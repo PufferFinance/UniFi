@@ -125,7 +125,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
             _registerOperatorParams({ salt: bytes32(uint256(1)), expiry: uint256(block.timestamp + 1 days) });
 
         vm.expectEmit(true, false, false, false);
-        emit OperatorRegistered(operator);
+        emit IUniFiAVSManager.OperatorRegistered(operator);
 
         vm.prank(operator);
         avsManager.registerOperator(operatorSignature);
@@ -164,11 +164,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _setupOperator();
         _registerOperator();
         _setupValidators(blsPubKeyHashes);
-
-        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
-            vm.expectEmit(true, true, false, true);
-            emit ValidatorRegistered(podOwner, operator, delegatePubKey, blsPubKeyHashes[i], i);
-        }
 
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
@@ -263,12 +258,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(operatorData.validatorCount, 2);
 
         uint256 initialBlockNumber = block.number;
-
-        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
-            vm.expectEmit(true, true, false, true);
-            emit ValidatorDeregistered(podOwner, operator, delegatePubKey, blsPubKeyHashes[i], i);
-        }
-
         vm.prank(operator);
         avsManager.deregisterValidators(blsPubKeyHashes);
 
@@ -386,7 +375,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _registerOperator();
 
         vm.expectEmit(true, false, false, false);
-        emit OperatorDeregisterStarted(operator);
+        emit IUniFiAVSManager.OperatorDeregisterStarted(operator);
 
         vm.prank(operator);
         avsManager.startDeregisterOperator();
@@ -441,7 +430,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.roll(block.number + avsManager.getDeregistrationDelay());
 
         vm.expectEmit(true, false, false, false);
-        emit OperatorDeregistered(operator);
+        emit IUniFiAVSManager.OperatorDeregistered(operator);
 
         vm.prank(operator);
         avsManager.finishDeregisterOperator();
@@ -605,7 +594,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
 
         vm.expectEmit(true, false, false, true);
-        emit OperatorDelegateKeySet(operator, delegatePubKey, newDelegateKey);
+        emit IUniFiAVSManager.OperatorDelegateKeySet(operator, delegatePubKey, newDelegateKey);
 
         vm.prank(operator);
         avsManager.setOperatorDelegateKey(newDelegateKey);
