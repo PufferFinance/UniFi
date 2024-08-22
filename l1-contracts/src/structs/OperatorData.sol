@@ -29,6 +29,8 @@ struct OperatorDataExtended {
     bytes delegateKey;
     /// @notice The last block number when the operator deregistered validators.
     uint256 lastDeregisterBlock;
+    /// @notice The block number when the operator started the deregistration process.
+    uint256 startOperatorDeregisterBlock;
     /// @notice Whether the operator is registered or not.
     bool isRegistered;
 }

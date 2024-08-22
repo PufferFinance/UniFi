@@ -219,6 +219,7 @@ contract UniFiAVSManager is
             validatorCount: $.operators[operator].validatorCount,
             delegateKey: $.operators[operator].delegateKey,
             lastDeregisterBlock: $.operators[operator].lastDeregisterBlock,
+            startOperatorDeregisterBlock: $.operators[operator].startOperatorDeregisterBlock,
             isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
         });
