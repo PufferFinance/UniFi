@@ -94,7 +94,7 @@ This design choice prioritizes efficiency and simplicity. While it limits the gr
 
 ### Validator Registration
 
-Before any validators can be registered, the `UniFiAVSManager` contract performs a crucial check using the `podIsDelegated` modifier. This check demonstrates the mutual trust between the operator and the podOwner. Here's the code snippet for the modifier:
+Before any validators can be registered, the `UniFiAVSManager` contract performs a crucial check using the `podIsDelegated` modifier. This check demonstrates the mutual trust between the operator and the podOwner:
 
 ```solidity
 modifier podIsDelegated(address podOwner) {
@@ -112,7 +112,7 @@ modifier podIsDelegated(address podOwner) {
 ```
 
 This modifier ensures that:
-1. The `Operator` (msg.sender) is a registered operator in the EigenLayer system.
+1. The `Operator` (msg.sender) is a registered operator in EigenLayer's system.
 2. The `podOwner` has an EigenPod.
 3. The `podOwner` has delegated their stake to the `Operator`.
 
@@ -157,71 +157,4 @@ sequenceDiagram
     - It verifies that the validator is not already registered in the UniFi AVS.
     - If all checks pass, it registers the validator, associating it with the operator and storing relevant information.
 
-5. The `UniFiAVSManager` updates the operator's validator count and resets the deregistration start block.
-
-This process ensures that only active, unregistered validators associated with the operator's EigenPod can be registered with the UniFi AVS. The implementation also includes checks for the operator's registration status and the presence of a delegate key.
-
-Here's a more detailed look at the `registerValidators` function based on the `backup.sol` file:
-
-```solidity
-function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
-    external
-    podIsDelegated(podOwner)
-{
-    UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
-    if (
-        AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
-            == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
-    ) {
-        revert OperatorNotRegistered();
-    }
-
-    if ($.operators[msg.sender].delegateKey.length == 0) {
-        revert DelegateKeyNotSet();
-    }
-
-    IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
-
-    uint256 newValidatorCount = blsPubKeyHashes.length;
-    for (uint256 i = 0; i < newValidatorCount; i++) {
-        bytes32 blsPubkeyHash = blsPubKeyHashes[i];
-        IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubkeyHash);
-
-        if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
-            revert ValidatorNotActive();
-        }
-
-        if ($.validators[blsPubkeyHash].index != 0) {
-            revert ValidatorAlreadyRegistered();
-        }
-
-        $.validators[blsPubkeyHash] = ValidatorData({
-            eigenPod: address(eigenPod),
-            index: validatorInfo.validatorIndex,
-            operator: msg.sender,
-            registeredUntil: type(uint64).max
-        });
-
-        $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
-
-        emit ValidatorRegistered(
-            podOwner, msg.sender, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
-        );
-    }
-
-    OperatorData storage operator = $.operators[msg.sender];
-    operator.validatorCount += uint128(newValidatorCount);
-    operator.startOperatorDeregisterBlock = 0; // Reset the deregistration start block
-}
-```
-
-This implementation includes additional checks and operations:
-- Verifies that the operator is registered with the AVS.
-- Ensures that the operator has set a delegate key.
-- Checks each validator's status and whether it's already registered.
-- Stores validator information and updates relevant mappings.
-- Emits events for each registered validator.
-- Updates the operator's validator count and resets the deregistration start block.
-
-These additional checks and operations provide a more robust and secure validator registration process.
+5. The `UniFiAVSManager` updates the operator's validator count and resets their deregistration state if they had previously queued to deregister their operator.
