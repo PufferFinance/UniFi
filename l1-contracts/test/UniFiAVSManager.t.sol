@@ -669,7 +669,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         vm.roll(block.number + avsManager.getDeregistrationDelay() - 1);
 
-        vm.expectRevert(DelegateKeyChangeNotReady.selector);
+        vm.expectRevert(IUniFiAVSManager.DelegateKeyChangeNotReady.selector);
         vm.prank(operator);
         avsManager.updateOperatorDelegateKey();
     }
