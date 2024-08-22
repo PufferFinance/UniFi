@@ -618,13 +618,54 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
 
         vm.expectEmit(true, false, false, true);
-        emit IUniFiAVSManager.OperatorDelegateKeySet(operator, delegatePubKey, newDelegateKey);
+        emit IUniFiAVSManager.OperatorDelegateKeyChangeInitiated(operator, delegatePubKey, newDelegateKey, block.number + avsManager.getDeregistrationDelay());
 
         vm.prank(operator);
         avsManager.setOperatorDelegateKey(newDelegateKey);
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.delegateKey, delegatePubKey, "Delegate key should not change immediately");
+        assertEq(operatorData.pendingDelegateKey, newDelegateKey, "Pending delegate key should be set");
+        assertEq(operatorData.delegateKeyValidAfter, block.number + avsManager.getDeregistrationDelay(), "Delegate key valid after should be set correctly");
+    }
+
+    function testUpdateOperatorDelegateKey() public {
+        _setupOperator();
+        _registerOperator();
+
+        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+
+        vm.prank(operator);
+        avsManager.setOperatorDelegateKey(newDelegateKey);
+
+        vm.roll(block.number + avsManager.getDeregistrationDelay());
+
+        vm.expectEmit(true, false, false, true);
+        emit IUniFiAVSManager.OperatorDelegateKeySet(operator, delegatePubKey, newDelegateKey);
+
+        vm.prank(operator);
+        avsManager.updateOperatorDelegateKey();
+
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.delegateKey, newDelegateKey, "Delegate key should be updated");
+        assertEq(operatorData.pendingDelegateKey, "", "Pending delegate key should be cleared");
+        assertEq(operatorData.delegateKeyValidAfter, 0, "Delegate key valid after should be reset");
+    }
+
+    function testUpdateOperatorDelegateKey_TooEarly() public {
+        _setupOperator();
+        _registerOperator();
+
+        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+
+        vm.prank(operator);
+        avsManager.setOperatorDelegateKey(newDelegateKey);
+
+        vm.roll(block.number + avsManager.getDeregistrationDelay() - 1);
+
+        vm.expectRevert(DelegateKeyChangeNotReady.selector);
+        vm.prank(operator);
+        avsManager.updateOperatorDelegateKey();
     }
 
     function testSetOperatorDelegateKey_NotRegistered() public {
