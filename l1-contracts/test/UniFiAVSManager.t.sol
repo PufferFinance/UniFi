@@ -102,9 +102,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function _setOperatorDelegateKey(address _operator, bytes memory _delegateKey) internal {
         vm.prank(_operator);
         avsManager.setOperatorDelegateKey(_delegateKey);
-        
+
         vm.roll(block.number + avsManager.getDeregistrationDelay());
-        
+
         vm.prank(_operator);
         avsManager.updateOperatorDelegateKey();
     }
@@ -280,7 +280,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.registeredUntil, initialBlockNumber + avsManager.getDeregistrationDelay(), "registeredUntil should be the deregistrationDelay");
+            assertEq(
+                validatorData.registeredUntil,
+                initialBlockNumber + avsManager.getDeregistrationDelay(),
+                "registeredUntil should be the deregistrationDelay"
+            );
             assertTrue(validatorData.registered, "Validator should be registered");
         }
 
@@ -547,7 +551,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.delegateKey, delegatePubKey, "Delegate key should not change immediately");
         assertEq(operatorData.pendingDelegateKey, newDelegateKey, "Pending delegate key should be set");
-        assertEq(operatorData.delegateKeyValidAfter, block.number + avsManager.getDeregistrationDelay(), "Delegate key valid after should be set correctly");
+        assertEq(
+            operatorData.delegateKeyValidAfter,
+            block.number + avsManager.getDeregistrationDelay(),
+            "Delegate key valid after should be set correctly"
+        );
     }
 
     function testUpdateOperatorDelegateKey() public {
