@@ -118,7 +118,7 @@ contract UniFiAVSManager is
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
             emit ValidatorRegistered(
-                podOwner, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
+                podOwner, msg.sender, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
             );
         }
     
@@ -155,7 +155,13 @@ contract UniFiAVSManager is
 
             validator.registeredUntil = uint64(block.number) + $.deregistrationDelay;
 
-            emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
+            emit ValidatorDeregistered(
+                IEigenPod(validator.eigenPod).podOwner(),
+                validator.operator,
+                $.operators[validator.operator].delegateKey,
+                blsPubKeyHash,
+                validator.index
+            );
         }
         $.operators[msg.sender].lastDeregisterBlock = block.number;
     }
@@ -182,7 +188,7 @@ contract UniFiAVSManager is
 
         operator.startOperatorDeregisterBlock = block.number;
 
-        emit OperatorDeregisterStarted(msg.sender, block.number);
+        emit OperatorDeregisterStarted(msg.sender);
     }
 
     function finishDeregisterOperator() external {
@@ -209,7 +215,7 @@ contract UniFiAVSManager is
 
         delete $.operators[msg.sender];
 
-        emit OperatorDeregistered(msg.sender, block.number);
+        emit OperatorDeregistered(msg.sender);
     }
 
     function getOperator(address operator) external view returns (OperatorDataExtended memory) {
@@ -255,8 +261,9 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
+        bytes memory oldDelegateKey = operator.delegateKey;
         operator.delegateKey = newDelegateKey;
-        emit OperatorDelegateKeySet(msg.sender, newDelegateKey);
+        emit OperatorDelegateKeySet(msg.sender, oldDelegateKey, newDelegateKey);
     }
 
     function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory) {
@@ -287,8 +294,9 @@ contract UniFiAVSManager is
 
     function setDeregistrationDelay(uint64 newDelay) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        uint64 oldDelay = $.deregistrationDelay;
         $.deregistrationDelay = newDelay;
-        emit DeregistrationDelaySet(newDelay);
+        emit DeregistrationDelaySet(oldDelay, newDelay);
     }
 
     function getDeregistrationDelay() external returns (uint64) {

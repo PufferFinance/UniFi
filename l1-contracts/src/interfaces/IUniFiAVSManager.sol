@@ -114,39 +114,41 @@ interface IUniFiAVSManager {
      * @param validatorIndex The beacon chain validator index.
      */
     event ValidatorRegistered(
-        address indexed podOwner, bytes delegatePubKey, bytes32 blsPubKeyHash, uint256 validatorIndex
+        address indexed podOwner, address indexed operator, bytes delegatePubKey, bytes32 blsPubKeyHash, uint256 validatorIndex
     );
 
     /**
      * @notice Emitted when an operator starts the deregistration process.
      * @param operator The address of the operator starting deregistration.
-     * @param blockNumber The block number when the deregistration process started.
      */
-    event OperatorDeregisterStarted(address indexed operator, uint256 blockNumber);
+    event OperatorDeregisterStarted(address indexed operator);
 
     /**
      * @notice Emitted when an operator is deregistered from the UniFi AVS system.
      * @param operator The address of the deregistered operator.
-     * @param blockNumber The block number when the operator was deregistered.
      */
-    event OperatorDeregistered(address indexed operator, uint256 blockNumber);
+    event OperatorDeregistered(address indexed operator);
 
     /**
      * @notice Emitted when a validator is deregistered from the UniFi AVS system.
-     * @param blsPubKeyHash The BLS public key hash of the deregistered validator.
-     * @param validatorIndex The index of the deregistered validator.
      * @param podOwner The address of the EigenPod owner.
      * @param operator The address of the operator managing the validator.
+     * @param delegatePubKey The delegate public key for the validator.
+     * @param blsPubKeyHash The BLS public key hash of the deregistered validator.
+     * @param validatorIndex The index of the deregistered validator.
      */
-    event ValidatorDeregistered(bytes32 blsPubKeyHash, uint64 validatorIndex, address podOwner, address operator);
+    event ValidatorDeregistered(
+        address indexed podOwner, address indexed operator, bytes delegatePubKey, bytes32 blsPubKeyHash, uint256 validatorIndex
+    );
 
     /**
      * @notice Emitted when an operator's delegate key is set or updated.
      * @param operator The address of the operator.
+     * @param oldDelegateKey The previous delegate key for the operator.
      * @param newDelegateKey The new delegate key for the operator.
      */
-    event OperatorDelegateKeySet(address indexed operator, bytes newDelegateKey);
-    event DeregistrationDelaySet(uint64 newDelay);
+    event OperatorDelegateKeySet(address indexed operator, bytes oldDelegateKey, bytes newDelegateKey);
+    event DeregistrationDelaySet(uint64 oldDelay, uint64 newDelay);
 
     /**
      * @notice Registers a new operator in the UniFi AVS system.
