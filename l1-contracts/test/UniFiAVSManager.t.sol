@@ -662,9 +662,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         bytes4[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
 
         assertEq(chainIDs.length, 3, "Should return 3 chainIDs");
-        assertEq(chainIDs[0], 0x11111111, "First chainID should match");
-        assertEq(chainIDs[1], 0x22222222, "Second chainID should match");
-        assertEq(chainIDs[2], 0x33333333, "Third chainID should match");
+        assertEq(uint32(chainIDs[0]), uint32(0x11111111), "First chainID should match");
+        assertEq(uint32(chainIDs[1]), uint32(0x22222222), "Second chainID should match");
+        assertEq(uint32(chainIDs[2]), uint32(0x33333333), "Third chainID should match");
 
         vm.stopPrank();
     }
@@ -680,8 +680,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         bytes4[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
 
         assertEq(chainIDs.length, 2, "Should return 2 chainIDs");
-        assertEq(chainIDs[0], 0x11111111, "First chainID should match");
-        assertEq(chainIDs[1], 0x33333333, "Second chainID should match");
+        assertEq(uint32(chainIDs[0]), uint32(0x11111111), "First chainID should match");
+        assertEq(uint32(chainIDs[1]), uint32(0x33333333), "Second chainID should match");
 
         vm.stopPrank();
     }
