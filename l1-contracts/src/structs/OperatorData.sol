@@ -34,12 +34,14 @@ struct OperatorData {
 struct OperatorDataExtended {
     /// @notice The number of validators associated with this operator.
     uint128 validatorCount;
-    /// @notice The delegate key for the operator.
-    bytes delegateKey;
+    /// @notice The current commitment of the operator.
+    OperatorCommitment commitment;
     /// @notice The block number when the operator started the deregistration process.
     uint256 startOperatorDeregisterBlock;
     /// @notice Whether the operator is registered or not.
     bool isRegistered;
-    bytes pendingDelegateKey;
-    uint256 delegateKeyValidAfter;
+    /// @notice The pending commitment of the operator.
+    OperatorCommitment pendingCommitment;
+    /// @notice The block number after which the pending commitment becomes valid.
+    uint256 commitmentValidAfter;
 }
