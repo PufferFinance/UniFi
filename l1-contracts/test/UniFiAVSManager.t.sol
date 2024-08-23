@@ -99,14 +99,17 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _setOperatorDelegateKey(operator, delegatePubKey);
     }
 
-    function _setOperatorDelegateKey(address _operator, bytes memory _delegateKey) internal {
+    function _setOperatorCommitment(address _operator, bytes memory _delegateKey, uint256 _chainIDBitMap) internal {
         vm.prank(_operator);
-        avsManager.setOperatorDelegateKey(_delegateKey);
+        avsManager.setOperatorCommitment(OperatorCommitment({
+            delegateKey: _delegateKey,
+            chainIDBitMap: _chainIDBitMap
+        }));
 
         vm.roll(block.number + avsManager.getDeregistrationDelay());
 
         vm.prank(_operator);
-        avsManager.updateOperatorDelegateKey();
+        avsManager.updateOperatorCommitment();
     }
 
     // BEGIN TESTS
@@ -535,70 +538,93 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertFalse(validatorData.backedByStake, "backedByStake should be false when delegated to a different address");
     }
 
-    function testSetOperatorDelegateKey() public {
+    function testSetOperatorCommitment() public {
         _setupOperator();
         _registerOperator();
 
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+        uint256 newChainIDBitMap = 3; // 0b11
 
         vm.prank(operator);
-        avsManager.setOperatorDelegateKey(newDelegateKey);
+        avsManager.setOperatorCommitment(OperatorCommitment({
+            delegateKey: newDelegateKey,
+            chainIDBitMap: newChainIDBitMap
+        }));
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.delegateKey, delegatePubKey, "Delegate key should not change immediately");
-        assertEq(operatorData.pendingDelegateKey, newDelegateKey, "Pending delegate key should be set");
+        assertEq(operatorData.pendingCommitment.delegateKey, newDelegateKey, "Pending delegate key should be set");
+        assertEq(operatorData.pendingCommitment.chainIDBitMap, newChainIDBitMap, "Pending chain ID bitmap should be set");
         assertEq(
-            operatorData.delegateKeyValidAfter,
+            operatorData.commitmentValidAfter,
             block.number + avsManager.getDeregistrationDelay(),
-            "Delegate key valid after should be set correctly"
+            "Commitment valid after should be set correctly"
         );
     }
 
-    function testUpdateOperatorDelegateKey() public {
+    function testUpdateOperatorCommitment() public {
         _setupOperator();
         _registerOperator();
 
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+        uint256 newChainIDBitMap = 3; // 0b11
 
         vm.prank(operator);
-        avsManager.setOperatorDelegateKey(newDelegateKey);
+        avsManager.setOperatorCommitment(OperatorCommitment({
+            delegateKey: newDelegateKey,
+            chainIDBitMap: newChainIDBitMap
+        }));
 
         // advance to the update block
         vm.roll(block.number + avsManager.getDeregistrationDelay());
 
         vm.expectEmit(true, false, false, true);
-        emit IUniFiAVSManager.OperatorDelegateKeySet(operator, delegatePubKey, newDelegateKey);
+        emit IUniFiAVSManager.OperatorCommitmentSet(
+            operator,
+            OperatorCommitment({delegateKey: delegatePubKey, chainIDBitMap: 0}),
+            OperatorCommitment({delegateKey: newDelegateKey, chainIDBitMap: newChainIDBitMap})
+        );
 
         vm.prank(operator);
-        avsManager.updateOperatorDelegateKey();
+        avsManager.updateOperatorCommitment();
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.delegateKey, newDelegateKey, "Delegate key should be updated");
-        assertEq(operatorData.pendingDelegateKey, "", "Pending delegate key should be cleared");
-        assertEq(operatorData.delegateKeyValidAfter, 0, "Delegate key valid after should be reset");
+        assertEq(operatorData.commitment.chainIDBitMap, newChainIDBitMap, "Chain ID bitmap should be updated");
+        assertEq(operatorData.pendingCommitment.delegateKey, "", "Pending delegate key should be cleared");
+        assertEq(operatorData.pendingCommitment.chainIDBitMap, 0, "Pending chain ID bitmap should be cleared");
+        assertEq(operatorData.commitmentValidAfter, 0, "Commitment valid after should be reset");
     }
 
-    function testUpdateOperatorDelegateKey_TooEarly() public {
+    function testUpdateOperatorCommitment_TooEarly() public {
         _setupOperator();
         _registerOperator();
 
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+        uint256 newChainIDBitMap = 3; // 0b11
 
         vm.prank(operator);
-        avsManager.setOperatorDelegateKey(newDelegateKey);
+        avsManager.setOperatorCommitment(OperatorCommitment({
+            delegateKey: newDelegateKey,
+            chainIDBitMap: newChainIDBitMap
+        }));
 
         vm.roll(block.number + avsManager.getDeregistrationDelay() - 1);
 
-        vm.expectRevert(IUniFiAVSManager.DelegateKeyChangeNotReady.selector);
+        vm.expectRevert(IUniFiAVSManager.CommitmentChangeNotReady.selector);
         vm.prank(operator);
-        avsManager.updateOperatorDelegateKey();
+        avsManager.updateOperatorCommitment();
     }
 
-    function testSetOperatorDelegateKey_NotRegistered() public {
+    function testSetOperatorCommitment_NotRegistered() public {
         bytes memory newDelegateKey = abi.encodePacked(uint256(2));
+        uint256 newChainIDBitMap = 3; // 0b11
 
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-        avsManager.setOperatorDelegateKey(newDelegateKey);
+        avsManager.setOperatorCommitment(OperatorCommitment({
+            delegateKey: newDelegateKey,
+            chainIDBitMap: newChainIDBitMap
+        }));
     }
 }
