@@ -139,7 +139,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.delegateKey, delegatePubKey);
+        assertEq(operatorData.commitment.delegateKey, delegatePubKey);
+        assertEq(operatorData.commitment.chainIDBitMap, 0);
     }
 
     function testRegisterOperator() public {
