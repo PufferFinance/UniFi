@@ -566,7 +566,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         }));
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.delegateKey, delegatePubKey, "Delegate key should not change immediately");
+        assertEq(operatorData.commitment.delegateKey, delegatePubKey, "Delegate key should not change immediately");
+        assertEq(operatorData.commitment.chainIDBitMap, 0, "Chain ID bitmap should not change immediately");
         assertEq(operatorData.pendingCommitment.delegateKey, newDelegateKey, "Pending delegate key should be set");
         assertEq(operatorData.pendingCommitment.chainIDBitMap, newChainIDBitMap, "Pending chain ID bitmap should be set");
         assertEq(
@@ -603,7 +604,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.updateOperatorCommitment();
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.delegateKey, newDelegateKey, "Delegate key should be updated");
+        assertEq(operatorData.commitment.delegateKey, newDelegateKey, "Delegate key should be updated");
         assertEq(operatorData.commitment.chainIDBitMap, newChainIDBitMap, "Chain ID bitmap should be updated");
         assertEq(operatorData.pendingCommitment.delegateKey, "", "Pending delegate key should be cleared");
         assertEq(operatorData.pendingCommitment.chainIDBitMap, 0, "Pending chain ID bitmap should be cleared");
