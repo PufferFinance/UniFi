@@ -63,6 +63,11 @@ contract UniFiAVSManager is
 
     // EXTERNAL FUNCTIONS
 
+    /**
+     * @notice Registers a new operator in the UniFi AVS system
+     * @dev This function checks if the operator is already registered and if not, registers them in the AVS Directory
+     * @param operatorSignature The signature and associated data for operator registration
+     */
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -78,6 +83,12 @@ contract UniFiAVSManager is
         emit OperatorRegistered(msg.sender);
     }
 
+    /**
+     * @notice Registers validators for a given pod owner
+     * @dev This function checks various conditions and registers validators associated with the operator
+     * @param podOwner The address of the pod owner
+     * @param blsPubKeyHashes The BLS public key hashes of the validators to register
+     */
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
         external
         podIsDelegated(podOwner)
@@ -133,6 +144,11 @@ contract UniFiAVSManager is
         operator.startDeregisterOperatorBlock = 0; // Reset the deregistration start block
     }
 
+    /**
+     * @notice Deregisters validators from the UniFi AVS system
+     * @dev This function handles the deregistration process for multiple validators
+     * @param blsPubKeyHashes The BLS public key hashes of the validators to deregister
+     */
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -171,6 +187,10 @@ contract UniFiAVSManager is
         }
     }
 
+    /**
+     * @notice Starts the process of deregistering an operator from the UniFi AVS system
+     * @dev This function initiates the deregistration process for an operator
+     */
     function startDeregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -196,6 +216,10 @@ contract UniFiAVSManager is
         emit OperatorDeregisterStarted(msg.sender);
     }
 
+    /**
+     * @notice Finishes the process of deregistering an operator from the UniFi AVS system
+     * @dev This function completes the deregistration process for an operator after the delay period
+     */
     function finishDeregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -246,6 +270,11 @@ contract UniFiAVSManager is
         return validators;
     }
 
+    /**
+     * @notice Sets the commitment for an operator
+     * @dev This function initiates a change in the operator's commitment
+     * @param newCommitment The new commitment to set for the operator
+     */
     function setOperatorCommitment(OperatorCommitment memory newCommitment) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
@@ -265,6 +294,10 @@ contract UniFiAVSManager is
         );
     }
 
+    /**
+     * @notice Updates the operator's commitment after the delay period
+     * @dev This function finalizes the commitment change for an operator
+     */
     function updateOperatorCommitment() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
@@ -283,6 +316,11 @@ contract UniFiAVSManager is
         emit OperatorCommitmentSet(msg.sender, oldCommitment, operator.commitment);
     }
 
+    /**
+     * @notice Sets a new deregistration delay
+     * @dev This function can only be called by authorized addresses
+     * @param newDelay The new deregistration delay to set
+     */
     function setDeregistrationDelay(uint64 newDelay) external restricted {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         uint64 oldDelay = $.deregistrationDelay;
@@ -295,6 +333,12 @@ contract UniFiAVSManager is
         return $.deregistrationDelay;
     }
 
+    /**
+     * @notice Converts a bitmap of chain IDs to an array of chain IDs
+     * @dev This function interprets each bit in the bitmap as a flag for a chain ID
+     * @param bitmap The bitmap representing chain IDs
+     * @return An array of chain IDs (as bytes4) corresponding to the set bits in the bitmap
+     */
     function bitmapToChainIDs(uint256 bitmap) public view returns (bytes4[] memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         bytes4[] memory result = new bytes4[](256);
@@ -312,6 +356,12 @@ contract UniFiAVSManager is
         return result;
     }
 
+    /**
+     * @notice Sets a chain ID at a specific index
+     * @dev This function can only be called by authorized addresses
+     * @param index The index at which to set the chain ID (0-255)
+     * @param chainID The chain ID to set
+     */
     function setChainID(uint256 index, bytes4 chainID) external restricted {
         if (index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
