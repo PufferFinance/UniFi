@@ -74,6 +74,16 @@ The commitment change process involves a delay mechanism to ensure security and 
 
 This two-step process with a delay prevents a malicious Operator from switching their commitment during the lookahead window. If they were to do so they could sign preconfs, and break promises by switching their key or supported chains without facing penalties.
 
+#### Chain ID Bitmap
+
+The `chainIDBitMap` is a crucial part of the Operator's commitment. It's a 256-bit integer where each bit represents a specific chain ID. If a bit is set to 1, it means the Operator is committed to supporting that chain. This bitmap allows for efficient storage and quick checking of supported chains.
+
+For example:
+- If `chainIDBitMap` is 5 (binary: 101), the Operator supports chains with IDs 0 and 2.
+- If `chainIDBitMap` is 7 (binary: 111), the Operator supports chains with IDs 0, 1, and 2.
+
+The `UniFiAVSManager` contract provides a `bitmapToChainIDs` function to convert this bitmap into an array of actual chain IDs, making it easy to retrieve the list of supported chains for any Operator.
+
 #### Key Type Flexibility
 
 The type of key (e.g., ECDSA or BLS) is not specified in the registration process. This decision allows for flexibility in the future, accommodating different key types as needed without requiring changes to the core registration mechanism.
