@@ -37,9 +37,9 @@ This streamlined process ensures that operators can register directly with the U
 
 Note: The previous steps involving the PodOwner, EigenPodManager, and DelegationManager are not part of the direct registration process in the `UniFiAVSManager` contract. These steps may be prerequisites handled separately before an operator attempts to register with the UniFi AVS.
 
-### Delegate Key Registration
+### Operator Commitment Registration
 
-After the initial registration, the Operator needs to set a delegate key. This key will be used for signing pre-confirmations and other operations related to the UniFi AVS. The process involves two steps: initiating the change and then updating the key after a delay.
+After the initial registration, the Operator needs to set their commitment, which includes a delegate key and a chain ID bitmap. This commitment will be used for signing pre-confirmations and other operations related to the UniFi AVS. The process involves two steps: initiating the change and then updating the commitment after a delay.
 
 ```mermaid
 sequenceDiagram
@@ -47,32 +47,32 @@ sequenceDiagram
     participant Operator
     participant UniFiAVSManager
 
-    Operator->>UniFiAVSManager: setOperatorDelegateKey(newDelegateKey)
-    UniFiAVSManager-->>Operator: Delegate key change initiated
+    Operator->>UniFiAVSManager: setOperatorCommitment(newCommitment)
+    UniFiAVSManager-->>Operator: Commitment change initiated
     Note over Operator,UniFiAVSManager: Wait for deregistration delay
-    Operator->>UniFiAVSManager: updateOperatorDelegateKey()
-    UniFiAVSManager-->>Operator: Delegate key updated
+    Operator->>UniFiAVSManager: updateOperatorCommitment()
+    UniFiAVSManager-->>Operator: Commitment updated
 ```
 
-1. The `Operator` calls `setOperatorDelegateKey()` on the `UniFiAVSManager`, providing the new delegate key.
-2. The `UniFiAVSManager` initiates the delegate key change process, setting a future block number when the change can be finalized.
-3. After the deregistration delay has passed, the `Operator` calls `updateOperatorDelegateKey()`.
-4. The `UniFiAVSManager` updates the delegate key for the Operator.
+1. The `Operator` calls `setOperatorCommitment()` on the `UniFiAVSManager`, providing the new commitment (delegate key and chain ID bitmap).
+2. The `UniFiAVSManager` initiates the commitment change process, setting a future block number when the change can be finalized.
+3. After the deregistration delay has passed, the `Operator` calls `updateOperatorCommitment()`.
+4. The `UniFiAVSManager` updates the commitment for the Operator.
 
-#### Key Rotation Process
+#### Commitment Rotation Process
 
-The delegate key change process involves a delay mechanism to ensure security and prevent rapid changes:
+The commitment change process involves a delay mechanism to ensure security and prevent rapid changes:
 
-1. When `setOperatorDelegateKey()` is called:
-   - The new key is stored as a pending change.
+1. When `setOperatorCommitment()` is called:
+   - The new commitment is stored as a pending change.
    - A block number is set for when the change can be finalized (current block + deregistration delay).
 
-2. After the delay period, `updateOperatorDelegateKey()` can be called to finalize the change:
+2. After the delay period, `updateOperatorCommitment()` can be called to finalize the change:
    - This function checks if the delay period has passed.
-   - If so, it updates the delegate key to the pending new key.
-   - The pending key and validation block are then reset.
+   - If so, it updates the commitment to the pending new commitment.
+   - The pending commitment and validation block are then reset.
 
-This two-step process with a delay prevents a malicious Operator from switching their delegateKey during the lookahead window. If they were to do so they could sign preconfs, and break promises by switching their key without facing penalities.
+This two-step process with a delay prevents a malicious Operator from switching their commitment during the lookahead window. If they were to do so they could sign preconfs, and break promises by switching their key or supported chains without facing penalties.
 
 #### Key Type Flexibility
 
