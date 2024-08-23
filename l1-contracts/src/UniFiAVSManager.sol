@@ -64,8 +64,8 @@ contract UniFiAVSManager is
     // EXTERNAL FUNCTIONS
 
     /**
-     * @notice Registers a new operator in the UniFi AVS system
-     * @dev This function checks if the operator is already registered and if not, registers them in the AVS Directory
+     * @notice Registers a new operator in the UniFi AVS
+     * @dev This function checks if the operator is already registered and if not, registers them in EigenLayer's AVSDirectory
      * @param operatorSignature The signature and associated data for operator registration
      */
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
@@ -84,10 +84,10 @@ contract UniFiAVSManager is
     }
 
     /**
-     * @notice Registers validators for a given pod owner
-     * @dev This function checks various conditions and registers validators associated with the operator
-     * @param podOwner The address of the pod owner
-     * @param blsPubKeyHashes The BLS public key hashes of the validators to register
+     * @notice Registers validators from a specific EigenPod given pod owner
+     * @dev This function checks that the validator is active on the beacon chain and is delegated to the calling Operator, then registers validators associated with the operator
+     * @param podOwner The address of the owner of the validator's EigenPod 
+     * @param blsPubKeyHashes The BLS public key hashes of the validators that want to be registered
      */
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
         external
@@ -145,8 +145,8 @@ contract UniFiAVSManager is
     }
 
     /**
-     * @notice Deregisters validators from the UniFi AVS system
-     * @dev This function handles the deregistration process for multiple validators
+     * @notice Deregisters validators from the UniFi AVS
+     * @dev This function handles the deregistration process for multiple validators. If the validator's status is not active, a non-owner can deregister the validator. The validator is not immediately deregistered, but instead will be marked as deregistered after the deregistrationDelay and is liable for penalties during this period.
      * @param blsPubKeyHashes The BLS public key hashes of the validators to deregister
      */
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
@@ -188,8 +188,8 @@ contract UniFiAVSManager is
     }
 
     /**
-     * @notice Starts the process of deregistering an operator from the UniFi AVS system
-     * @dev This function initiates the deregistration process for an operator
+     * @notice Starts the process of deregistering an operator from the UniFi AVS. 
+     * @dev This function initiates the deregistration process for an operator. The Operator is not immediately deregistered, but can complete the process by calling finishDeregisterOperator after the deregistrationDelay and is liable for penalties during this period.
      */
     function startDeregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
@@ -217,7 +217,7 @@ contract UniFiAVSManager is
     }
 
     /**
-     * @notice Finishes the process of deregistering an operator from the UniFi AVS system
+     * @notice Finishes the process of deregistering an operator from the UniFi AVS.
      * @dev This function completes the deregistration process for an operator after the delay period
      */
     function finishDeregisterOperator() external {
