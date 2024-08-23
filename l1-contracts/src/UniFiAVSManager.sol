@@ -36,9 +36,6 @@ contract UniFiAVSManager is
     bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
         keccak256("BN254ValidatorRegistration(bytes delegatePubKey,bytes32 salt,uint256 expiry)");
 
-    // Mapping to store chainIDs
-    mapping(uint256 => bytes4) private chainIDs;
-
     modifier podIsDelegated(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
             revert NotOperator();
@@ -110,7 +107,6 @@ contract UniFiAVSManager is
                 revert ValidatorNotActive();
             }
 
-            // Check if the validator already exists
             if ($.validators[blsPubkeyHash].index != 0) {
                 revert ValidatorAlreadyRegistered();
             }
@@ -301,11 +297,12 @@ contract UniFiAVSManager is
     }
 
     function bitmapToChainIDs(uint256 bitmap) public view returns (bytes4[] memory) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         bytes4[] memory result = new bytes4[](256);
         uint256 count = 0;
         for (uint256 i = 0; i < 256; i++) {
             if ((bitmap & (1 << i)) != 0) {
-                result[count] = chainIDs[i];
+                result[count] = $.chainIDs[i];
                 count++;
             }
         }
@@ -318,12 +315,14 @@ contract UniFiAVSManager is
 
     function setChainID(uint256 index, bytes4 chainID) external restricted {
         require(index < 256, "Index out of bounds");
-        chainIDs[index] = chainID;
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        chainIDs[index] = $.chainID;
     }
 
     function getChainID(uint256 index) external view returns (bytes4) {
         require(index < 256, "Index out of bounds");
-        return chainIDs[index];
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.chainIDs[index];
     }
 
     // INTERNAL FUNCTIONS
