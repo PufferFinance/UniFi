@@ -102,9 +102,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function _setOperatorDelegateKey(address _operator, bytes memory _delegateKey) internal {
         vm.prank(_operator);
         avsManager.setOperatorDelegateKey(_delegateKey);
-        
+
         vm.roll(block.number + avsManager.getDeregistrationDelay());
-        
+
         vm.prank(_operator);
         avsManager.updateOperatorDelegateKey();
     }
@@ -140,6 +140,12 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerOperator(operatorSignature);
 
         assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
+
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 0);
+        assertEq(operatorData.delegateKey, "");
+        assertEq(operatorData.startOperatorDeregisterBlock, 0);
+        assertTrue(operatorData.isRegistered);
     }
 
     function testRegisterOperator_AlreadyRegistered() public {
@@ -274,7 +280,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.registeredUntil, initialBlockNumber + avsManager.getDeregistrationDelay(), "registeredUntil should be the deregistrationDelay");
+            assertEq(
+                validatorData.registeredUntil,
+                initialBlockNumber + avsManager.getDeregistrationDelay(),
+                "registeredUntil should be the deregistrationDelay"
+            );
             assertTrue(validatorData.registered, "Validator should be registered");
         }
 
@@ -478,44 +488,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.finishDeregisterOperator();
     }
 
-    function testLastDeregisterBlockUpdatesOnDeregister() public {
-        _setupOperator();
-        _registerOperator();
+    // Test removed as lastDeregisterBlock functionality no longer exists
 
-        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
-        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
-        _setupValidators(blsPubKeyHashes);
-
-        vm.prank(operator);
-        avsManager.registerValidators(podOwner, blsPubKeyHashes);
-
-        OperatorDataExtended memory initialOperatorData = avsManager.getOperator(operator);
-        assertEq(initialOperatorData.lastDeregisterBlock, 0, "Initial lastDeregisterBlock should be 0");
-
-        vm.roll(20);
-        vm.prank(operator);
-        avsManager.deregisterValidators(blsPubKeyHashes);
-
-        OperatorDataExtended memory updatedOperatorData = avsManager.getOperator(operator);
-        assertEq(updatedOperatorData.lastDeregisterBlock, 20, "lastDeregisterBlock should be updated to current block number");
-    }
-
-    function testLastDeregisterBlockDoesNotUpdateOnOtherOperations() public {
-        _setupOperator();
-        _registerOperator();
-
-        OperatorDataExtended memory initialOperatorData = avsManager.getOperator(operator);
-        assertEq(initialOperatorData.lastDeregisterBlock, 0, "Initial lastDeregisterBlock should be 0");
-
-        vm.roll(20);
-
-        bytes memory newDelegateKey = abi.encodePacked(uint256(2));
-        vm.prank(operator);
-        avsManager.setOperatorDelegateKey(newDelegateKey);
-
-        OperatorDataExtended memory updatedOperatorData = avsManager.getOperator(operator);
-        assertEq(updatedOperatorData.lastDeregisterBlock, 0, "lastDeregisterBlock should not change for other operations");
-    }
+    // Test removed as lastDeregisterBlock functionality no longer exists
 
     function testSetDeregistrationDelay() public {
         uint64 newDelay = 100;
@@ -541,62 +516,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     //     assertEq(avsManager.getDeregistrationDelay(), DEREGISTRATION_DELAY, "Deregistration delay should not change");
     // }
 
-    function testLastDeregisterBlockUpdatesOnMultipleDeregistrations() public {
-        _setupOperator();
-        _registerOperator();
-
-        // Setup multiple validators
-        bytes32[] memory blsPubKeyHashes = new bytes32[](3);
-        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
-        blsPubKeyHashes[1] = keccak256(abi.encodePacked("validator2"));
-        blsPubKeyHashes[2] = keccak256(abi.encodePacked("validator3"));
-        _setupValidators(blsPubKeyHashes);
-
-        vm.prank(operator);
-        avsManager.registerValidators(podOwner, blsPubKeyHashes);
-
-        // Advance block number
-        vm.roll(100);
-        uint256 initialBlock = block.number;
-
-        // Deregister first validator
-        bytes32[] memory deregister1 = new bytes32[](1);
-        deregister1[0] = blsPubKeyHashes[0];
-        vm.prank(operator);
-        avsManager.deregisterValidators(deregister1);
-
-        OperatorDataExtended memory operatorData1 = avsManager.getOperator(operator);
-        assertEq(operatorData1.lastDeregisterBlock, initialBlock, "lastDeregisterBlock should be updated after first deregistration");
-        assertEq(operatorData1.validatorCount, 2, "validatorCount should be decremented after first deregistration");
-
-        // Advance block number
-        vm.roll(block.number + 10);
-
-        // Deregister second validator
-        bytes32[] memory deregister2 = new bytes32[](1);
-        deregister2[0] = blsPubKeyHashes[1];
-        vm.prank(operator);
-        avsManager.deregisterValidators(deregister2);
-
-        OperatorDataExtended memory operatorData2 = avsManager.getOperator(operator);
-        assertEq(operatorData2.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated after second deregistration");
-        assertEq(operatorData2.lastDeregisterBlock, initialBlock + 10, "Second deregister block should be 10 blocks later");
-        assertEq(operatorData2.validatorCount, 1, "validatorCount should be decremented after second deregistration");
-
-        // Advance block number
-        vm.roll(block.number + 10);
-
-        // Deregister third validator
-        bytes32[] memory deregister3 = new bytes32[](1);
-        deregister3[0] = blsPubKeyHashes[2];
-        vm.prank(operator);
-        avsManager.deregisterValidators(deregister3);
-
-        OperatorDataExtended memory operatorData3 = avsManager.getOperator(operator);
-        assertEq(operatorData3.lastDeregisterBlock, block.number, "lastDeregisterBlock should be updated after second deregistration");
-        assertEq(operatorData3.lastDeregisterBlock, initialBlock + 20, "Third deregister block should be 20 blocks later");
-        assertEq(operatorData3.validatorCount, 0, "validatorCount should be decremented after second deregistration");
-    }
+    // Test removed as lastDeregisterBlock functionality no longer exists
 
     function testGetValidator_BackedByStakeFalse() public {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
@@ -631,7 +551,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.delegateKey, delegatePubKey, "Delegate key should not change immediately");
         assertEq(operatorData.pendingDelegateKey, newDelegateKey, "Pending delegate key should be set");
-        assertEq(operatorData.delegateKeyValidAfter, block.number + avsManager.getDeregistrationDelay(), "Delegate key valid after should be set correctly");
+        assertEq(
+            operatorData.delegateKeyValidAfter,
+            block.number + avsManager.getDeregistrationDelay(),
+            "Delegate key valid after should be set correctly"
+        );
     }
 
     function testUpdateOperatorDelegateKey() public {
