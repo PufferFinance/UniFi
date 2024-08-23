@@ -120,7 +120,7 @@ contract UniFiAVSManager is
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
             emit ValidatorRegistered(
-                podOwner, msg.sender, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
+                podOwner, msg.sender, $.operators[msg.sender].commitment.delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
             );
         }
 
