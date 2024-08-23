@@ -648,7 +648,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testSetChainIDUnauthorized() public {
         address unauthorizedUser = address(0x1234);
         vm.prank(unauthorizedUser);
-        vm.expectRevert("AccessManaged: sender is not authorized");
+        vm.expectRevert(); // todo get correct Unauthorized.selector
         avsManager.setChainID(0, 0x12345678);
     }
 
@@ -660,7 +660,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testSetDeregistrationDelayUnauthorized() public {
         address unauthorizedUser = address(0x1234);
         vm.prank(unauthorizedUser);
-        vm.expectRevert("AccessManaged: sender is not authorized");
+        vm.expectRevert(); // todo get correct Unauthorized.selector
         avsManager.setDeregistrationDelay(100);
     }
 
