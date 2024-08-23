@@ -147,8 +147,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 0);
-        assertEq(operatorData.delegateKey, "");
-        assertEq(operatorData.startOperatorDeregisterBlock, 0);
+        assertEq(operatorData.commitment.delegateKey, "");
+        assertEq(operatorData.startDeregisterOperatorBlock, 0);
         assertTrue(operatorData.isRegistered);
     }
 
@@ -189,7 +189,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 2);
-        assertEq(operatorData.delegateKey, delegatePubKey);
+        assertEq(operatorData.commitment.delegateKey, delegatePubKey);
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
@@ -284,11 +284,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(
-                validatorData.registeredUntil,
-                initialBlockNumber + avsManager.getDeregistrationDelay(),
-                "registeredUntil should be the deregistrationDelay"
-            );
             assertTrue(validatorData.registered, "Validator should be registered");
         }
 
@@ -387,7 +382,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
-            assertEq(validatorData.registeredUntil, block.number + avsManager.getDeregistrationDelay());
             assertTrue(validatorData.registered);
         }
     }
@@ -403,7 +397,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.startDeregisterOperator();
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.startOperatorDeregisterBlock, block.number);
+        assertEq(operatorData.startDeregisterOperatorBlock, block.number);
     }
 
     function testStartDeregisterOperator_NotRegistered() public {
