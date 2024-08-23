@@ -256,7 +256,7 @@ contract UniFiAVSManager is
         return validators;
     }
 
-    function setOperatorDelegateKey(bytes memory newDelegateKey) external {
+    function setOperatorCommitment(OperatorCommitment memory newCommitment) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
 
@@ -267,30 +267,30 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
-        operator.pendingDelegateKey = newDelegateKey;
-        operator.delegateKeyValidAfter = block.number + $.deregistrationDelay;
+        operator.pendingCommitment = newCommitment;
+        operator.commitmentValidAfter = block.number + $.deregistrationDelay;
 
-        emit OperatorDelegateKeyChangeInitiated(
-            msg.sender, operator.delegateKey, newDelegateKey, operator.delegateKeyValidAfter
+        emit OperatorCommitmentChangeInitiated(
+            msg.sender, operator.commitment, newCommitment, operator.commitmentValidAfter
         );
     }
 
-    function updateOperatorDelegateKey() external {
+    function updateOperatorCommitment() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
 
-        if (operator.delegateKeyValidAfter == 0 || block.number < operator.delegateKeyValidAfter) {
-            revert DelegateKeyChangeNotReady();
+        if (operator.commitmentValidAfter == 0 || block.number < operator.commitmentValidAfter) {
+            revert CommitmentChangeNotReady();
         }
 
-        bytes memory oldDelegateKey = operator.delegateKey;
-        operator.delegateKey = operator.pendingDelegateKey;
+        OperatorCommitment memory oldCommitment = operator.commitment;
+        operator.commitment = operator.pendingCommitment;
 
         // Reset pending data
-        operator.pendingDelegateKey = "";
-        operator.delegateKeyValidAfter = 0;
+        operator.pendingCommitment = OperatorCommitment({delegateKey: "", chainIDBitMap: 0});
+        operator.commitmentValidAfter = 0;
 
-        emit OperatorDelegateKeySet(msg.sender, oldDelegateKey, operator.delegateKey);
+        emit OperatorCommitmentSet(msg.sender, oldCommitment, operator.commitment);
     }
 
     function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory) {
