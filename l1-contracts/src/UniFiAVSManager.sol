@@ -18,6 +18,8 @@ import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
 
+error CommitmentChangeNotReady();
+
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
     IUniFiAVSManager,
