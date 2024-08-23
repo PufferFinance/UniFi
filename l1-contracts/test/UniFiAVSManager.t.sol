@@ -639,7 +639,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testSetChainIDOutOfBounds() public {
         vm.startPrank(DAO);
 
-        vm.expectRevert("Index out of bounds");
+        vm.expectRevert(IndexOutOfBounds.selector);
         avsManager.setChainID(256, 0x12345678);
 
         vm.stopPrank();
@@ -653,7 +653,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testGetChainIDOutOfBounds() public {
-        vm.expectRevert("Index out of bounds");
+        vm.expectRevert(IndexOutOfBounds.selector);
         avsManager.getChainID(256);
     }
 
