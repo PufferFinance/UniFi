@@ -645,9 +645,23 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.stopPrank();
     }
 
+    function testSetChainIDUnauthorized() public {
+        address unauthorizedUser = address(0x1234);
+        vm.prank(unauthorizedUser);
+        vm.expectRevert("AccessManaged: sender is not authorized");
+        avsManager.setChainID(0, 0x12345678);
+    }
+
     function testGetChainIDOutOfBounds() public {
         vm.expectRevert("Index out of bounds");
         avsManager.getChainID(256);
+    }
+
+    function testSetDeregistrationDelayUnauthorized() public {
+        address unauthorizedUser = address(0x1234);
+        vm.prank(unauthorizedUser);
+        vm.expectRevert("AccessManaged: sender is not authorized");
+        avsManager.setDeregistrationDelay(100);
     }
 
     function testBitmapToChainIDs() public {
