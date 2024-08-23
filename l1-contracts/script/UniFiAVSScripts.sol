@@ -88,4 +88,33 @@ contract UniFiAVSScripts is Script {
         uniFiAVSManager.finishDeregisterOperator();
         vm.stopBroadcast();
     }
+
+    // Action 9: Complete Pod Setup and Validator Registration
+    function setupPodAndRegisterValidators(
+        address podOwner,
+        address operator,
+        bytes32[] memory pubkeyHashes,
+        MockEigenPod.ValidatorInfo[] memory validators,
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+    ) public {
+        require(pubkeyHashes.length == validators.length, "Mismatched array lengths");
+
+        // Step 1: Create a Mock Pod
+        createEigenPod(podOwner);
+
+        // Step 2: Add Validators to MockEigenPod
+        addValidatorsToEigenPod(podOwner, pubkeyHashes, validators);
+
+        // Step 3: Delegate from PodOwner to Operator
+        delegateFromPodOwner(podOwner, operator);
+
+        // Step 4: Register the Operator
+        vm.startPrank(operator);
+        registerOperatorToUniFiAVS(operatorSignature);
+        vm.stopPrank();
+
+        // Step 5: Register Validators with UniFiAVSManager
+        vm.prank(operator);
+        registerValidatorsToUniFiAVS(podOwner, pubkeyHashes);
+    }
 }
