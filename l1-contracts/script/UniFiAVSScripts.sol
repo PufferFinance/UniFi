@@ -76,16 +76,16 @@ contract UniFiAVSScripts is Script {
     }
 
     // Action 7: Start Deregistering an Operator
-    function startDeregisteringOperator() public {
+    function startDeregisterOperator() public {
         vm.startBroadcast();
-        uniFiAVSManager.startDeregisteringOperator();
+        uniFiAVSManager.startDeregisterOperator();
         vm.stopBroadcast();
     }
 
     // Action 8: Finish Deregistering an Operator
-    function finishDeregisteringOperator(address operator) public {
+    function finishDeregisterOperator() public {
         vm.startBroadcast();
-        uniFiAVSManager.finishDeregisteringOperator(operator);
+        uniFiAVSManager.finishDeregisterOperator();
         vm.stopBroadcast();
     }
 }
