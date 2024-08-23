@@ -39,7 +39,7 @@ Note: The previous steps involving the PodOwner, EigenPodManager, and Delegation
 
 ### Operator Commitment Registration
 
-After the initial registration, the Operator needs to set their commitment, which includes a delegate key and a chain ID bitmap. This commitment will be used for signing pre-confirmations and other operations related to the UniFi AVS. The process involves two steps: initiating the change and then updating the commitment after a delay.
+After the initial registration, the Operator needs to set their commitment, which includes a delegate key and a chain ID bitmap. This commitment is used to signal which chains the validator will accept preconfs for and the key that they will use to sign off on them.
 
 ```mermaid
 sequenceDiagram
@@ -59,7 +59,7 @@ sequenceDiagram
 3. After the deregistration delay has passed, the `Operator` calls `updateOperatorCommitment()`.
 4. The `UniFiAVSManager` updates the commitment for the Operator.
 
-#### Commitment Rotation Process
+#### Commitment Update Process
 
 The commitment change process involves a delay mechanism to ensure security and prevent rapid changes:
 
