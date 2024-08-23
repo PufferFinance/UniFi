@@ -18,9 +18,3 @@ error InvalidAddress();
  * @dev Signature "0x2c5211c6"
  */
 error InvalidAmount();
-
-/**
- * @notice Thrown when trying to update delegate key before the delay has passed
- * @dev Signature "0x3381d71c"
- */
-error DelegateKeyChangeNotReady();

@@ -488,10 +488,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.finishDeregisterOperator();
     }
 
-    // Test removed as lastDeregisterBlock functionality no longer exists
-
-    // Test removed as lastDeregisterBlock functionality no longer exists
-
     function testSetDeregistrationDelay() public {
         uint64 newDelay = 100;
         uint64 oldDelay = avsManager.getDeregistrationDelay();
