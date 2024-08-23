@@ -17,8 +17,7 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
-
-error CommitmentChangeNotReady();
+import { IndexOutOfBounds } from "./Errors.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -314,13 +313,13 @@ contract UniFiAVSManager is
     }
 
     function setChainID(uint256 index, bytes4 chainID) external restricted {
-        require(index < 256, "Index out of bounds");
+        if (index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        chainIDs[index] = $.chainID;
+        $.chainIDs[index] = chainID;
     }
 
     function getChainID(uint256 index) external view returns (bytes4) {
-        require(index < 256, "Index out of bounds");
+        if (index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.chainIDs[index];
     }

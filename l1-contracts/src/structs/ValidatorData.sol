@@ -25,21 +25,20 @@ struct ValidatorData {
  * @dev This struct combines ValidatorData with additional status information.
  */
 struct ValidatorDataExtended {
+    /// @notice The address of the operator this validator is delegated to.
+    address operator;
+    /// @notice The address of the validator's EigenPod.
     address eigenPod;
     /// @notice The index of the validator in the beacon chain.
     uint64 validatorIndex;
     /// @notice The current status of the validator in the EigenPod.
     IEigenPod.VALIDATOR_STATUS status;
-    /// @notice Indicates whether the validator's EigenPod is delegated to the operator.
-    bool backedByStake;
-    /// @notice The address of the operator managing this validator.
-    address operator;
-    /// @notice The delegate key associated with the validator's operator.
+    /// @notice The delegate key currently associated with the validator's operator.
     bytes delegateKey;
-    /// @notice The block number until which the validator is registered.
-    uint64 registeredUntil;
+    /// @notice Bitmap of chain IDs the validator's operator is committed to.
+    uint256 chainIDBitMap;
+    /// @notice Indicates whether the validator's EigenPod is currently delegated to the operator.
+    bool backedByStake;
     /// @notice Indicates whether the validator is currently registered (current block < registeredUntil).
     bool registered;
-    /// @notice The active commitment of the operator.
-    OperatorCommitment activeCommitment;
 }

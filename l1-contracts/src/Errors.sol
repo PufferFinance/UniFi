@@ -18,3 +18,9 @@ error InvalidAddress();
  * @dev Signature "0x2c5211c6"
  */
 error InvalidAmount();
+
+/**
+ * @notice Thrown when an index is out of bounds
+ * @dev Signature "0x9e8c4c1a"
+ */
+error IndexOutOfBounds();

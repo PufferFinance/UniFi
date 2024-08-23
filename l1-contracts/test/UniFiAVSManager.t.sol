@@ -498,19 +498,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(avsManager.getDeregistrationDelay(), newDelay, "Deregistration delay should be updated");
     }
 
-    // function testSetDeregistrationDelay_Unauthorized() public {
-    //     uint64 newDelay = 100;
-    //     address unauthorizedUser = makeAddr("unauthorizedUser");
-
-    //     vm.prank(unauthorizedUser);
-    //     vm.expectRevert("AccessManaged: sender is not authorized");
-    //     avsManager.setDeregistrationDelay(newDelay);
-
-    //     assertEq(avsManager.getDeregistrationDelay(), DEREGISTRATION_DELAY, "Deregistration delay should not change");
-    // }
-
-    // Test removed as lastDeregisterBlock functionality no longer exists
-
     function testGetValidator_BackedByStakeFalse() public {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));

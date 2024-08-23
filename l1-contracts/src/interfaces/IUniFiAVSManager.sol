@@ -88,6 +88,9 @@ interface IUniFiAVSManager {
     /// @notice Thrown when trying to update a delegate key before the change delay has passed
     error DelegateKeyChangeNotReady();
 
+    /// @notice Thrown when trying to update an operator commitment before the change delay has passed
+    error CommitmentChangeNotReady();
+
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS system.
      * @param operator The address of the registered operator.
@@ -143,7 +146,9 @@ interface IUniFiAVSManager {
      * @param oldCommitment The previous commitment for the operator.
      * @param newCommitment The new commitment for the operator.
      */
-    event OperatorCommitmentSet(address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment);
+    event OperatorCommitmentSet(
+        address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment
+    );
     event OperatorCommitmentChangeInitiated(
         address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment, uint256 validAfter
     );

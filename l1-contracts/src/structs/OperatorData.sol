@@ -19,7 +19,7 @@ struct OperatorData {
     /// @notice The current commitment of the operator.
     OperatorCommitment commitment;
     /// @notice The block number when the operator started the deregistration process.
-    uint256 startOperatorDeregisterBlock;
+    uint256 startDeregisterOperatorBlock;
     /// @notice The pending commitment of the operator.
     OperatorCommitment pendingCommitment;
     /// @notice The block number after which the pending commitment becomes valid.
@@ -36,14 +36,12 @@ struct OperatorDataExtended {
     uint128 validatorCount;
     /// @notice The current commitment of the operator.
     OperatorCommitment commitment;
-    /// @notice The block number when the operator started the deregistration process.
-    uint256 startOperatorDeregisterBlock;
-    /// @notice Whether the operator is registered or not.
-    bool isRegistered;
     /// @notice The pending commitment of the operator.
     OperatorCommitment pendingCommitment;
+    /// @notice The block number when the operator started the deregistration process.
+    uint256 startDeregisterOperatorBlock;
+    /// @notice Whether the operator is registered or not.
+    bool isRegistered;
     /// @notice The block number after which the pending commitment becomes valid.
     uint256 commitmentValidAfter;
-    /// @notice The active commitment of the operator.
-    OperatorCommitment activeCommitment;
 }
