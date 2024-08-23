@@ -3,7 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Script.sol";
 import { UniFiAVSManager } from "../src/UniFiAVSManager.sol";
-import { ISignatureUtils } from "../src/interfaces/ISignatureUtils.sol";
+import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
 import "../test/mocks/MockEigenPodManager.sol";
 import "../test/mocks/MockDelegationManager.sol";
 import "../test/mocks/MockAVSDirectory.sol";
@@ -98,7 +98,7 @@ contract UniFiAVSScripts is Script {
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
     ) public {
         require(pubkeyHashes.length == validators.length, "Mismatched array lengths");
-
+        vm.startBroadcast();
         // Step 1: Create a Mock Pod
         createEigenPod(podOwner);
 
@@ -109,12 +109,10 @@ contract UniFiAVSScripts is Script {
         delegateFromPodOwner(podOwner, operator);
 
         // Step 4: Register the Operator
-        vm.startPrank(operator);
         registerOperatorToUniFiAVS(operatorSignature);
-        vm.stopPrank();
+
 
         // Step 5: Register Validators with UniFiAVSManager
-        vm.prank(operator);
         registerValidatorsToUniFiAVS(podOwner, pubkeyHashes);
     }
 }
