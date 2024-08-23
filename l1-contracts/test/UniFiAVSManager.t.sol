@@ -112,19 +112,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.updateOperatorCommitment();
     }
 
-    function _setOperatorCommitment(address _operator, bytes memory _delegateKey, uint256 _chainIDBitMap) internal {
-        vm.prank(_operator);
-        avsManager.setOperatorCommitment(OperatorCommitment({
-            delegateKey: _delegateKey,
-            chainIDBitMap: _chainIDBitMap
-        }));
-
-        vm.roll(block.number + avsManager.getDeregistrationDelay());
-
-        vm.prank(_operator);
-        avsManager.updateOperatorCommitment();
-    }
-
     // BEGIN TESTS
 
     function testInitialize() public {

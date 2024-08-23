@@ -90,7 +90,7 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
-        if ($.operators[msg.sender].delegateKey.length == 0) {
+        if ($.operators[msg.sender].commitment.delegateKey.length == 0) {
             revert DelegateKeyNotSet();
         }
 
