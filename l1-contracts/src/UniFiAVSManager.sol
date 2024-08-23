@@ -65,6 +65,8 @@ contract UniFiAVSManager is
         __AccessManaged_init(accessManager);
     }
 
+    // EXTERNAL FUNCTIONS
+
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -227,23 +229,7 @@ contract UniFiAVSManager is
     }
 
     function getOperator(address operator) external view returns (OperatorDataExtended memory) {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        OperatorData storage operatorData = $.operators[operator];
-
-        OperatorCommitment memory activeCommitment = operatorData.commitment;
-        if (operatorData.commitmentValidAfter != 0 && block.number >= operatorData.commitmentValidAfter) {
-            activeCommitment = operatorData.pendingCommitment;
-        }
-
-        return OperatorDataExtended({
-            validatorCount: operatorData.validatorCount,
-            commitment: activeCommitment,
-            pendingCommitment: operatorData.pendingCommitment,
-            startDeregisterOperatorBlock: operatorData.startDeregisterOperatorBlock,
-            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
-                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED,
-            commitmentValidAfter: operatorData.commitmentValidAfter
-        });
+        return _getOperator(operator);
     }
 
     function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorDataExtended memory) {
@@ -302,6 +288,66 @@ contract UniFiAVSManager is
         emit OperatorCommitmentSet(msg.sender, oldCommitment, operator.commitment);
     }
 
+    function setDeregistrationDelay(uint64 newDelay) external restricted {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        uint64 oldDelay = $.deregistrationDelay;
+        $.deregistrationDelay = newDelay;
+        emit DeregistrationDelaySet(oldDelay, newDelay);
+    }
+
+    function getDeregistrationDelay() external view returns (uint64) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.deregistrationDelay;
+    }
+
+    function bitmapToChainIDs(uint256 bitmap) public view returns (bytes4[] memory) {
+        bytes4[] memory result = new bytes4[](256);
+        uint256 count = 0;
+        for (uint256 i = 0; i < 256; i++) {
+            if ((bitmap & (1 << i)) != 0) {
+                result[count] = chainIDs[i];
+                count++;
+            }
+        }
+        // Resize the array to remove unused elements
+        assembly {
+            mstore(result, count)
+        }
+        return result;
+    }
+
+    function setChainID(uint256 index, bytes4 chainID) external restricted {
+        require(index < 256, "Index out of bounds");
+        chainIDs[index] = chainID;
+    }
+
+    function getChainID(uint256 index) external view returns (bytes4) {
+        require(index < 256, "Index out of bounds");
+        return chainIDs[index];
+    }
+
+    // INTERNAL FUNCTIONS
+
+    function _getOperator(address operator) internal view returns (OperatorDataExtended memory) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operatorData = $.operators[operator];
+
+        OperatorCommitment memory activeCommitment = operatorData.commitment;
+        if (operatorData.commitmentValidAfter != 0 && block.number >= operatorData.commitmentValidAfter) {
+            activeCommitment = operatorData.pendingCommitment;
+        }
+
+        return OperatorDataExtended({
+            validatorCount: operatorData.validatorCount,
+            commitment: activeCommitment,
+            pendingCommitment: operatorData.pendingCommitment,
+            startDeregisterOperatorBlock: operatorData.startDeregisterOperatorBlock,
+            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
+                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED,
+            commitmentValidAfter: operatorData.commitmentValidAfter
+        });
+    }
+
     function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -333,42 +379,4 @@ contract UniFiAVSManager is
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
-
-    function setDeregistrationDelay(uint64 newDelay) external restricted {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        uint64 oldDelay = $.deregistrationDelay;
-        $.deregistrationDelay = newDelay;
-        emit DeregistrationDelaySet(oldDelay, newDelay);
-    }
-
-    function getDeregistrationDelay() external returns (uint64) {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        return $.deregistrationDelay;
-    }
-
-    function bitmapToChainIDs(uint256 bitmap) public view returns (bytes4[] memory) {
-        bytes4[] memory result = new bytes4[](256);
-        uint256 count = 0;
-        for (uint256 i = 0; i < 256; i++) {
-            if ((bitmap & (1 << i)) != 0) {
-                result[count] = chainIDs[i];
-                count++;
-            }
-        }
-        // Resize the array to remove unused elements
-        assembly {
-            mstore(result, count)
-        }
-        return result;
-    }
-
-    function setChainID(uint256 index, bytes4 chainID) external restricted {
-        require(index < 256, "Index out of bounds");
-        chainIDs[index] = chainID;
-    }
-
-    function getChainID(uint256 index) external view returns (bytes4) {
-        require(index < 256, "Index out of bounds");
-        return chainIDs[index];
-    }
 }
