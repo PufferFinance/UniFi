@@ -223,19 +223,20 @@ contract UniFiAVSManager is
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operatorData = $.operators[operator];
 
-        bytes memory activeDelegateKey = operatorData.delegateKey;
-        if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
-            activeDelegateKey = operatorData.pendingDelegateKey;
+        OperatorCommitment memory activeCommitment = operatorData.commitment;
+        if (operatorData.commitmentValidAfter != 0 && block.number >= operatorData.commitmentValidAfter) {
+            activeCommitment = operatorData.pendingCommitment;
         }
 
         return OperatorDataExtended({
             validatorCount: operatorData.validatorCount,
-            delegateKey: activeDelegateKey,
+            commitment: operatorData.commitment,
             startOperatorDeregisterBlock: operatorData.startOperatorDeregisterBlock,
-            pendingDelegateKey: operatorData.pendingDelegateKey,
-            delegateKeyValidAfter: operatorData.delegateKeyValidAfter,
             isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
-                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
+                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED,
+            pendingCommitment: operatorData.pendingCommitment,
+            commitmentValidAfter: operatorData.commitmentValidAfter,
+            activeCommitment: activeCommitment
         });
     }
 

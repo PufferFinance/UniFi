@@ -44,4 +44,6 @@ struct OperatorDataExtended {
     OperatorCommitment pendingCommitment;
     /// @notice The block number after which the pending commitment becomes valid.
     uint256 commitmentValidAfter;
+    /// @notice The active commitment of the operator.
+    OperatorCommitment activeCommitment;
 }
