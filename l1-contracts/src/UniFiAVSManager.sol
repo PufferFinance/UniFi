@@ -123,7 +123,11 @@ contract UniFiAVSManager is
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
             emit ValidatorRegistered(
-                podOwner, msg.sender, $.operators[msg.sender].commitment.delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
+                podOwner,
+                msg.sender,
+                $.operators[msg.sender].commitment.delegateKey,
+                blsPubkeyHash,
+                validatorInfo.validatorIndex
             );
         }
 
@@ -292,7 +296,7 @@ contract UniFiAVSManager is
         operator.commitment = operator.pendingCommitment;
 
         // Reset pending data
-        operator.pendingCommitment = OperatorCommitment({delegateKey: "", chainIDBitMap: 0});
+        operator.pendingCommitment = OperatorCommitment({ delegateKey: "", chainIDBitMap: 0 });
         operator.commitmentValidAfter = 0;
 
         emit OperatorCommitmentSet(msg.sender, oldCommitment, operator.commitment);
@@ -330,8 +334,7 @@ contract UniFiAVSManager is
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
 
-    // Todo: restrict to DAO
-    function setDeregistrationDelay(uint64 newDelay) external {
+    function setDeregistrationDelay(uint64 newDelay) external restricted {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         uint64 oldDelay = $.deregistrationDelay;
         $.deregistrationDelay = newDelay;
