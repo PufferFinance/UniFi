@@ -40,4 +40,6 @@ struct ValidatorDataExtended {
     uint64 registeredUntil;
     /// @notice Indicates whether the validator is currently registered (current block < registeredUntil).
     bool registered;
+    /// @notice The active commitment of the operator.
+    OperatorCommitment activeCommitment;
 }
