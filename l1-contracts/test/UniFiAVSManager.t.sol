@@ -96,7 +96,20 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.prank(operator);
         avsManager.registerOperator(operatorSignature);
 
-        _setOperatorDelegateKey(operator, delegatePubKey);
+        _setOperatorCommitment(operator, delegatePubKey, 0);
+    }
+
+    function _setOperatorCommitment(address _operator, bytes memory _delegateKey, uint256 _chainIDBitMap) internal {
+        vm.prank(_operator);
+        avsManager.setOperatorCommitment(OperatorCommitment({
+            delegateKey: _delegateKey,
+            chainIDBitMap: _chainIDBitMap
+        }));
+
+        vm.roll(block.number + avsManager.getDeregistrationDelay());
+
+        vm.prank(_operator);
+        avsManager.updateOperatorCommitment();
     }
 
     function _setOperatorCommitment(address _operator, bytes memory _delegateKey, uint256 _chainIDBitMap) internal {
@@ -219,7 +232,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _setupValidators(blsPubKeyHashes);
 
         // Clear the delegate key
-        _setOperatorDelegateKey(operator, "");
+        _setOperatorCommitment(operator, "", 0);
 
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.DelegateKeyNotSet.selector);
