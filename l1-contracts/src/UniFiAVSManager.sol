@@ -94,7 +94,8 @@ contract UniFiAVSManager is
 
         IEigenPod eigenPod = EIGEN_POD_MANAGER.getPod(podOwner);
 
-        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+        uint256 newValidatorCount = blsPubKeyHashes.length;
+        for (uint256 i = 0; i < newValidatorCount; i++) {
             bytes32 blsPubkeyHash = blsPubKeyHashes[i];
             IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubkeyHash);
 
@@ -110,17 +111,20 @@ contract UniFiAVSManager is
             $.validators[blsPubkeyHash] = ValidatorData({
                 eigenPod: address(eigenPod),
                 index: validatorInfo.validatorIndex,
-                operator: msg.sender
+                operator: msg.sender,
+                registeredUntil: type(uint64).max
             });
 
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
-            $.operators[msg.sender].validatorCount++;
-
             emit ValidatorRegistered(
-                podOwner, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
+                podOwner, msg.sender, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
             );
         }
+
+        OperatorData storage operator = $.operators[msg.sender];
+        operator.validatorCount += uint128(newValidatorCount);
+        operator.startOperatorDeregisterBlock = 0; // Reset the deregistration start block
     }
 
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
@@ -128,7 +132,7 @@ contract UniFiAVSManager is
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
-            ValidatorData memory validator = $.validators[blsPubKeyHash];
+            ValidatorData storage validator = $.validators[blsPubKeyHash];
             OperatorData storage operator = $.operators[validator.operator];
 
             if (validator.index == 0) {
@@ -142,17 +146,26 @@ contract UniFiAVSManager is
                 if (validatorInfo.status == IEigenPod.VALIDATOR_STATUS.ACTIVE) {
                     revert NotValidatorOperator();
                 }
+
+                // update the actual operator's validator count
+                $.operators[validator.operator].validatorCount -= 1;
+            } else {
+                $.operators[msg.sender].validatorCount -= 1;
             }
 
-            delete $.validatorIndexes[validator.index];
-            delete $.validators[blsPubKeyHash];
-            operator.validatorCount--;
+            validator.registeredUntil = uint64(block.number) + $.deregistrationDelay;
 
-            emit ValidatorDeregistered(blsPubKeyHash, validator.index, address(validator.eigenPod), validator.operator);
+            emit ValidatorDeregistered(
+                IEigenPod(validator.eigenPod).podOwner(),
+                validator.operator,
+                $.operators[validator.operator].delegateKey,
+                blsPubKeyHash,
+                validator.index
+            );
         }
     }
 
-    function deregisterOperator() external {
+    function startDeregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         OperatorData storage operator = $.operators[msg.sender];
@@ -168,6 +181,35 @@ contract UniFiAVSManager is
             revert OperatorHasValidators();
         }
 
+        if (operator.startOperatorDeregisterBlock != 0) {
+            revert DeregistrationAlreadyStarted();
+        }
+
+        operator.startOperatorDeregisterBlock = block.number;
+
+        emit OperatorDeregisterStarted(msg.sender);
+    }
+
+    function finishDeregisterOperator() external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        OperatorData storage operator = $.operators[msg.sender];
+
+        if (
+            AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
+                == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
+        ) {
+            revert OperatorNotRegistered();
+        }
+
+        if (operator.startOperatorDeregisterBlock == 0) {
+            revert DeregistrationNotStarted();
+        }
+
+        if (block.number < operator.startOperatorDeregisterBlock + $.deregistrationDelay) {
+            revert DeregistrationDelayNotElapsed();
+        }
+
         AVS_DIRECTORY.deregisterOperatorFromAVS(msg.sender);
 
         delete $.operators[msg.sender];
@@ -177,11 +219,20 @@ contract UniFiAVSManager is
 
     function getOperator(address operator) external view returns (OperatorDataExtended memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operatorData = $.operators[operator];
+
+        bytes memory activeDelegateKey = operatorData.delegateKey;
+        if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
+            activeDelegateKey = operatorData.pendingDelegateKey;
+        }
 
         return OperatorDataExtended({
-            validatorCount: $.operators[operator].validatorCount,
-            delegateKey: $.operators[operator].delegateKey,
-            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
+            validatorCount: operatorData.validatorCount,
+            delegateKey: activeDelegateKey,
+            startOperatorDeregisterBlock: operatorData.startOperatorDeregisterBlock,
+            pendingDelegateKey: operatorData.pendingDelegateKey,
+            delegateKeyValidAfter: operatorData.delegateKeyValidAfter,
+            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
         });
     }
@@ -216,8 +267,30 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
-        operator.delegateKey = newDelegateKey;
-        emit OperatorDelegateKeySet(msg.sender, newDelegateKey);
+        operator.pendingDelegateKey = newDelegateKey;
+        operator.delegateKeyValidAfter = block.number + $.deregistrationDelay;
+
+        emit OperatorDelegateKeyChangeInitiated(
+            msg.sender, operator.delegateKey, newDelegateKey, operator.delegateKeyValidAfter
+        );
+    }
+
+    function updateOperatorDelegateKey() external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operator = $.operators[msg.sender];
+
+        if (operator.delegateKeyValidAfter == 0 || block.number < operator.delegateKeyValidAfter) {
+            revert DelegateKeyChangeNotReady();
+        }
+
+        bytes memory oldDelegateKey = operator.delegateKey;
+        operator.delegateKey = operator.pendingDelegateKey;
+
+        // Reset pending data
+        operator.pendingDelegateKey = "";
+        operator.delegateKeyValidAfter = 0;
+
+        emit OperatorDelegateKeySet(msg.sender, oldDelegateKey, operator.delegateKey);
     }
 
     function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory) {
@@ -231,16 +304,37 @@ contract UniFiAVSManager is
 
             bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
 
+            OperatorData storage operatorData = $.operators[validatorData.operator];
+            bytes memory activeDelegateKey = operatorData.delegateKey;
+            if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
+                activeDelegateKey = operatorData.pendingDelegateKey;
+            }
+
             return ValidatorDataExtended({
                 eigenPod: validatorData.eigenPod,
                 validatorIndex: validatorInfo.validatorIndex,
                 status: validatorInfo.status,
                 backedByStake: backedByStake,
-                delegateKey: $.operators[validatorData.operator].delegateKey,
-                operator: validatorData.operator
+                delegateKey: activeDelegateKey,
+                operator: validatorData.operator,
+                registeredUntil: validatorData.registeredUntil,
+                registered: block.number < validatorData.registeredUntil
             });
         }
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
+
+    // Todo: restrict to DAO
+    function setDeregistrationDelay(uint64 newDelay) external {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        uint64 oldDelay = $.deregistrationDelay;
+        $.deregistrationDelay = newDelay;
+        emit DeregistrationDelaySet(oldDelay, newDelay);
+    }
+
+    function getDeregistrationDelay() external returns (uint64) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.deregistrationDelay;
+    }
 }

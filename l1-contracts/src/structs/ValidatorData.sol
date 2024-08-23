@@ -15,6 +15,8 @@ struct ValidatorData {
     uint64 index;
     /// @notice The address of the operator managing this validator.
     address operator;
+    /// @notice The block number until which the validator is registered.
+    uint64 registeredUntil;
 }
 
 /**
@@ -34,4 +36,8 @@ struct ValidatorDataExtended {
     address operator;
     /// @notice The delegate key associated with the validator's operator.
     bytes delegateKey;
+    /// @notice The block number until which the validator is registered.
+    uint64 registeredUntil;
+    /// @notice Indicates whether the validator is currently registered (current block < registeredUntil).
+    bool registered;
 }
