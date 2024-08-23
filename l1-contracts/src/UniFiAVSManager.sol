@@ -160,7 +160,7 @@ contract UniFiAVSManager is
             emit ValidatorDeregistered(
                 IEigenPod(validator.eigenPod).podOwner(),
                 validator.operator,
-                $.operators[validator.operator].delegateKey,
+                $.operators[validator.operator].commitment.delegateKey,
                 blsPubKeyHash,
                 validator.index
             );
