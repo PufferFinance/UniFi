@@ -101,10 +101,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function _setOperatorCommitment(address _operator, bytes memory _delegateKey, uint256 _chainIDBitMap) internal {
         vm.prank(_operator);
-        avsManager.setOperatorCommitment(OperatorCommitment({
-            delegateKey: _delegateKey,
-            chainIDBitMap: _chainIDBitMap
-        }));
+        avsManager.setOperatorCommitment(
+            OperatorCommitment({ delegateKey: _delegateKey, chainIDBitMap: _chainIDBitMap })
+        );
 
         vm.roll(block.number + avsManager.getDeregistrationDelay());
 
@@ -541,16 +540,17 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         uint256 newChainIDBitMap = 3; // 0b11
 
         vm.prank(operator);
-        avsManager.setOperatorCommitment(OperatorCommitment({
-            delegateKey: newDelegateKey,
-            chainIDBitMap: newChainIDBitMap
-        }));
+        avsManager.setOperatorCommitment(
+            OperatorCommitment({ delegateKey: newDelegateKey, chainIDBitMap: newChainIDBitMap })
+        );
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.commitment.delegateKey, delegatePubKey, "Delegate key should not change immediately");
         assertEq(operatorData.commitment.chainIDBitMap, 0, "Chain ID bitmap should not change immediately");
         assertEq(operatorData.pendingCommitment.delegateKey, newDelegateKey, "Pending delegate key should be set");
-        assertEq(operatorData.pendingCommitment.chainIDBitMap, newChainIDBitMap, "Pending chain ID bitmap should be set");
+        assertEq(
+            operatorData.pendingCommitment.chainIDBitMap, newChainIDBitMap, "Pending chain ID bitmap should be set"
+        );
         assertEq(
             operatorData.commitmentValidAfter,
             block.number + avsManager.getDeregistrationDelay(),
@@ -566,10 +566,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         uint256 newChainIDBitMap = 3; // 0b11
 
         vm.prank(operator);
-        avsManager.setOperatorCommitment(OperatorCommitment({
-            delegateKey: newDelegateKey,
-            chainIDBitMap: newChainIDBitMap
-        }));
+        avsManager.setOperatorCommitment(
+            OperatorCommitment({ delegateKey: newDelegateKey, chainIDBitMap: newChainIDBitMap })
+        );
 
         // advance to the update block
         vm.roll(block.number + avsManager.getDeregistrationDelay());
@@ -577,8 +576,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.expectEmit(true, false, false, true);
         emit IUniFiAVSManager.OperatorCommitmentSet(
             operator,
-            OperatorCommitment({delegateKey: delegatePubKey, chainIDBitMap: 0}),
-            OperatorCommitment({delegateKey: newDelegateKey, chainIDBitMap: newChainIDBitMap})
+            OperatorCommitment({ delegateKey: delegatePubKey, chainIDBitMap: 0 }),
+            OperatorCommitment({ delegateKey: newDelegateKey, chainIDBitMap: newChainIDBitMap })
         );
 
         vm.prank(operator);
@@ -600,10 +599,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         uint256 newChainIDBitMap = 3; // 0b11
 
         vm.prank(operator);
-        avsManager.setOperatorCommitment(OperatorCommitment({
-            delegateKey: newDelegateKey,
-            chainIDBitMap: newChainIDBitMap
-        }));
+        avsManager.setOperatorCommitment(
+            OperatorCommitment({ delegateKey: newDelegateKey, chainIDBitMap: newChainIDBitMap })
+        );
 
         vm.roll(block.number + avsManager.getDeregistrationDelay() - 1);
 
@@ -618,9 +616,73 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         vm.prank(operator);
         vm.expectRevert(IUniFiAVSManager.OperatorNotRegistered.selector);
-        avsManager.setOperatorCommitment(OperatorCommitment({
-            delegateKey: newDelegateKey,
-            chainIDBitMap: newChainIDBitMap
-        }));
+        avsManager.setOperatorCommitment(
+            OperatorCommitment({ delegateKey: newDelegateKey, chainIDBitMap: newChainIDBitMap })
+        );
+    }
+
+    function testSetAndGetChainID() public {
+        vm.startPrank(DAO);
+
+        bytes4 chainID1 = 0x12345678;
+        bytes4 chainID2 = 0x87654321;
+
+        avsManager.setChainID(0, chainID1);
+        avsManager.setChainID(1, chainID2);
+
+        assertEq(avsManager.getChainID(0), chainID1, "ChainID at index 0 should match");
+        assertEq(avsManager.getChainID(1), chainID2, "ChainID at index 1 should match");
+
+        vm.stopPrank();
+    }
+
+    function testSetChainIDOutOfBounds() public {
+        vm.startPrank(DAO);
+
+        vm.expectRevert("Index out of bounds");
+        avsManager.setChainID(256, 0x12345678);
+
+        vm.stopPrank();
+    }
+
+    function testGetChainIDOutOfBounds() public {
+        vm.expectRevert("Index out of bounds");
+        avsManager.getChainID(256);
+    }
+
+    function testBitmapToChainIDs() public {
+        vm.startPrank(DAO);
+
+        avsManager.setChainID(0, 0x11111111);
+        avsManager.setChainID(1, 0x22222222);
+        avsManager.setChainID(2, 0x33333333);
+
+        uint256 bitmap = 0x7; // 0b111
+
+        bytes4[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
+
+        assertEq(chainIDs.length, 3, "Should return 3 chainIDs");
+        assertEq(chainIDs[0], 0x11111111, "First chainID should match");
+        assertEq(chainIDs[1], 0x22222222, "Second chainID should match");
+        assertEq(chainIDs[2], 0x33333333, "Third chainID should match");
+
+        vm.stopPrank();
+    }
+
+    function testBitmapToChainIDsWithGaps() public {
+        vm.startPrank(DAO);
+
+        avsManager.setChainID(0, 0x11111111);
+        avsManager.setChainID(2, 0x33333333);
+
+        uint256 bitmap = 0x5; // 0b101
+
+        bytes4[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
+
+        assertEq(chainIDs.length, 2, "Should return 2 chainIDs");
+        assertEq(chainIDs[0], 0x11111111, "First chainID should match");
+        assertEq(chainIDs[1], 0x33333333, "Second chainID should match");
+
+        vm.stopPrank();
     }
 }
