@@ -3,6 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Script.sol";
 import { UniFiAVSManager } from "../src/UniFiAVSManager.sol";
+import { ISignatureUtils } from "../src/interfaces/ISignatureUtils.sol";
 import "../test/mocks/MockEigenPodManager.sol";
 import "../test/mocks/MockDelegationManager.sol";
 import "../test/mocks/MockAVSDirectory.sol";
@@ -71,6 +72,20 @@ contract UniFiAVSScripts is Script {
     function setOperatorDelegateKey(bytes memory newDelegateKey) public {
         vm.startBroadcast();
         uniFiAVSManager.setOperatorDelegateKey(newDelegateKey);
+        vm.stopBroadcast();
+    }
+
+    // Action 7: Start Deregistering an Operator
+    function startDeregisteringOperator() public {
+        vm.startBroadcast();
+        uniFiAVSManager.startDeregisteringOperator();
+        vm.stopBroadcast();
+    }
+
+    // Action 8: Finish Deregistering an Operator
+    function finishDeregisteringOperator(address operator) public {
+        vm.startBroadcast();
+        uniFiAVSManager.finishDeregisteringOperator(operator);
         vm.stopBroadcast();
     }
 }
