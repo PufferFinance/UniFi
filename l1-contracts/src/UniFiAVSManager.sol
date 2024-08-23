@@ -126,7 +126,7 @@ contract UniFiAVSManager is
 
         OperatorData storage operator = $.operators[msg.sender];
         operator.validatorCount += uint128(newValidatorCount);
-        operator.startOperatorDeregisterBlock = 0; // Reset the deregistration start block
+        operator.startDeregisterOperatorBlock = 0; // Reset the deregistration start block
     }
 
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
@@ -183,11 +183,11 @@ contract UniFiAVSManager is
             revert OperatorHasValidators();
         }
 
-        if (operator.startOperatorDeregisterBlock != 0) {
+        if (operator.startDeregisterOperatorBlock != 0) {
             revert DeregistrationAlreadyStarted();
         }
 
-        operator.startOperatorDeregisterBlock = block.number;
+        operator.startDeregisterOperatorBlock = block.number;
 
         emit OperatorDeregisterStarted(msg.sender);
     }
@@ -204,11 +204,11 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
-        if (operator.startOperatorDeregisterBlock == 0) {
+        if (operator.startDeregisterOperatorBlock == 0) {
             revert DeregistrationNotStarted();
         }
 
-        if (block.number < operator.startOperatorDeregisterBlock + $.deregistrationDelay) {
+        if (block.number < operator.startDeregisterOperatorBlock + $.deregistrationDelay) {
             revert DeregistrationDelayNotElapsed();
         }
 
@@ -230,13 +230,12 @@ contract UniFiAVSManager is
 
         return OperatorDataExtended({
             validatorCount: operatorData.validatorCount,
-            commitment: operatorData.commitment,
-            startOperatorDeregisterBlock: operatorData.startOperatorDeregisterBlock,
+            commitment: activeCommitment,
+            pendingCommitment: operatorData.pendingCommitment,
+            startDeregisterOperatorBlock: operatorData.startDeregisterOperatorBlock,
             isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED,
-            pendingCommitment: operatorData.pendingCommitment,
-            commitmentValidAfter: operatorData.commitmentValidAfter,
-            activeCommitment: activeCommitment
+            commitmentValidAfter: operatorData.commitmentValidAfter
         });
     }
 
@@ -308,19 +307,19 @@ contract UniFiAVSManager is
             bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
 
             OperatorData storage operatorData = $.operators[validatorData.operator];
-            bytes memory activeDelegateKey = operatorData.delegateKey;
-            if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
-                activeDelegateKey = operatorData.pendingDelegateKey;
+            OperatorCommitment memory activeCommitment = operatorData.commitment;
+            if (operatorData.commitmentValidAfter != 0 && block.number >= operatorData.commitmentValidAfter) {
+                activeCommitment = operatorData.pendingCommitment;
             }
 
             return ValidatorDataExtended({
+                operator: validatorData.operator,
                 eigenPod: validatorData.eigenPod,
                 validatorIndex: validatorInfo.validatorIndex,
                 status: validatorInfo.status,
+                delegateKey: activeCommitment.delegateKey,
+                chainIDBitMap: activeCommitment.chainIDBitMap,
                 backedByStake: backedByStake,
-                delegateKey: activeDelegateKey,
-                operator: validatorData.operator,
-                registeredUntil: validatorData.registeredUntil,
                 registered: block.number < validatorData.registeredUntil
             });
         }
