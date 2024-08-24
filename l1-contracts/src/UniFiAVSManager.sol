@@ -335,9 +335,9 @@ contract UniFiAVSManager is
      * @param bitmap The bitmap representing chain IDs
      * @return An array of chain IDs (as bytes4) corresponding to the set bits in the bitmap
      */
-    function bitmapToChainIDs(uint256 bitmap) public view returns (bytes4[] memory) {
+    function bitmapToChainIDs(uint256 bitmap) public view returns (uint32[] memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        bytes4[] memory result = new bytes4[](256);
+        uint32[] memory result = new uint32[](256);
         uint256 count = 0;
         for (uint256 i = 0; i < 256; i++) {
             if ((bitmap & (1 << i)) != 0) {
@@ -358,20 +358,20 @@ contract UniFiAVSManager is
      * @param index The index at which to set the chain ID (0-255)
      * @param chainID The chain ID to set
      */
-    function setChainID(uint256 index, bytes4 chainID) external restricted {
+    function setChainID(uint256 index, uint32 chainID) external restricted {
         if (index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         $.bitmapIndexToChainId[index] = chainID;
         $.chainIdToBitmapIndex[chainID] = uint8(index);
     }
 
-    function getChainID(uint256 index) external view returns (bytes4) {
+    function getChainID(uint256 index) external view returns (uint32) {
         if (index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.bitmapIndexToChainId[index];
     }
 
-    function getBitmapIndex(bytes4 chainID) external view returns (uint8) {
+    function getBitmapIndex(uint32 chainID) external view returns (uint8) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.chainIdToBitmapIndex[chainID];
     }
@@ -436,7 +436,7 @@ contract UniFiAVSManager is
      * @param chainId The chain ID to check.
      * @return bool True if the validator is registered for the given chain ID, false otherwise.
      */
-    function isValidatorInChainId(bytes32 blsPubKeyHash, bytes4 chainId) external view returns (bool) {
+    function isValidatorInChainId(bytes32 blsPubKeyHash, uint32 chainId) external view returns (bool) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         ValidatorData storage validator = $.validators[blsPubKeyHash];
 
