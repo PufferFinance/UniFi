@@ -44,5 +44,5 @@ struct OperatorDataExtended {
     uint128 commitmentValidAfter;
     /// @notice Whether the operator is registered or not.
     bool isRegistered;
-    // 7 bytes padding here (automatically added by the compiler)
 }
+// 7 bytes padding here (automatically added by the compiler)

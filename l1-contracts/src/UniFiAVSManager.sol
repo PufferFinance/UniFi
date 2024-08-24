@@ -86,7 +86,7 @@ contract UniFiAVSManager is
     /**
      * @notice Registers validators from a specific EigenPod given pod owner
      * @dev This function checks that the validator is active on the beacon chain and is delegated to the calling Operator, then registers validators associated with the operator
-     * @param podOwner The address of the owner of the validator's EigenPod 
+     * @param podOwner The address of the owner of the validator's EigenPod
      * @param blsPubKeyHashes The BLS public key hashes of the validators that want to be registered
      */
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
@@ -131,13 +131,7 @@ contract UniFiAVSManager is
 
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
-            emit ValidatorRegistered(
-                podOwner,
-                msg.sender,
-                delegateKey,
-                blsPubkeyHash,
-                validatorInfo.validatorIndex
-            );
+            emit ValidatorRegistered(podOwner, msg.sender, delegateKey, blsPubkeyHash, validatorInfo.validatorIndex);
         }
 
         OperatorData storage operator = $.operators[msg.sender];
@@ -190,7 +184,7 @@ contract UniFiAVSManager is
     }
 
     /**
-     * @notice Starts the process of deregistering an operator from the UniFi AVS. 
+     * @notice Starts the process of deregistering an operator from the UniFi AVS.
      * @dev This function initiates the deregistration process for an operator. The Operator is not immediately deregistered, but can complete the process by calling finishDeregisterOperator after the deregistrationDelay and is liable for penalties during this period.
      */
     function startDeregisterOperator() external {
