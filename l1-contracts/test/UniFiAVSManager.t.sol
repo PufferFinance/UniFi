@@ -127,6 +127,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.commitment.delegateKey, delegatePubKey);
         assertEq(operatorData.commitment.chainIDBitMap, 0);
+        assertEq(operatorData.pendingCommitment.delegateKey, "");
+        assertEq(operatorData.pendingCommitment.chainIDBitMap, 0);
     }
 
     function testRegisterOperator() public {
@@ -147,7 +149,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 0);
         assertEq(operatorData.commitment.delegateKey, "");
+        assertEq(operatorData.commitment.chainIDBitMap, 0);
+        assertEq(operatorData.pendingCommitment.delegateKey, "");
+        assertEq(operatorData.pendingCommitment.chainIDBitMap, 0);
         assertEq(operatorData.startDeregisterOperatorBlock, 0);
+        assertEq(operatorData.commitmentValidAfter, 0);
         assertTrue(operatorData.isRegistered);
     }
 
@@ -396,7 +402,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.startDeregisterOperator();
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
-        assertEq(operatorData.startDeregisterOperatorBlock, block.number);
+        assertEq(operatorData.startDeregisterOperatorBlock, uint128(block.number));
     }
 
     function testStartDeregisterOperator_NotRegistered() public {
