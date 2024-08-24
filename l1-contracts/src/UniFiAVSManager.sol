@@ -423,4 +423,28 @@ contract UniFiAVSManager is
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
+
+    /**
+     * @notice Checks if a validator is registered for a specific chain ID.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param chainId The chain ID to check.
+     * @return bool True if the validator is registered for the given chain ID, false otherwise.
+     */
+    function isValidatorInChainId(bytes32 blsPubKeyHash, uint32 chainId) external view returns (bool) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        ValidatorData storage validator = $.validators[blsPubKeyHash];
+        
+        if (validator.index == 0) {
+            return false; // Validator not found
+        }
+
+        OperatorData storage operator = $.operators[validator.operator];
+        OperatorCommitment memory activeCommitment = operator.commitment;
+        
+        if (operator.commitmentValidAfter != 0 && block.number >= operator.commitmentValidAfter) {
+            activeCommitment = operator.pendingCommitment;
+        }
+
+        return (activeCommitment.chainIDBitMap & (1 << chainId)) != 0;
+    }
 }

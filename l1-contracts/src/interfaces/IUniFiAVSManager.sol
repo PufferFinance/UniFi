@@ -227,4 +227,12 @@ interface IUniFiAVSManager {
      * @notice Updates the operator's commitment after the delay period.
      */
     function updateOperatorCommitment() external;
+
+    /**
+     * @notice Checks if a validator is registered for a specific chain ID.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param chainId The chain ID to check.
+     * @return bool True if the validator is registered for the given chain ID, false otherwise.
+     */
+    function isValidatorInChainId(bytes32 blsPubKeyHash, uint32 chainId) external view returns (bool);
 }
