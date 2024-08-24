@@ -101,8 +101,9 @@ contract UniFiAVSManager is
         ) {
             revert OperatorNotRegistered();
         }
+        bytes memory delegateKey = $.operators[msg.sender].commitment.delegateKey;
 
-        if ($.operators[msg.sender].commitment.delegateKey.length == 0) {
+        if (delegateKey.length == 0) {
             revert DelegateKeyNotSet();
         }
 
@@ -133,7 +134,7 @@ contract UniFiAVSManager is
             emit ValidatorRegistered(
                 podOwner,
                 msg.sender,
-                $.operators[msg.sender].commitment.delegateKey,
+                delegateKey,
                 blsPubkeyHash,
                 validatorInfo.validatorIndex
             );
@@ -310,8 +311,8 @@ contract UniFiAVSManager is
         operator.commitment = operator.pendingCommitment;
 
         // Reset pending data
-        operator.pendingCommitment = OperatorCommitment({ delegateKey: "", chainIDBitMap: 0 });
-        operator.commitmentValidAfter = 0;
+        delete operator.pendingCommitment;
+        delete operator.commitmentValidAfter;
 
         emit OperatorCommitmentSet(msg.sender, oldCommitment, operator.commitment);
     }
