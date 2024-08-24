@@ -14,14 +14,14 @@ struct OperatorCommitment {
 }
 
 struct OperatorData {
-    /// @notice The number of validators associated with this operator.
-    uint128 validatorCount;
     /// @notice The current commitment of the operator.
     OperatorCommitment commitment;
-    /// @notice The block number when the operator started the deregistration process.
-    uint128 startDeregisterOperatorBlock;
     /// @notice The pending commitment of the operator.
     OperatorCommitment pendingCommitment;
+    /// @notice The number of validators associated with this operator.
+    uint128 validatorCount;
+    /// @notice The block number when the operator started the deregistration process.
+    uint128 startDeregisterOperatorBlock;
     /// @notice The block number after which the pending commitment becomes valid.
     uint128 commitmentValidAfter;
 }
@@ -32,16 +32,17 @@ struct OperatorData {
  * @dev This struct combines OperatorData with additional status information.
  */
 struct OperatorDataExtended {
-    /// @notice The number of validators associated with this operator.
-    uint128 validatorCount;
     /// @notice The current commitment of the operator.
     OperatorCommitment commitment;
     /// @notice The pending commitment of the operator.
     OperatorCommitment pendingCommitment;
+    /// @notice The number of validators associated with this operator.
+    uint128 validatorCount;
     /// @notice The block number when the operator started the deregistration process.
     uint128 startDeregisterOperatorBlock;
-    /// @notice Whether the operator is registered or not.
-    bool isRegistered;
     /// @notice The block number after which the pending commitment becomes valid.
     uint128 commitmentValidAfter;
+    /// @notice Whether the operator is registered or not.
+    bool isRegistered;
+    // 7 bytes padding here (automatically added by the compiler)
 }
