@@ -341,7 +341,7 @@ contract UniFiAVSManager is
         uint256 count = 0;
         for (uint256 i = 0; i < 256; i++) {
             if ((bitmap & (1 << i)) != 0) {
-                result[count] = $.chainIDs[i];
+                result[count] = $.bitmapIndexToChainId[i];
                 count++;
             }
         }
@@ -361,13 +361,19 @@ contract UniFiAVSManager is
     function setChainID(uint256 index, bytes4 chainID) external restricted {
         if (index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        $.chainIDs[index] = chainID;
+        $.bitmapIndexToChainId[index] = chainID;
+        $.chainIdToBitmapIndex[chainID] = uint8(index);
     }
 
     function getChainID(uint256 index) external view returns (bytes4) {
         if (index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        return $.chainIDs[index];
+        return $.bitmapIndexToChainId[index];
+    }
+
+    function getBitmapIndex(bytes4 chainID) external view returns (uint8) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.chainIdToBitmapIndex[chainID];
     }
 
     // INTERNAL FUNCTIONS
