@@ -717,7 +717,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testGetBitmapIndexNonExistent() public {
         uint32 nonExistentChainID = 999;
 
-        assertEq(avsManager.getBitmapIndex(nonExistentChainID), type(uint8).max, "Bitmap index for non-existent chainID should be type(uint8).max");
+        assertEq(
+            avsManager.getBitmapIndex(nonExistentChainID),
+            type(uint8).max,
+            "Bitmap index for non-existent chainID should be type(uint8).max"
+        );
     }
 
     function testIsValidatorInChainId() public {
