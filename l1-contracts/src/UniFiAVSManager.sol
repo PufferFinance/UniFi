@@ -433,17 +433,13 @@ contract UniFiAVSManager is
     function isValidatorInChainId(bytes32 blsPubKeyHash, uint32 chainId) external view returns (bool) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         ValidatorData storage validator = $.validators[blsPubKeyHash];
-        
+
         if (validator.index == 0) {
             return false; // Validator not found
         }
 
         OperatorData storage operator = $.operators[validator.operator];
         OperatorCommitment memory activeCommitment = operator.commitment;
-        
-        if (operator.commitmentValidAfter != 0 && block.number >= operator.commitmentValidAfter) {
-            activeCommitment = operator.pendingCommitment;
-        }
 
         return (activeCommitment.chainIDBitMap & (1 << chainId)) != 0;
     }

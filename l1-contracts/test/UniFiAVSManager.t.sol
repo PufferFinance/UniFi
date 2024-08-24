@@ -717,7 +717,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testIsValidatorInChainId_ValidatorNotFound() public {
         bytes32 nonExistentValidator = keccak256(abi.encodePacked("nonExistentValidator"));
 
-        assertFalse(avsManager.isValidatorInChainId(nonExistentValidator, 0), "Non-existent validator should not be in any chain");
+        assertFalse(
+            avsManager.isValidatorInChainId(nonExistentValidator, 0),
+            "Non-existent validator should not be in any chain"
+        );
     }
 
     function testIsValidatorInChainId_AfterCommitmentChange() public {
@@ -738,7 +741,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         // Change the commitment
         uint256 newChainIDBitMap = 0x6; // 0b110, active for chain IDs 1 and 2
         vm.prank(operator);
-        avsManager.setOperatorCommitment(OperatorCommitment({ delegateKey: delegatePubKey, chainIDBitMap: newChainIDBitMap }));
+        avsManager.setOperatorCommitment(
+            OperatorCommitment({ delegateKey: delegatePubKey, chainIDBitMap: newChainIDBitMap })
+        );
 
         // Before the commitment change takes effect
         assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should still be in chain ID 0");
@@ -751,7 +756,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.updateOperatorCommitment();
 
         // After the commitment change takes effect
-        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should no longer be in chain ID 0");
+        assertFalse(
+            avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should no longer be in chain ID 0"
+        );
         assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should now be in chain ID 1");
         assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 2), "Validator should still be in chain ID 2");
     }
