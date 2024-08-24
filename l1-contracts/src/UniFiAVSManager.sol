@@ -359,21 +359,22 @@ contract UniFiAVSManager is
      * @param chainID The chain ID to set
      */
     function setChainID(uint256 index, uint32 chainID) external restricted {
-        if (index >= 256) revert IndexOutOfBounds();
+        if (index == 0 || index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         $.bitmapIndexToChainId[index] = chainID;
         $.chainIdToBitmapIndex[chainID] = uint8(index);
     }
 
     function getChainID(uint256 index) external view returns (uint32) {
-        if (index >= 256) revert IndexOutOfBounds();
+        if (index == 0 || index >= 256) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.bitmapIndexToChainId[index];
     }
 
     function getBitmapIndex(uint32 chainID) external view returns (uint8) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        return $.chainIdToBitmapIndex[chainID];
+        uint8 index = $.chainIdToBitmapIndex[chainID];
+        return index == 0 ? type(uint8).max : index;
     }
 
     // INTERNAL FUNCTIONS
@@ -448,6 +449,9 @@ contract UniFiAVSManager is
         OperatorCommitment memory activeCommitment = operator.commitment;
 
         uint8 bitmapIndex = $.chainIdToBitmapIndex[chainId];
-        return (activeCommitment.chainIDBitMap & (1 << bitmapIndex)) != 0;
+        if (bitmapIndex == 0) {
+            return false; // ChainId not set
+        }
+        return (activeCommitment.chainIDBitMap & (1 << (bitmapIndex - 1))) != 0;
     }
 }
