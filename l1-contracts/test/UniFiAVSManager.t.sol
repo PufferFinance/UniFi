@@ -722,24 +722,31 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _registerOperator();
         _setupValidators(blsPubKeyHashes);
 
+        // Set chain IDs
+        vm.startPrank(DAO);
+        avsManager.setChainID(0, bytes4(uint32(1))); // Ethereum Mainnet
+        avsManager.setChainID(1, bytes4(uint32(10))); // Optimism
+        avsManager.setChainID(2, bytes4(uint32(137))); // Polygon
+        vm.stopPrank();
+
         // Set a chainIDBitMap for the operator
-        uint256 chainIDBitMap = 0x5; // 0b101, active for chain IDs 0 and 2
+        uint256 chainIDBitMap = 0x5; // 0b101, active for chain IDs at index 0 and 2
         _setOperatorCommitment(operator, delegatePubKey, chainIDBitMap);
 
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
-        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should be in chain ID 0");
-        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should not be in chain ID 1");
-        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 2), "Validator should be in chain ID 2");
-        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 3), "Validator should not be in chain ID 3");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(1))), "Validator should be in Ethereum Mainnet");
+        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(10))), "Validator should not be in Optimism");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(137))), "Validator should be in Polygon");
+        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(42161))), "Validator should not be in Arbitrum One");
     }
 
     function testIsValidatorInChainId_ValidatorNotFound() public {
         bytes32 nonExistentValidator = keccak256(abi.encodePacked("nonExistentValidator"));
 
         assertFalse(
-            avsManager.isValidatorInChainId(nonExistentValidator, 0),
+            avsManager.isValidatorInChainId(nonExistentValidator, bytes4(uint32(1))),
             "Non-existent validator should not be in any chain"
         );
     }
@@ -752,23 +759,30 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         _registerOperator();
         _setupValidators(blsPubKeyHashes);
 
+        // Set chain IDs
+        vm.startPrank(DAO);
+        avsManager.setChainID(0, bytes4(uint32(1))); // Ethereum Mainnet
+        avsManager.setChainID(1, bytes4(uint32(10))); // Optimism
+        avsManager.setChainID(2, bytes4(uint32(137))); // Polygon
+        vm.stopPrank();
+
         // Initial chainIDBitMap
-        uint256 initialChainIDBitMap = 0x5; // 0b101, active for chain IDs 0 and 2
+        uint256 initialChainIDBitMap = 0x5; // 0b101, active for chain IDs at index 0 and 2
         _setOperatorCommitment(operator, delegatePubKey, initialChainIDBitMap);
 
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
         // Change the commitment
-        uint256 newChainIDBitMap = 0x6; // 0b110, active for chain IDs 1 and 2
+        uint256 newChainIDBitMap = 0x6; // 0b110, active for chain IDs at index 1 and 2
         vm.prank(operator);
         avsManager.setOperatorCommitment(
             OperatorCommitment({ delegateKey: delegatePubKey, chainIDBitMap: newChainIDBitMap })
         );
 
         // Before the commitment change takes effect
-        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should still be in chain ID 0");
-        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should not yet be in chain ID 1");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(1))), "Validator should still be in Ethereum Mainnet");
+        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(10))), "Validator should not yet be in Optimism");
 
         // Advance to make the new commitment active
         vm.roll(block.number + avsManager.getDeregistrationDelay());
@@ -778,9 +792,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         // After the commitment change takes effect
         assertFalse(
-            avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should no longer be in chain ID 0"
+            avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(1))), "Validator should no longer be in Ethereum Mainnet"
         );
-        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should now be in chain ID 1");
-        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 2), "Validator should still be in chain ID 2");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(10))), "Validator should now be in Optimism");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], bytes4(uint32(137))), "Validator should still be in Polygon");
     }
 }
