@@ -670,7 +670,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         uint256 bitmap = 0xE; // 0b1110
 
-        uint32[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
+        uint256[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
 
         assertEq(chainIDs.length, 3, "Should return 3 chainIDs");
         assertEq(chainIDs[0], 1, "First chainID should match");
@@ -688,7 +688,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         uint256 bitmap = 0xA; // 0b1010
 
-        uint32[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
+        uint256[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
 
         assertEq(chainIDs.length, 2, "Should return 2 chainIDs");
         assertEq(chainIDs[0], 1, "First chainID should match");
