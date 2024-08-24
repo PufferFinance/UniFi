@@ -335,9 +335,9 @@ contract UniFiAVSManager is
      * @param bitmap The bitmap representing chain IDs
      * @return An array of chain IDs (as bytes4) corresponding to the set bits in the bitmap
      */
-    function bitmapToChainIDs(uint256 bitmap) public view returns (uint32[] memory) {
+    function bitmapToChainIDs(uint256 bitmap) public view returns (uint256[] memory) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        uint32[] memory result = new uint32[](256);
+        uint256[] memory result = new uint256[](256);
         uint8 count = 0;
         for (uint8 i = 1; i < 255; i++) {
             if ((bitmap & (1 << i)) != 0) {
@@ -358,20 +358,20 @@ contract UniFiAVSManager is
      * @param index The index at which to set the chain ID (0-255)
      * @param chainID The chain ID to set
      */
-    function setChainID(uint8 index, uint32 chainID) external restricted {
+    function setChainID(uint8 index, uint256 chainID) external restricted {
         if (index == 0) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         $.bitmapIndexToChainId[index] = chainID;
         $.chainIdToBitmapIndex[chainID] = index;
     }
 
-    function getChainID(uint8 index) external view returns (uint32) {
+    function getChainID(uint8 index) external view returns (uint256) {
         if (index == 0) revert IndexOutOfBounds();
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.bitmapIndexToChainId[index];
     }
 
-    function getBitmapIndex(uint32 chainID) external view returns (uint8) {
+    function getBitmapIndex(uint256 chainID) external view returns (uint8) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         uint8 index = $.chainIdToBitmapIndex[chainID];
         return index == 0 ? type(uint8).max : index;

@@ -617,8 +617,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testSetAndGetChainID() public {
         vm.startPrank(DAO);
 
-        uint32 chainID1 = 1; // Ethereum Mainnet
-        uint32 chainID2 = 10; // Optimism
+        uint256 chainID1 = 1; // Ethereum Mainnet
+        uint256 chainID2 = 10; // Optimism
 
         avsManager.setChainID(1, chainID1);
         avsManager.setChainID(2, chainID2);
@@ -635,8 +635,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.expectRevert(IndexOutOfBounds.selector);
         avsManager.setChainID(0, 1);
 
-        vm.expectRevert(IndexOutOfBounds.selector);
-        avsManager.setChainID(256, 1);
+        // No need to test for 256 as uint8 can't be 256
 
         vm.stopPrank();
     }
@@ -652,8 +651,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.expectRevert(IndexOutOfBounds.selector);
         avsManager.getChainID(0);
 
-        vm.expectRevert(IndexOutOfBounds.selector);
-        avsManager.getChainID(256);
+        // No need to test for 256 as uint8 can't be 256
     }
 
     function testSetDeregistrationDelayUnauthorized() public {
