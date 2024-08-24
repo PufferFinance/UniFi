@@ -359,14 +359,16 @@ contract UniFiAVSManager is
      * @param chainID The chain ID to set
      */
     function setChainID(uint8 index, uint256 chainID) external restricted {
-        if (index == 0) revert IndexOutOfBounds();
+        if (index == 0 || index > 255) revert IndexOutOfBounds();
+
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         $.bitmapIndexToChainId[index] = chainID;
         $.chainIdToBitmapIndex[chainID] = index;
     }
 
     function getChainID(uint8 index) external view returns (uint256) {
-        if (index == 0) revert IndexOutOfBounds();
+        if (index == 0 || index > 255) revert IndexOutOfBounds();
+
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.bitmapIndexToChainId[index];
     }
@@ -374,7 +376,8 @@ contract UniFiAVSManager is
     function getBitmapIndex(uint256 chainID) external view returns (uint8) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         uint8 index = $.chainIdToBitmapIndex[chainID];
-        return index == 0 ? type(uint8).max : index;
+
+        return index; // if 0 then there's no index set
     }
 
     // INTERNAL FUNCTIONS

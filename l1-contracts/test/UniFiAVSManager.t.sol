@@ -717,7 +717,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         assertEq(
             avsManager.getBitmapIndex(nonExistentChainID),
-            type(uint8).max,
+            0,
             "Bitmap index for non-existent chainID should be type(uint8).max"
         );
     }
