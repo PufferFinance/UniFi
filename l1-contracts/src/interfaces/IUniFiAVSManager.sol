@@ -150,7 +150,7 @@ interface IUniFiAVSManager {
         address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment
     );
     event OperatorCommitmentChangeInitiated(
-        address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment, uint256 validAfter
+        address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment, uint128 validAfter
     );
 
     /**

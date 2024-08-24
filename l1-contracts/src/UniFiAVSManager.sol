@@ -143,6 +143,7 @@ contract UniFiAVSManager is
         OperatorData storage operator = $.operators[msg.sender];
         operator.validatorCount += uint128(newValidatorCount);
         operator.startDeregisterOperatorBlock = 0; // Reset the deregistration start block
+        operator.commitmentValidAfter = 0; // Reset the commitment valid after block
     }
 
     /**
@@ -212,7 +213,7 @@ contract UniFiAVSManager is
             revert DeregistrationAlreadyStarted();
         }
 
-        operator.startDeregisterOperatorBlock = block.number;
+        operator.startDeregisterOperatorBlock = uint128(block.number);
 
         emit OperatorDeregisterStarted(msg.sender);
     }
@@ -288,7 +289,7 @@ contract UniFiAVSManager is
         }
 
         operator.pendingCommitment = newCommitment;
-        operator.commitmentValidAfter = block.number + $.deregistrationDelay;
+        operator.commitmentValidAfter = uint128(block.number + $.deregistrationDelay);
 
         emit OperatorCommitmentChangeInitiated(
             msg.sender, operator.commitment, newCommitment, operator.commitmentValidAfter
