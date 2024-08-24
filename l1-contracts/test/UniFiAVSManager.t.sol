@@ -693,6 +693,27 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         vm.stopPrank();
     }
 
+    function testGetBitmapIndex() public {
+        vm.startPrank(DAO);
+
+        bytes4 chainID1 = 0x11111111;
+        bytes4 chainID2 = 0x22222222;
+
+        avsManager.setChainID(0, chainID1);
+        avsManager.setChainID(1, chainID2);
+
+        assertEq(avsManager.getBitmapIndex(chainID1), 0, "Bitmap index for chainID1 should be 0");
+        assertEq(avsManager.getBitmapIndex(chainID2), 1, "Bitmap index for chainID2 should be 1");
+
+        vm.stopPrank();
+    }
+
+    function testGetBitmapIndexNonExistent() public {
+        bytes4 nonExistentChainID = 0x99999999;
+
+        assertEq(avsManager.getBitmapIndex(nonExistentChainID), 0, "Bitmap index for non-existent chainID should be 0");
+    }
+
     function testIsValidatorInChainId() public {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
