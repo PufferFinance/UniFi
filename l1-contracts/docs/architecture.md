@@ -97,8 +97,8 @@ When it is their turn to propose a block, Commit-Boost will request a complete L
 #### Operator Registration
 At a high level it is required for an `Operator` within the EigenLayer contracts to opt-in to the AVS. See the [Operator Registration Process](registration.md#operator-registration-process) section for more details.
 
-#### Delegate Key Registration
-Each `Operator` will register a single `delegateKey` that will be used to issue preconfs. See the [Delegate Key Registration](registration.md#delegate-key-registration) section for more details.
+### Operator Commitment Registration
+Each `Operator` will register an `OperatorCommitment` containing a `delegateKey` that will be used to issue preconfs and a mapping of supported chainIDs. See the [Delegate Key Registration](registration.md#operator-commitment-registration) section for more details.
 
 #### Validator Registration
 If an EigenPod owner has delegated their stake to an `Operator`, then the `Operator` can register the EigenPod's validators as preconferers in the AVS. See the [Validator Registration](registration.md#validator-registration) section for more details.

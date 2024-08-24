@@ -15,6 +15,8 @@ abstract contract UniFiAVSManagerStorage {
         mapping(uint256 => bytes32) validatorIndexes;
         mapping(address => OperatorData) operators; // operator => OperatorData
         uint64 deregistrationDelay;
+        // Mapping to store chainIDs
+        mapping(uint256 => bytes4) chainIDs;
     }
 
     /**

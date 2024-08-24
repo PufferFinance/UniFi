@@ -6,15 +6,24 @@ pragma solidity >=0.8.0 <0.9.0;
  * @notice Struct to store information about an operator in the UniFi AVS system.
  * @dev This struct is used to keep track of important operator details.
  */
-struct OperatorData {
-    /// @notice The number of validators associated with this operator.
-    uint128 validatorCount;
+struct OperatorCommitment {
     /// @notice The delegate key for the operator.
     bytes delegateKey;
+    /// @notice Bitmap of chain IDs the operator is committed to.
+    uint256 chainIDBitMap;
+}
+
+struct OperatorData {
+    /// @notice The current commitment of the operator.
+    OperatorCommitment commitment;
+    /// @notice The pending commitment of the operator.
+    OperatorCommitment pendingCommitment;
+    /// @notice The number of validators associated with this operator.
+    uint128 validatorCount;
     /// @notice The block number when the operator started the deregistration process.
-    uint256 startOperatorDeregisterBlock;
-    bytes pendingDelegateKey;
-    uint256 delegateKeyValidAfter;
+    uint128 startDeregisterOperatorBlock;
+    /// @notice The block number after which the pending commitment becomes valid.
+    uint128 commitmentValidAfter;
 }
 
 /**
@@ -23,14 +32,17 @@ struct OperatorData {
  * @dev This struct combines OperatorData with additional status information.
  */
 struct OperatorDataExtended {
+    /// @notice The current commitment of the operator.
+    OperatorCommitment commitment;
+    /// @notice The pending commitment of the operator.
+    OperatorCommitment pendingCommitment;
     /// @notice The number of validators associated with this operator.
     uint128 validatorCount;
-    /// @notice The delegate key for the operator.
-    bytes delegateKey;
     /// @notice The block number when the operator started the deregistration process.
-    uint256 startOperatorDeregisterBlock;
+    uint128 startDeregisterOperatorBlock;
+    /// @notice The block number after which the pending commitment becomes valid.
+    uint128 commitmentValidAfter;
     /// @notice Whether the operator is registered or not.
     bool isRegistered;
-    bytes pendingDelegateKey;
-    uint256 delegateKeyValidAfter;
 }
+// 7 bytes padding here (automatically added by the compiler)

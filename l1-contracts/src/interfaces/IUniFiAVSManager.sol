@@ -88,6 +88,9 @@ interface IUniFiAVSManager {
     /// @notice Thrown when trying to update a delegate key before the change delay has passed
     error DelegateKeyChangeNotReady();
 
+    /// @notice Thrown when trying to update an operator commitment before the change delay has passed
+    error CommitmentChangeNotReady();
+
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS system.
      * @param operator The address of the registered operator.
@@ -138,14 +141,16 @@ interface IUniFiAVSManager {
     );
 
     /**
-     * @notice Emitted when an operator's delegate key is set or updated.
+     * @notice Emitted when an operator's commitment is set or updated.
      * @param operator The address of the operator.
-     * @param oldDelegateKey The previous delegate key for the operator.
-     * @param newDelegateKey The new delegate key for the operator.
+     * @param oldCommitment The previous commitment for the operator.
+     * @param newCommitment The new commitment for the operator.
      */
-    event OperatorDelegateKeySet(address indexed operator, bytes oldDelegateKey, bytes newDelegateKey);
-    event OperatorDelegateKeyChangeInitiated(
-        address indexed operator, bytes oldDelegateKey, bytes newDelegateKey, uint256 validAfter
+    event OperatorCommitmentSet(
+        address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment
+    );
+    event OperatorCommitmentChangeInitiated(
+        address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment, uint128 validAfter
     );
 
     /**
@@ -213,8 +218,21 @@ interface IUniFiAVSManager {
     function getValidators(bytes32[] calldata blsPubKeyHashes) external view returns (ValidatorDataExtended[] memory);
 
     /**
-     * @notice Sets the delegate key for an operator.
-     * @param newDelegateKey The new delegate key to set.
+     * @notice Sets the commitment for an operator.
+     * @param newCommitment The new commitment to set.
      */
-    function setOperatorDelegateKey(bytes memory newDelegateKey) external;
+    function setOperatorCommitment(OperatorCommitment memory newCommitment) external;
+
+    /**
+     * @notice Updates the operator's commitment after the delay period.
+     */
+    function updateOperatorCommitment() external;
+
+    /**
+     * @notice Checks if a validator is registered for a specific chain ID.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param chainId The chain ID to check.
+     * @return bool True if the validator is registered for the given chain ID, false otherwise.
+     */
+    function isValidatorInChainId(bytes32 blsPubKeyHash, uint32 chainId) external view returns (bool);
 }

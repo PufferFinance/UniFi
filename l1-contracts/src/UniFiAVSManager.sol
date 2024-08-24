@@ -17,6 +17,7 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
+import { IndexOutOfBounds } from "./Errors.sol";
 
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
@@ -60,6 +61,13 @@ contract UniFiAVSManager is
         __AccessManaged_init(accessManager);
     }
 
+    // EXTERNAL FUNCTIONS
+
+    /**
+     * @notice Registers a new operator in the UniFi AVS
+     * @dev This function checks if the operator is already registered and if not, registers them in EigenLayer's AVSDirectory
+     * @param operatorSignature The signature and associated data for operator registration
+     */
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -75,6 +83,12 @@ contract UniFiAVSManager is
         emit OperatorRegistered(msg.sender);
     }
 
+    /**
+     * @notice Registers validators from a specific EigenPod given pod owner
+     * @dev This function checks that the validator is active on the beacon chain and is delegated to the calling Operator, then registers validators associated with the operator
+     * @param podOwner The address of the owner of the validator's EigenPod
+     * @param blsPubKeyHashes The BLS public key hashes of the validators that want to be registered
+     */
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
         external
         podIsDelegated(podOwner)
@@ -87,8 +101,9 @@ contract UniFiAVSManager is
         ) {
             revert OperatorNotRegistered();
         }
+        bytes memory delegateKey = $.operators[msg.sender].commitment.delegateKey;
 
-        if ($.operators[msg.sender].delegateKey.length == 0) {
+        if (delegateKey.length == 0) {
             revert DelegateKeyNotSet();
         }
 
@@ -103,7 +118,6 @@ contract UniFiAVSManager is
                 revert ValidatorNotActive();
             }
 
-            // Check if the validator already exists
             if ($.validators[blsPubkeyHash].index != 0) {
                 revert ValidatorAlreadyRegistered();
             }
@@ -117,16 +131,20 @@ contract UniFiAVSManager is
 
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
 
-            emit ValidatorRegistered(
-                podOwner, msg.sender, $.operators[msg.sender].delegateKey, blsPubkeyHash, validatorInfo.validatorIndex
-            );
+            emit ValidatorRegistered(podOwner, msg.sender, delegateKey, blsPubkeyHash, validatorInfo.validatorIndex);
         }
 
         OperatorData storage operator = $.operators[msg.sender];
         operator.validatorCount += uint128(newValidatorCount);
-        operator.startOperatorDeregisterBlock = 0; // Reset the deregistration start block
+        operator.startDeregisterOperatorBlock = 0; // Reset the deregistration start block
+        operator.commitmentValidAfter = 0; // Reset the commitment valid after block
     }
 
+    /**
+     * @notice Deregisters validators from the UniFi AVS
+     * @dev This function handles the deregistration process for multiple validators. If the validator's status is not active, a non-owner can deregister the validator. The validator is not immediately deregistered, but instead will be marked as deregistered after the deregistrationDelay and is liable for penalties during this period.
+     * @param blsPubKeyHashes The BLS public key hashes of the validators to deregister
+     */
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -158,13 +176,17 @@ contract UniFiAVSManager is
             emit ValidatorDeregistered(
                 IEigenPod(validator.eigenPod).podOwner(),
                 validator.operator,
-                $.operators[validator.operator].delegateKey,
+                $.operators[validator.operator].commitment.delegateKey,
                 blsPubKeyHash,
                 validator.index
             );
         }
     }
 
+    /**
+     * @notice Starts the process of deregistering an operator from the UniFi AVS.
+     * @dev This function initiates the deregistration process for an operator. The Operator is not immediately deregistered, but can complete the process by calling finishDeregisterOperator after the deregistrationDelay and is liable for penalties during this period.
+     */
     function startDeregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -181,15 +203,19 @@ contract UniFiAVSManager is
             revert OperatorHasValidators();
         }
 
-        if (operator.startOperatorDeregisterBlock != 0) {
+        if (operator.startDeregisterOperatorBlock != 0) {
             revert DeregistrationAlreadyStarted();
         }
 
-        operator.startOperatorDeregisterBlock = block.number;
+        operator.startDeregisterOperatorBlock = uint128(block.number);
 
         emit OperatorDeregisterStarted(msg.sender);
     }
 
+    /**
+     * @notice Finishes the process of deregistering an operator from the UniFi AVS.
+     * @dev This function completes the deregistration process for an operator after the delay period
+     */
     function finishDeregisterOperator() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -202,11 +228,11 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
-        if (operator.startOperatorDeregisterBlock == 0) {
+        if (operator.startDeregisterOperatorBlock == 0) {
             revert DeregistrationNotStarted();
         }
 
-        if (block.number < operator.startOperatorDeregisterBlock + $.deregistrationDelay) {
+        if (block.number < operator.startDeregisterOperatorBlock + $.deregistrationDelay) {
             revert DeregistrationDelayNotElapsed();
         }
 
@@ -218,23 +244,7 @@ contract UniFiAVSManager is
     }
 
     function getOperator(address operator) external view returns (OperatorDataExtended memory) {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        OperatorData storage operatorData = $.operators[operator];
-
-        bytes memory activeDelegateKey = operatorData.delegateKey;
-        if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
-            activeDelegateKey = operatorData.pendingDelegateKey;
-        }
-
-        return OperatorDataExtended({
-            validatorCount: operatorData.validatorCount,
-            delegateKey: activeDelegateKey,
-            startOperatorDeregisterBlock: operatorData.startOperatorDeregisterBlock,
-            pendingDelegateKey: operatorData.pendingDelegateKey,
-            delegateKeyValidAfter: operatorData.delegateKeyValidAfter,
-            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
-                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
-        });
+        return _getOperator(operator);
     }
 
     function getValidator(bytes32 blsPubKeyHash) external view returns (ValidatorDataExtended memory) {
@@ -256,7 +266,12 @@ contract UniFiAVSManager is
         return validators;
     }
 
-    function setOperatorDelegateKey(bytes memory newDelegateKey) external {
+    /**
+     * @notice Sets the commitment for an operator
+     * @dev This function initiates a change in the operator's commitment
+     * @param newCommitment The new commitment to set for the operator
+     */
+    function setOperatorCommitment(OperatorCommitment memory newCommitment) external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
 
@@ -267,30 +282,114 @@ contract UniFiAVSManager is
             revert OperatorNotRegistered();
         }
 
-        operator.pendingDelegateKey = newDelegateKey;
-        operator.delegateKeyValidAfter = block.number + $.deregistrationDelay;
+        operator.pendingCommitment = newCommitment;
+        operator.commitmentValidAfter = uint128(block.number + $.deregistrationDelay);
 
-        emit OperatorDelegateKeyChangeInitiated(
-            msg.sender, operator.delegateKey, newDelegateKey, operator.delegateKeyValidAfter
+        emit OperatorCommitmentChangeInitiated(
+            msg.sender, operator.commitment, newCommitment, operator.commitmentValidAfter
         );
     }
 
-    function updateOperatorDelegateKey() external {
+    /**
+     * @notice Updates the operator's commitment after the delay period
+     * @dev This function finalizes the commitment change for an operator
+     */
+    function updateOperatorCommitment() external {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
 
-        if (operator.delegateKeyValidAfter == 0 || block.number < operator.delegateKeyValidAfter) {
-            revert DelegateKeyChangeNotReady();
+        if (operator.commitmentValidAfter == 0 || block.number < operator.commitmentValidAfter) {
+            revert CommitmentChangeNotReady();
         }
 
-        bytes memory oldDelegateKey = operator.delegateKey;
-        operator.delegateKey = operator.pendingDelegateKey;
+        OperatorCommitment memory oldCommitment = operator.commitment;
+        operator.commitment = operator.pendingCommitment;
 
         // Reset pending data
-        operator.pendingDelegateKey = "";
-        operator.delegateKeyValidAfter = 0;
+        delete operator.pendingCommitment;
+        delete operator.commitmentValidAfter;
 
-        emit OperatorDelegateKeySet(msg.sender, oldDelegateKey, operator.delegateKey);
+        emit OperatorCommitmentSet(msg.sender, oldCommitment, operator.commitment);
+    }
+
+    /**
+     * @notice Sets a new deregistration delay
+     * @dev This function can only be called by authorized addresses
+     * @param newDelay The new deregistration delay to set
+     */
+    function setDeregistrationDelay(uint64 newDelay) external restricted {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        uint64 oldDelay = $.deregistrationDelay;
+        $.deregistrationDelay = newDelay;
+        emit DeregistrationDelaySet(oldDelay, newDelay);
+    }
+
+    function getDeregistrationDelay() external view returns (uint64) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.deregistrationDelay;
+    }
+
+    /**
+     * @notice Converts a bitmap of chain IDs to an array of chain IDs
+     * @dev This function interprets each bit in the bitmap as a flag for a chain ID
+     * @param bitmap The bitmap representing chain IDs
+     * @return An array of chain IDs (as bytes4) corresponding to the set bits in the bitmap
+     */
+    function bitmapToChainIDs(uint256 bitmap) public view returns (bytes4[] memory) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        bytes4[] memory result = new bytes4[](256);
+        uint256 count = 0;
+        for (uint256 i = 0; i < 256; i++) {
+            if ((bitmap & (1 << i)) != 0) {
+                result[count] = $.chainIDs[i];
+                count++;
+            }
+        }
+        // Resize the array to remove unused elements
+        assembly {
+            mstore(result, count)
+        }
+        return result;
+    }
+
+    /**
+     * @notice Sets a chain ID at a specific index
+     * @dev This function can only be called by authorized addresses
+     * @param index The index at which to set the chain ID (0-255)
+     * @param chainID The chain ID to set
+     */
+    function setChainID(uint256 index, bytes4 chainID) external restricted {
+        if (index >= 256) revert IndexOutOfBounds();
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        $.chainIDs[index] = chainID;
+    }
+
+    function getChainID(uint256 index) external view returns (bytes4) {
+        if (index >= 256) revert IndexOutOfBounds();
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.chainIDs[index];
+    }
+
+    // INTERNAL FUNCTIONS
+
+    function _getOperator(address operator) internal view returns (OperatorDataExtended memory) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operatorData = $.operators[operator];
+
+        OperatorCommitment memory activeCommitment = operatorData.commitment;
+        if (operatorData.commitmentValidAfter != 0 && block.number >= operatorData.commitmentValidAfter) {
+            activeCommitment = operatorData.pendingCommitment;
+        }
+
+        return OperatorDataExtended({
+            validatorCount: operatorData.validatorCount,
+            commitment: activeCommitment,
+            pendingCommitment: operatorData.pendingCommitment,
+            startDeregisterOperatorBlock: operatorData.startDeregisterOperatorBlock,
+            isRegistered: AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
+                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED,
+            commitmentValidAfter: operatorData.commitmentValidAfter
+        });
     }
 
     function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory) {
@@ -305,19 +404,19 @@ contract UniFiAVSManager is
             bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
 
             OperatorData storage operatorData = $.operators[validatorData.operator];
-            bytes memory activeDelegateKey = operatorData.delegateKey;
-            if (operatorData.delegateKeyValidAfter != 0 && block.number >= operatorData.delegateKeyValidAfter) {
-                activeDelegateKey = operatorData.pendingDelegateKey;
+            OperatorCommitment memory activeCommitment = operatorData.commitment;
+            if (operatorData.commitmentValidAfter != 0 && block.number >= operatorData.commitmentValidAfter) {
+                activeCommitment = operatorData.pendingCommitment;
             }
 
             return ValidatorDataExtended({
+                operator: validatorData.operator,
                 eigenPod: validatorData.eigenPod,
                 validatorIndex: validatorInfo.validatorIndex,
                 status: validatorInfo.status,
+                delegateKey: activeCommitment.delegateKey,
+                chainIDBitMap: activeCommitment.chainIDBitMap,
                 backedByStake: backedByStake,
-                delegateKey: activeDelegateKey,
-                operator: validatorData.operator,
-                registeredUntil: validatorData.registeredUntil,
                 registered: block.number < validatorData.registeredUntil
             });
         }
@@ -325,16 +424,23 @@ contract UniFiAVSManager is
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
 
-    // Todo: restrict to DAO
-    function setDeregistrationDelay(uint64 newDelay) external {
+    /**
+     * @notice Checks if a validator is registered for a specific chain ID.
+     * @param blsPubKeyHash The BLS public key hash of the validator.
+     * @param chainId The chain ID to check.
+     * @return bool True if the validator is registered for the given chain ID, false otherwise.
+     */
+    function isValidatorInChainId(bytes32 blsPubKeyHash, uint32 chainId) external view returns (bool) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        uint64 oldDelay = $.deregistrationDelay;
-        $.deregistrationDelay = newDelay;
-        emit DeregistrationDelaySet(oldDelay, newDelay);
-    }
+        ValidatorData storage validator = $.validators[blsPubKeyHash];
 
-    function getDeregistrationDelay() external returns (uint64) {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        return $.deregistrationDelay;
+        if (validator.index == 0) {
+            return false; // Validator not found
+        }
+
+        OperatorData storage operator = $.operators[validator.operator];
+        OperatorCommitment memory activeCommitment = operator.commitment;
+
+        return (activeCommitment.chainIDBitMap & (1 << chainId)) != 0;
     }
 }
