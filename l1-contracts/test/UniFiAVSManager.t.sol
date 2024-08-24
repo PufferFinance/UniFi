@@ -692,4 +692,67 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         vm.stopPrank();
     }
+
+    function testIsValidatorInChainId() public {
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+
+        _setupOperator();
+        _registerOperator();
+        _setupValidators(blsPubKeyHashes);
+
+        // Set a chainIDBitMap for the operator
+        uint256 chainIDBitMap = 0x5; // 0b101, active for chain IDs 0 and 2
+        _setOperatorCommitment(operator, delegatePubKey, chainIDBitMap);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should be in chain ID 0");
+        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should not be in chain ID 1");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 2), "Validator should be in chain ID 2");
+        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 3), "Validator should not be in chain ID 3");
+    }
+
+    function testIsValidatorInChainId_ValidatorNotFound() public {
+        bytes32 nonExistentValidator = keccak256(abi.encodePacked("nonExistentValidator"));
+
+        assertFalse(avsManager.isValidatorInChainId(nonExistentValidator, 0), "Non-existent validator should not be in any chain");
+    }
+
+    function testIsValidatorInChainId_AfterCommitmentChange() public {
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
+
+        _setupOperator();
+        _registerOperator();
+        _setupValidators(blsPubKeyHashes);
+
+        // Initial chainIDBitMap
+        uint256 initialChainIDBitMap = 0x5; // 0b101, active for chain IDs 0 and 2
+        _setOperatorCommitment(operator, delegatePubKey, initialChainIDBitMap);
+
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        // Change the commitment
+        uint256 newChainIDBitMap = 0x6; // 0b110, active for chain IDs 1 and 2
+        vm.prank(operator);
+        avsManager.setOperatorCommitment(OperatorCommitment({ delegateKey: delegatePubKey, chainIDBitMap: newChainIDBitMap }));
+
+        // Before the commitment change takes effect
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should still be in chain ID 0");
+        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should not yet be in chain ID 1");
+
+        // Advance to make the new commitment active
+        vm.roll(block.number + avsManager.getDeregistrationDelay());
+
+        vm.prank(operator);
+        avsManager.updateOperatorCommitment();
+
+        // After the commitment change takes effect
+        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 0), "Validator should no longer be in chain ID 0");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should now be in chain ID 1");
+        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 2), "Validator should still be in chain ID 2");
+    }
 }
