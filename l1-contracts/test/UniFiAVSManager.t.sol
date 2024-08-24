@@ -620,17 +620,20 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         uint32 chainID1 = 1; // Ethereum Mainnet
         uint32 chainID2 = 10; // Optimism
 
-        avsManager.setChainID(0, chainID1);
-        avsManager.setChainID(1, chainID2);
+        avsManager.setChainID(1, chainID1);
+        avsManager.setChainID(2, chainID2);
 
-        assertEq(avsManager.getChainID(0), chainID1, "ChainID at index 0 should match");
-        assertEq(avsManager.getChainID(1), chainID2, "ChainID at index 1 should match");
+        assertEq(avsManager.getChainID(1), chainID1, "ChainID at index 1 should match");
+        assertEq(avsManager.getChainID(2), chainID2, "ChainID at index 2 should match");
 
         vm.stopPrank();
     }
 
     function testSetChainIDOutOfBounds() public {
         vm.startPrank(DAO);
+
+        vm.expectRevert(IndexOutOfBounds.selector);
+        avsManager.setChainID(0, 1);
 
         vm.expectRevert(IndexOutOfBounds.selector);
         avsManager.setChainID(256, 1);
@@ -647,6 +650,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testGetChainIDOutOfBounds() public {
         vm.expectRevert(IndexOutOfBounds.selector);
+        avsManager.getChainID(0);
+
+        vm.expectRevert(IndexOutOfBounds.selector);
         avsManager.getChainID(256);
     }
 
@@ -660,11 +666,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testBitmapToChainIDs() public {
         vm.startPrank(DAO);
 
-        avsManager.setChainID(0, 1); // Ethereum Mainnet
-        avsManager.setChainID(1, 10); // Optimism
-        avsManager.setChainID(2, 137); // Polygon
+        avsManager.setChainID(1, 1); // Ethereum Mainnet
+        avsManager.setChainID(2, 10); // Optimism
+        avsManager.setChainID(3, 137); // Polygon
 
-        uint256 bitmap = 0x7; // 0b111
+        uint256 bitmap = 0xE; // 0b1110
 
         uint32[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
 
@@ -679,10 +685,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testBitmapToChainIDsWithGaps() public {
         vm.startPrank(DAO);
 
-        avsManager.setChainID(0, 1); // Ethereum Mainnet
-        avsManager.setChainID(2, 137); // Polygon
+        avsManager.setChainID(1, 1); // Ethereum Mainnet
+        avsManager.setChainID(3, 137); // Polygon
 
-        uint256 bitmap = 0x5; // 0b101
+        uint256 bitmap = 0xA; // 0b1010
 
         uint32[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
 
@@ -699,11 +705,11 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         uint32 chainID1 = 1; // Ethereum Mainnet
         uint32 chainID2 = 10; // Optimism
 
-        avsManager.setChainID(0, chainID1);
-        avsManager.setChainID(1, chainID2);
+        avsManager.setChainID(1, chainID1);
+        avsManager.setChainID(2, chainID2);
 
-        assertEq(avsManager.getBitmapIndex(chainID1), 0, "Bitmap index for chainID1 should be 0");
-        assertEq(avsManager.getBitmapIndex(chainID2), 1, "Bitmap index for chainID2 should be 1");
+        assertEq(avsManager.getBitmapIndex(chainID1), 1, "Bitmap index for chainID1 should be 1");
+        assertEq(avsManager.getBitmapIndex(chainID2), 2, "Bitmap index for chainID2 should be 2");
 
         vm.stopPrank();
     }
@@ -711,7 +717,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testGetBitmapIndexNonExistent() public {
         uint32 nonExistentChainID = 999;
 
-        assertEq(avsManager.getBitmapIndex(nonExistentChainID), 0, "Bitmap index for non-existent chainID should be 0");
+        assertEq(avsManager.getBitmapIndex(nonExistentChainID), type(uint8).max, "Bitmap index for non-existent chainID should be type(uint8).max");
     }
 
     function testIsValidatorInChainId() public {
@@ -724,13 +730,13 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         // Set chain IDs
         vm.startPrank(DAO);
-        avsManager.setChainID(0, 1); // Ethereum Mainnet
-        avsManager.setChainID(1, 10); // Optimism
-        avsManager.setChainID(2, 137); // Polygon
+        avsManager.setChainID(1, 1); // Ethereum Mainnet
+        avsManager.setChainID(2, 10); // Optimism
+        avsManager.setChainID(3, 137); // Polygon
         vm.stopPrank();
 
         // Set a chainIDBitMap for the operator
-        uint256 chainIDBitMap = 0x5; // 0b101, active for chain IDs at index 0 and 2
+        uint256 chainIDBitMap = 0x5; // 0b101, active for chain IDs at index 1 and 3
         _setOperatorCommitment(operator, delegatePubKey, chainIDBitMap);
 
         vm.prank(operator);
@@ -763,20 +769,20 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         // Set chain IDs
         vm.startPrank(DAO);
-        avsManager.setChainID(0, 1); // Ethereum Mainnet
-        avsManager.setChainID(1, 10); // Optimism
-        avsManager.setChainID(2, 137); // Polygon
+        avsManager.setChainID(1, 1); // Ethereum Mainnet
+        avsManager.setChainID(2, 10); // Optimism
+        avsManager.setChainID(3, 137); // Polygon
         vm.stopPrank();
 
         // Initial chainIDBitMap
-        uint256 initialChainIDBitMap = 0x5; // 0b101, active for chain IDs at index 0 and 2
+        uint256 initialChainIDBitMap = 0x5; // 0b101, active for chain IDs at index 1 and 3
         _setOperatorCommitment(operator, delegatePubKey, initialChainIDBitMap);
 
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
 
         // Change the commitment
-        uint256 newChainIDBitMap = 0x6; // 0b110, active for chain IDs at index 1 and 2
+        uint256 newChainIDBitMap = 0x6; // 0b110, active for chain IDs at index 2 and 3
         vm.prank(operator);
         avsManager.setOperatorCommitment(
             OperatorCommitment({ delegateKey: delegatePubKey, chainIDBitMap: newChainIDBitMap })
