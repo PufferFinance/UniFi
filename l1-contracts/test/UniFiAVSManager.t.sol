@@ -617,7 +617,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testSetAndGetChainID() public {
         vm.startPrank(DAO);
 
-        uint32 chainID1 = 1;  // Ethereum Mainnet
+        uint32 chainID1 = 1; // Ethereum Mainnet
         uint32 chainID2 = 10; // Optimism
 
         avsManager.setChainID(0, chainID1);
@@ -660,7 +660,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testBitmapToChainIDs() public {
         vm.startPrank(DAO);
 
-        avsManager.setChainID(0, 1);  // Ethereum Mainnet
+        avsManager.setChainID(0, 1); // Ethereum Mainnet
         avsManager.setChainID(1, 10); // Optimism
         avsManager.setChainID(2, 137); // Polygon
 
@@ -679,7 +679,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testBitmapToChainIDsWithGaps() public {
         vm.startPrank(DAO);
 
-        avsManager.setChainID(0, 1);  // Ethereum Mainnet
+        avsManager.setChainID(0, 1); // Ethereum Mainnet
         avsManager.setChainID(2, 137); // Polygon
 
         uint256 bitmap = 0x5; // 0b101
@@ -696,7 +696,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testGetBitmapIndex() public {
         vm.startPrank(DAO);
 
-        uint32 chainID1 = 1;  // Ethereum Mainnet
+        uint32 chainID1 = 1; // Ethereum Mainnet
         uint32 chainID2 = 10; // Optimism
 
         avsManager.setChainID(0, chainID1);
@@ -739,7 +739,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should be in Ethereum Mainnet");
         assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 10), "Validator should not be in Optimism");
         assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 137), "Validator should be in Polygon");
-        assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 42161), "Validator should not be in Arbitrum One");
+        assertFalse(
+            avsManager.isValidatorInChainId(blsPubKeyHashes[0], 42161), "Validator should not be in Arbitrum One"
+        );
     }
 
     function testIsValidatorInChainId_ValidatorNotFound() public {
@@ -781,7 +783,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         );
 
         // Before the commitment change takes effect
-        assertTrue(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should still be in Ethereum Mainnet");
+        assertTrue(
+            avsManager.isValidatorInChainId(blsPubKeyHashes[0], 1), "Validator should still be in Ethereum Mainnet"
+        );
         assertFalse(avsManager.isValidatorInChainId(blsPubKeyHashes[0], 10), "Validator should not yet be in Optimism");
 
         // Advance to make the new commitment active
