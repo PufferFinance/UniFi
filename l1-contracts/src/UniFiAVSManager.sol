@@ -437,7 +437,7 @@ contract UniFiAVSManager is
      * @param chainId The chain ID to check.
      * @return bool True if the validator is registered for the given chain ID, false otherwise.
      */
-    function isValidatorInChainId(bytes32 blsPubKeyHash, uint32 chainId) external view returns (bool) {
+    function isValidatorInChainId(bytes32 blsPubKeyHash, uint256 chainId) external view returns (bool) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         ValidatorData storage validator = $.validators[blsPubKeyHash];
 
