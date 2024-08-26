@@ -1,5 +1,6 @@
-use alloy::{sol, sol_types};
-use alloy_primitives::Address;
+use alloy::{sol, sol_types, primitives::Address};
+use UniFiAVSManager::OperatorDataExtended;
+use eyre::Result;
 
 sol!(
     #[sol(rpc)]
@@ -12,23 +13,3 @@ impl UniFiAVSManager {
         self.get_operator(operator).call().await
     }
 }
-
-// impl OperatorCommitment {
-//     const PACKED_ENCODED_SIZE: Option<usize> = None;
-// }
-
-// impl OperatorData {
-//     const PACKED_ENCODED_SIZE: Option<usize> = None;
-// }
-
-// impl ValidatorData {
-//     const PACKED_ENCODED_SIZE: Option<usize> = None;
-// }
-
-// impl OperatorDataExtended {
-//     const PACKED_ENCODED_SIZE: Option<usize> = None;
-// }
-
-// impl ValidatorDataExtended {
-//     const PACKED_ENCODED_SIZE: Option<usize> = None;
-// }
