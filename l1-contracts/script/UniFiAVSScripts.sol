@@ -54,10 +54,14 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
-    // Action 4: Register an Operator with UniFiAVSManager (the caller of this script should be the operator)
-    function registerOperatorToUniFiAVS(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) public {
+    // Action 4: Register an Operator with UniFiAVSManager and set initial commitment (the caller of this script should be the operator)
+    function registerOperatorToUniFiAVS(
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature,
+        UniFiAVSManager.OperatorCommitment memory initialCommitment
+    ) public {
         vm.startBroadcast();
         uniFiAVSManager.registerOperator(operatorSignature);
+        uniFiAVSManager.setOperatorCommitment(initialCommitment);
         vm.stopBroadcast();
     }
 
@@ -68,28 +72,35 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
-    // Action 6: Set the Operator's Delegate Key
-    function setOperatorDelegateKey(bytes memory newDelegateKey) public {
+    // Action 6: Set the Operator's Commitment
+    function setOperatorCommitment(UniFiAVSManager.OperatorCommitment memory newCommitment) public {
         vm.startBroadcast();
-        uniFiAVSManager.setOperatorDelegateKey(newDelegateKey);
+        uniFiAVSManager.setOperatorCommitment(newCommitment);
         vm.stopBroadcast();
     }
 
-    // Action 7: Start Deregistering an Operator
+    // Action 7: Update Operator's Commitment
+    function updateOperatorCommitment() public {
+        vm.startBroadcast();
+        uniFiAVSManager.updateOperatorCommitment();
+        vm.stopBroadcast();
+    }
+
+    // Action 8: Start Deregistering an Operator
     function startDeregisterOperator() public {
         vm.startBroadcast();
         uniFiAVSManager.startDeregisterOperator();
         vm.stopBroadcast();
     }
 
-    // Action 8: Finish Deregistering an Operator
+    // Action 9: Finish Deregistering an Operator
     function finishDeregisterOperator() public {
         vm.startBroadcast();
         uniFiAVSManager.finishDeregisterOperator();
         vm.stopBroadcast();
     }
 
-    // Action 9: Complete Pod Setup and Validator Registration
+    // Action 10: Complete Pod Setup and Validator Registration
     function setupPodAndRegisterValidators(
         address podOwner,
         address operator,
