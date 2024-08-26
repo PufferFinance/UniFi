@@ -1,5 +1,10 @@
-use alloy::{primitives::{Address, U256}, providers::{Provider, RootProvider}, sol, transports::http::{Client, Http}};
+use alloy::{
+    primitives::{Address, U256},
+    providers::{Provider, ProviderBuilder},
+    sol,
+};
 use eyre::Result;
+use std::str::FromStr;
 use thiserror::Error;
 
 sol!(
@@ -61,68 +66,77 @@ pub enum UniFiAVSManagerError {
     #[error("Commitment change not ready")]
     CommitmentChangeNotReady,
 }
-// pub use UniFiAVSManager;
 
-pub struct UniFiAVSManagerWrapper(UniFiAVSManager::UniFiAVSManagerCalls);
+pub struct UniFiAVSManagerWrapper {
+    address: Address,
+    rpc_url: String,
+}
 
 impl UniFiAVSManagerWrapper {
-    pub fn new(address: Address, provider: RootProvider<Http<Client>>) -> Self {
-        Self(UniFiAVSManager::new(address, provider.into()))
+    pub fn new(address: Address, rpc_url: String) -> Self {
+        Self { address, rpc_url }
+    }
+
+    async fn get_provider(&self) -> Result<UniFiAVSManager::UniFiAVSManagerCalls> {
+        let provider = ProviderBuilder::new().on_http(self.rpc_url.parse()?);
+        Ok(UniFiAVSManager::new(self.address, provider.into()))
     }
 
     pub async fn get_operator(&self, operator: Address) -> Result<UniFiAVSManager::OperatorDataExtended> {
-        self.0.get_operator(operator).call().await
+        let provider = self.get_provider().await?;
+        provider.get_operator(operator).call().await
     }
 
     pub async fn get_validator(&self, bls_pub_key_hash: [u8; 32]) -> Result<UniFiAVSManager::ValidatorDataExtended> {
-        self.0.get_validator(bls_pub_key_hash).call().await
+        let provider = self.get_provider().await?;
+        provider.get_validator(bls_pub_key_hash).call().await
     }
 
     pub async fn get_validator_by_index(&self, validator_index: U256) -> Result<UniFiAVSManager::ValidatorDataExtended> {
-        self.0.get_validator(validator_index).call().await
+        let provider = self.get_provider().await?;
+        provider.get_validator(validator_index).call().await
     }
 
     pub async fn get_validators(&self, bls_pub_key_hashes: Vec<[u8; 32]>) -> Result<Vec<UniFiAVSManager::ValidatorDataExtended>> {
-        self.0.get_validators(bls_pub_key_hashes).call().await
+        let provider = self.get_provider().await?;
+        provider.get_validators(bls_pub_key_hashes).call().await
     }
 
     pub async fn set_operator_commitment(&self, new_commitment: UniFiAVSManager::OperatorCommitment) -> Result<()> {
-        self.0.set_operator_commitment(new_commitment).send().await?;
+        let provider = self.get_provider().await?;
+        provider.set_operator_commitment(new_commitment).send().await?;
         Ok(())
     }
 
     pub async fn update_operator_commitment(&self) -> Result<()> {
-        self.0.update_operator_commitment().send().await?;
+        let provider = self.get_provider().await?;
+        provider.update_operator_commitment().send().await?;
         Ok(())
     }
 
     pub async fn is_validator_in_chain_id(&self, bls_pub_key_hash: [u8; 32], chain_id: U256) -> Result<bool> {
-        self.0.is_validator_in_chain_id(bls_pub_key_hash, chain_id).call().await
+        let provider = self.get_provider().await?;
+        provider.is_validator_in_chain_id(bls_pub_key_hash, chain_id).call().await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::providers::{Provider, ProviderBuilder};
-    use std::str::FromStr;
 
     #[tokio::test]
     async fn test_get_operator() -> Result<()> {
-        // Connect to the existing Anvil instance
-        let rpc_url = "http://127.0.0.1:8545".parse()?;
-        let provider = ProviderBuilder::new().on_http(rpc_url);
-
         // Replace with your deployed contract address
         let contract_address = Address::from_str("0x5FbDB2315678afecb367f032d93F642f64180aa3")?;
-        let unifi_avs_manager = UniFiAVSManagerWrapper::new(contract_address, provider);
+        let rpc_url = "http://127.0.0.1:8545".to_string();
+        let unifi_avs_manager = UniFiAVSManagerWrapper::new(contract_address, rpc_url);
 
         // Replace with a valid operator address that you've registered in your local deployment
         let operator_address = Address::from_str("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")?;
 
         match unifi_avs_manager.get_operator(operator_address).await {
             Ok(operator_data) => {
-                println!("Operator data: {:?}", operator_data.commitmentValidAfter); // todo
+                println!("Operator data: {:?}", operator_data.commitmentValidAfter);
                 // Add assertions here to check the returned data
                 assert!(operator_data.isRegistered);
                 // Add more assertions based on your expected data
