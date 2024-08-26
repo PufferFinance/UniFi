@@ -48,13 +48,13 @@ Usage:
 forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVS(address,bytes32[])" "0x1234..." '["0xabcd...","0xefgh..."]'
 ```
 
-### 4. registerOperatorToUniFiAVS(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
+### 4. registerOperatorToUniFiAVS(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature, OperatorCommitment memory initialCommitment)
 
-Registers an operator with the UniFiAVSManager.
+Registers an operator with the UniFiAVSManager and sets the initial commitment.
 
 Usage:
 ```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS((bytes,bytes32,uint256))" '["0xsignature...","0xsalt...",1234567890]'
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS((bytes,bytes32,uint256),(bytes,uint256))" '["0xsignature...","0xsalt...",1234567890]' '["0xdelegateKey...",42]'
 ```
 
 ### 5. delegateFromPodOwner(address podOwner, address operator)
@@ -66,16 +66,25 @@ Usage:
 forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,address)" "0x1234..." "0x5678..."
 ```
 
-### 6. setOperatorDelegateKey(bytes memory newDelegateKey)
+### 6. setOperatorCommitment(OperatorCommitment memory newCommitment)
 
-Sets the operator's delegate key.
+Sets the operator's commitment.
 
 Usage:
 ```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setOperatorDelegateKey(bytes)" "0xnewkey..."
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setOperatorCommitment((bytes,uint256))" '["0xnewDelegateKey...",42]'
 ```
 
-### 7. startDeregisterOperator()
+### 7. updateOperatorCommitment()
+
+Updates the operator's commitment after the delay period.
+
+Usage:
+```
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment()"
+```
+
+### 8. startDeregisterOperator()
 
 Starts the process of deregistering an operator.
 
@@ -84,7 +93,7 @@ Usage:
 forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "startDeregisterOperator()"
 ```
 
-### 8. finishDeregisterOperator()
+### 9. finishDeregisterOperator()
 
 Finishes the process of deregistering an operator.
 
@@ -93,14 +102,50 @@ Usage:
 forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "finishDeregisterOperator()"
 ```
 
-### 9. setupPodAndRegisterValidators(address podOwner, address operator, bytes32[] memory pubkeyHashes, MockEigenPod.ValidatorInfo[] memory validators, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
+### 10. setupPodAndRegisterValidators(address podOwner, address operator, OperatorCommitment memory initialCommitment, bytes32[] memory pubkeyHashes, MockEigenPod.ValidatorInfo[] memory validators, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
 
 Performs the complete process of setting up a pod, adding validators, delegating to an operator, registering the operator, and registering the validators.
 
 Usage:
 ```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidators(address,address,bytes32[],tuple[],(bytes,bytes32,uint256))" "0x1234..." "0x5678..." '["0xabcd...","0xefgh..."]' '[{"status":1,"validatorIndex":0},{"status":1,"validatorIndex":1}]' '["0xsignature...","0xsalt...",1234567890]'
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidators(address,address,(bytes,uint256),bytes32[],tuple[],(bytes,bytes32,uint256))" "0x1234..." "0x5678..." '["0xdelegateKey...",42]' '["0xabcd...","0xefgh..."]' '[{"status":1,"validatorIndex":0},{"status":1,"validatorIndex":1}]' '["0xsignature...","0xsalt...",1234567890]'
 ```
+
+### 11. addValidatorsFromJsonFile(string memory filePath, address podOwner)
+
+Adds validators from a JSON file and registers them with UniFiAVSManager. The JSON file should follow the format of the Ethereum Beacon Chain API response for the `/eth/v1/beacon/states/head/validators` endpoint.
+
+JSON Schema:
+```json
+{
+  "execution_optimistic": boolean,
+  "finalized": boolean,
+  "data": [
+    {
+      "index": string,
+      "balance": string,
+      "status": string,
+      "validator": {
+        "pubkey": string,
+        "withdrawal_credentials": string,
+        "effective_balance": string,
+        "slashed": boolean,
+        "activation_eligibility_epoch": string,
+        "activation_epoch": string,
+        "exit_epoch": string,
+        "withdrawable_epoch": string
+      }
+    }
+  ]
+}
+```
+
+Usage:
+```
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsFromJsonFile(string,address)" "path/to/validators.json" "0x1234..."
+```
+
+Note: Ensure that the JSON file contains the validator data in the format specified above, which is typically obtained from the Ethereum Beacon Chain API.
 
 ## Notes
 
