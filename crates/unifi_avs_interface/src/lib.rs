@@ -1,5 +1,4 @@
-use alloy::{sol, sol_types, primitives::Address};
-use UniFiAVSManager::OperatorDataExtended;
+use alloy::{sol, primitives::Address};
 use eyre::Result;
 
 sol!(
@@ -8,19 +7,22 @@ sol!(
     "../../l1-contracts/out/UniFiAVSManager.sol/UniFiAVSManager.json"
 );
 
-impl UniFiAVSManager {
-    pub async fn get_operator(&self, operator: Address) -> Result<OperatorDataExtended> {
-        self.get_operator(operator).call().await
+pub struct UniFiAVSManagerWrapper(UniFiAVSManager);
+
+impl UniFiAVSManagerWrapper {
+    pub fn new(address: Address, provider: impl Into<alloy::providers::Provider>) -> Self {
+        Self(UniFiAVSManager::new(address, provider.into()))
+    }
+
+    pub async fn get_operator(&self, operator: Address) -> Result<UniFiAVSManager::OperatorDataExtended> {
+        self.0.get_operator(operator).call().await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::{
-        providers::{Provider, Http},
-        rpc::client::RpcClient,
-    };
+    use alloy::providers::{Provider, Http};
     use std::str::FromStr;
 
     #[tokio::test]
@@ -31,7 +33,7 @@ mod tests {
 
         // Replace with your deployed contract address
         let contract_address = Address::from_str("0x5FbDB2315678afecb367f032d93F642f64180aa3")?;
-        let unifi_avs_manager = UniFiAVSManager::new(contract_address).with_provider(provider);
+        let unifi_avs_manager = UniFiAVSManagerWrapper::new(contract_address, provider);
 
         // Replace with a valid operator address that you've registered in your local deployment
         let operator_address = Address::from_str("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")?;
