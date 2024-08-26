@@ -1,0 +1,8 @@
+[package]
+name = "unifi_avs_interface"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy-sol-macro = "0.6.0"
+alloy-primitives = "0.6.0"
