@@ -3,7 +3,7 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
     sol,
 };
-use eyre::Result;
+use eyre::{Result, eyre};
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -15,6 +15,8 @@ sol!(
 
 #[derive(Error, Debug)]
 pub enum UniFiAVSManagerError {
+    #[error("RPC error: {0}")]
+    RPCError(String),
     #[error("Registration expired")]
     RegistrationExpired,
     #[error("Invalid operator salt")]
@@ -85,11 +87,13 @@ impl UniFiAVSManagerWrapper {
     pub async fn get_operator(&self, operator: Address) -> Result<UniFiAVSManager::OperatorDataExtended> {
         let provider = self.get_provider().await?;
         provider.get_operator(operator).call().await
+            .map_err(|e| UniFiAVSManagerError::RPCError(e.to_string()).into())
     }
 
     pub async fn get_validator(&self, bls_pub_key_hash: [u8; 32]) -> Result<UniFiAVSManager::ValidatorDataExtended> {
         let provider = self.get_provider().await?;
         provider.get_validator(bls_pub_key_hash).call().await
+            .map_err(|e| UniFiAVSManagerError::RPCError(e.to_string()).into())
     }
 
     pub async fn get_validator_by_index(&self, validator_index: U256) -> Result<UniFiAVSManager::ValidatorDataExtended> {
@@ -118,6 +122,36 @@ impl UniFiAVSManagerWrapper {
         let provider = self.get_provider().await?;
         provider.is_validator_in_chain_id(bls_pub_key_hash, chain_id).call().await
     }
+
+    pub async fn register_operator(&self, operator_signature: UniFiAVSManager::SignatureWithSaltAndExpiry) -> Result<()> {
+        let provider = self.get_provider().await?;
+        provider.register_operator(operator_signature).send().await?;
+        Ok(())
+    }
+
+    pub async fn register_validators(&self, pod_owner: Address, bls_pub_key_hashes: Vec<[u8; 32]>) -> Result<()> {
+        let provider = self.get_provider().await?;
+        provider.register_validators(pod_owner, bls_pub_key_hashes).send().await?;
+        Ok(())
+    }
+
+    pub async fn deregister_validators(&self, bls_pub_key_hashes: Vec<[u8; 32]>) -> Result<()> {
+        let provider = self.get_provider().await?;
+        provider.deregister_validators(bls_pub_key_hashes).send().await?;
+        Ok(())
+    }
+
+    pub async fn start_deregister_operator(&self) -> Result<()> {
+        let provider = self.get_provider().await?;
+        provider.start_deregister_operator().send().await?;
+        Ok(())
+    }
+
+    pub async fn finish_deregister_operator(&self) -> Result<()> {
+        let provider = self.get_provider().await?;
+        provider.finish_deregister_operator().send().await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -134,17 +168,11 @@ mod tests {
         // Replace with a valid operator address that you've registered in your local deployment
         let operator_address = Address::from_str("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")?;
 
-        match unifi_avs_manager.get_operator(operator_address).await {
-            Ok(operator_data) => {
-                println!("Operator data: {:?}", operator_data.commitmentValidAfter);
-                // Add assertions here to check the returned data
-                assert!(operator_data.isRegistered);
-                // Add more assertions based on your expected data
-            }
-            Err(e) => {
-                panic!("Failed to get operator data: {:?}", e);
-            }
-        }
+        let operator_data = unifi_avs_manager.get_operator(operator_address).await?;
+        println!("Operator data: {:?}", operator_data.commitmentValidAfter);
+        // Add assertions here to check the returned data
+        assert!(operator_data.isRegistered);
+        // Add more assertions based on your expected data
 
         Ok(())
     }
