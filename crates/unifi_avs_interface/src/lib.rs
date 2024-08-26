@@ -1,11 +1,66 @@
 use alloy::{sol, primitives::Address, providers::Provider};
 use eyre::Result;
+use thiserror::Error;
 
 sol!(
     #[sol(rpc)]
     UniFiAVSManager,
     "../../l1-contracts/out/UniFiAVSManager.sol/UniFiAVSManager.json"
 );
+
+#[derive(Error, Debug)]
+pub enum UniFiAVSManagerError {
+    #[error("Registration expired")]
+    RegistrationExpired,
+    #[error("Invalid operator salt")]
+    InvalidOperatorSalt,
+    #[error("Signature expired")]
+    SignatureExpired,
+    #[error("Operator has validators")]
+    OperatorHasValidators,
+    #[error("Not operator")]
+    NotOperator,
+    #[error("No EigenPod")]
+    NoEigenPod,
+    #[error("Deregistration delay not elapsed")]
+    DeregistrationDelayNotElapsed,
+    #[error("Deregistration already started")]
+    DeregistrationAlreadyStarted,
+    #[error("Deregistration not started")]
+    DeregistrationNotStarted,
+    #[error("Not delegated to operator")]
+    NotDelegatedToOperator,
+    #[error("Validator not active")]
+    ValidatorNotActive,
+    #[error("Operator already exists")]
+    OperatorAlreadyExists,
+    #[error("Operator not registered")]
+    OperatorNotRegistered,
+    #[error("Operator already registered")]
+    OperatorAlreadyRegistered,
+    #[error("Not validator operator")]
+    NotValidatorOperator,
+    #[error("Validator already registered")]
+    ValidatorAlreadyRegistered,
+    #[error("Delegate key not set")]
+    DelegateKeyNotSet,
+    #[error("Invalid operator")]
+    InvalidOperator,
+    #[error("Not pod owner")]
+    NotPodOwner,
+    #[error("Validator not found")]
+    ValidatorNotFound,
+    #[error("Unauthorized")]
+    Unauthorized,
+    #[error("Invalid address")]
+    InvalidAddress,
+    #[error("Invalid amount")]
+    InvalidAmount,
+    #[error("Delegate key change not ready")]
+    DelegateKeyChangeNotReady,
+    #[error("Commitment change not ready")]
+    CommitmentChangeNotReady,
+}
 
 pub struct UniFiAVSManagerWrapper(UniFiAVSManager);
 
@@ -47,7 +102,7 @@ impl UniFiAVSManagerWrapper {
         self.0.get_validator(bls_pub_key_hash).call().await
     }
 
-    pub async fn get_validator_by_index(&self, validator_index: u64) -> Result<UniFiAVSManager::ValidatorDataExtended> {
+    pub async fn get_validator_by_index(&self, validator_index: u256) -> Result<UniFiAVSManager::ValidatorDataExtended> {
         self.0.get_validator(validator_index).call().await
     }
 
@@ -65,7 +120,7 @@ impl UniFiAVSManagerWrapper {
         Ok(())
     }
 
-    pub async fn is_validator_in_chain_id(&self, bls_pub_key_hash: [u8; 32], chain_id: u64) -> Result<bool> {
+    pub async fn is_validator_in_chain_id(&self, bls_pub_key_hash: [u8; 32], chain_id: u256) -> Result<bool> {
         self.0.is_validator_in_chain_id(bls_pub_key_hash, chain_id).call().await
     }
 }
