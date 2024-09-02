@@ -12,11 +12,39 @@ import "../test/mocks/MockAVSDirectory.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 import { IEigenPod } from "eigenlayer/interfaces/IEigenPod.sol";
+import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
 
 // to run the script: forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "createEigenPod(address)" "0xabcdefg..."
 
 contract UniFiAVSScripts is Script {
     using Strings for uint256;
+
+    // Struct for Validator information
+    struct Validator {
+        bytes32 pubkey;
+        bytes32 withdrawal_credentials;
+        uint256 effective_balance;
+        uint8 slashed;
+        uint256 activation_eligibility_epoch;
+        uint256 activation_epoch;
+        uint256 exit_epoch;
+        uint256 withdrawable_epoch;
+    }
+
+    // Struct for Data containing validator details
+    struct ValidatorData {
+        uint256 index;
+        uint256 balance;
+        string status;
+        Validator validator;
+    }
+
+    // Struct for the main object containing execution status, finalized status, and an array of Data
+    struct BeaconValidatorData {
+        uint8 execution_optimistic;
+        uint8 finalized;
+        ValidatorData[] data;
+    }
 
     MockDelegationManager mockDelegationManager;
     MockEigenPodManager mockEigenPodManager;
@@ -26,6 +54,7 @@ contract UniFiAVSScripts is Script {
     address mockDelegationManagerAddress = address(123);
     address mockEigenPodManagerAddress = address(123);
     address uniFiAVSManagerAddress = address(123);
+    address avsDirectoryAddress = address(123);
 
     function setUp() public {
         // Initialize the contract instances with their deployed addresses
@@ -62,11 +91,17 @@ contract UniFiAVSScripts is Script {
     }
 
     // Action 4: Register an Operator with UniFiAVSManager and set initial commitment (the caller of this script should be the operator)
-    function registerOperatorToUniFiAVS(
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature,
-        OperatorCommitment memory initialCommitment
-    ) public {
+    function registerOperatorToUniFiAVS(uint256 signerPk, OperatorCommitment memory initialCommitment) public {
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature;
+
         vm.startBroadcast();
+        (, operatorSignature) = _getOperatorSignature(
+            signerPk,
+            msg.sender,
+            uniFiAVSManagerAddress,
+            bytes32(keccak256(abi.encodePacked(block.timestamp, msg.sender))),
+            type(uint256).max
+        );
         uniFiAVSManager.registerOperator(operatorSignature);
         uniFiAVSManager.setOperatorCommitment(initialCommitment);
         vm.stopBroadcast();
@@ -109,49 +144,42 @@ contract UniFiAVSScripts is Script {
 
     // Action 10: Complete Pod Setup and Validator Registration
     function setupPodAndRegisterValidators(
+        uint256 signerPk,
         address podOwner,
-        address operator,
         OperatorCommitment memory initialCommitment,
-        bytes32[] memory pubkeyHashes,
-        MockEigenPod.ValidatorInfo[] memory validators,
-        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
+        string memory filePath
     ) public {
-        require(pubkeyHashes.length == validators.length, "Mismatched array lengths");
         vm.startBroadcast();
         // Step 1: Create a Mock Pod
         createEigenPod(podOwner);
 
         // Step 2: Delegate from PodOwner to Operator
-        delegateFromPodOwner(podOwner, operator);
+        delegateFromPodOwner(podOwner, msg.sender);
 
         // Step 3: Register the Operator
-        registerOperatorToUniFiAVS(operatorSignature, initialCommitment);
+        registerOperatorToUniFiAVS(signerPk, initialCommitment);
 
-        // Step 4: Add Validators to MockEigenPod
-        addValidatorsToEigenPod(podOwner, pubkeyHashes, validators);
-
-        // Step 5: Register Validators with UniFiAVSManager
-        registerValidatorsToUniFiAVS(podOwner, pubkeyHashes);
+        // Step 3: Add validators to pod and register them to the AVS
+        addValidatorsFromJsonFile(filePath, podOwner);
     }
 
     function addValidatorsFromJsonFile(string memory filePath, address podOwner) public {
         // Read the JSON file as a string
         string memory jsonData = vm.readFile(filePath);
+        bytes memory data = vm.parseJson(jsonData);
+        BeaconValidatorData memory beaconData = abi.decode(data, (BeaconValidatorData));
 
-        // Parse the JSON string into a dynamic array of objects
-        string[] memory validatorsData = vm.parseJsonStringArray(jsonData, ".data");
-
-        bytes32[] memory pubkeyHashes = new bytes32[](validatorsData.length);
-        IEigenPod.ValidatorInfo[] memory validators = new IEigenPod.ValidatorInfo[](validatorsData.length);
+        bytes32[] memory pubkeyHashes = new bytes32[](beaconData.data.length);
+        IEigenPod.ValidatorInfo[] memory validators = new IEigenPod.ValidatorInfo[](beaconData.data.length);
 
         // Iterate over the array and extract the required fields
-        for (uint256 i = 0; i < validatorsData.length; i++) {
+        for (uint256 i = 0; i < beaconData.data.length; i++) {
             // Extract index and pubkey from each object
-            string memory validatorJson = validatorsData[i];
+            ValidatorData memory validatorData = beaconData.data[i];
 
-            uint256 index = vm.parseJsonUint(validatorJson, ".index");
+            uint256 index = validatorData.index;
 
-            bytes memory pubkey = vm.parseJsonBytes(validatorJson, ".validator.pubkey");
+            bytes memory pubkey = abi.encode(validatorData.validator.pubkey);
 
             pubkeyHashes[i] = keccak256(pubkey);
             validators[i] = IEigenPod.ValidatorInfo({
@@ -167,5 +195,24 @@ contract UniFiAVSScripts is Script {
         }
 
         uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
+    }
+
+    function _getOperatorSignature(
+        uint256 _operatorPrivateKey,
+        address operator,
+        address avs,
+        bytes32 salt,
+        uint256 expiry
+    ) internal view returns (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) {
+        operatorSignature.expiry = expiry;
+        operatorSignature.salt = salt;
+        {
+            digestHash = IAVSDirectory(avsDirectoryAddress).calculateOperatorAVSRegistrationDigestHash(
+                operator, avs, salt, expiry
+            );
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(_operatorPrivateKey, digestHash);
+            operatorSignature.signature = abi.encodePacked(r, s, v);
+        }
+        return (digestHash, operatorSignature);
     }
 }
