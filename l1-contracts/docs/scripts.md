@@ -158,6 +158,17 @@ forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsDire
 
 Note: Ensure that the `pubkeys` and `validatorIndices` arrays have the same length and correspond to each other.
 
+### 13. setupPodAndRegisterValidatorsDirectly(uint256 signerPk, address podOwner, OperatorCommitment memory initialCommitment, bytes[] memory pubkeys, uint64[] memory validatorIndices)
+
+Performs the complete process of setting up a pod, adding validators directly, delegating to an operator, registering the operator, and registering the validators.
+
+Usage:
+```
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidatorsDirectly(uint256,address,(bytes,uint256),bytes[],uint64[])" "123456" "0x1234..." '["0xdelegateKey...",42]' '["0xpubkey1...","0xpubkey2..."]' '[1,2]'
+```
+
+Note: This function combines the steps of creating a pod, registering an operator, and adding validators directly, making it a convenient option for setting up the entire process in one transaction.
+
 ## Notes
 
 - Ensure that you have the necessary permissions to execute these functions.

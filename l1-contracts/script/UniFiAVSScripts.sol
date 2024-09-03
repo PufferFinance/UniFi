@@ -217,6 +217,28 @@ contract UniFiAVSScripts is Script {
         uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
     }
 
+    function setupPodAndRegisterValidatorsDirectly(
+        uint256 signerPk,
+        address podOwner,
+        OperatorCommitment memory initialCommitment,
+        bytes[] memory pubkeys,
+        uint64[] memory validatorIndices
+    ) public {
+        vm.startBroadcast();
+        // Step 1: Create a Mock Pod
+        createEigenPod(podOwner);
+
+        // Step 2: Delegate from PodOwner to Operator
+        delegateFromPodOwner(podOwner, msg.sender);
+
+        // Step 3: Register the Operator
+        registerOperatorToUniFiAVS(signerPk, initialCommitment);
+
+        // Step 4: Add validators to pod and register them to the AVS
+        addValidatorsDirectly(podOwner, pubkeys, validatorIndices);
+        vm.stopBroadcast();
+    }
+
     function _getOperatorSignature(
         uint256 _operatorPrivateKey,
         address operator,
