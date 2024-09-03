@@ -147,6 +147,17 @@ forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsFrom
 
 Note: Ensure that the JSON file contains the validator data in the format specified above, which is typically obtained from the Ethereum Beacon Chain API.
 
+### 12. addValidatorsDirectly(address podOwner, bytes[] memory pubkeys, uint64[] memory validatorIndices)
+
+Adds validators directly by passing their public keys and validator indices. This function allows you to add validators without using a JSON file.
+
+Usage:
+```
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsDirectly(address,bytes[],uint64[])" "0x1234..." '["0xpubkey1...","0xpubkey2..."]' '[1,2]'
+```
+
+Note: Ensure that the `pubkeys` and `validatorIndices` arrays have the same length and correspond to each other.
+
 ## Notes
 
 - Ensure that you have the necessary permissions to execute these functions.

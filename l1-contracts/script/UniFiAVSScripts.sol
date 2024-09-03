@@ -194,6 +194,29 @@ contract UniFiAVSScripts is Script {
         uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
     }
 
+    function addValidatorsDirectly(address podOwner, bytes[] memory pubkeys, uint64[] memory validatorIndices) public {
+        require(pubkeys.length == validatorIndices.length, "Mismatched array lengths");
+
+        bytes32[] memory pubkeyHashes = new bytes32[](pubkeys.length);
+        IEigenPod.ValidatorInfo[] memory validators = new IEigenPod.ValidatorInfo[](pubkeys.length);
+
+        for (uint256 i = 0; i < pubkeys.length; i++) {
+            pubkeyHashes[i] = keccak256(pubkeys[i]);
+            validators[i] = IEigenPod.ValidatorInfo({
+                validatorIndex: validatorIndices[i],
+                restakedBalanceGwei: 0,
+                mostRecentBalanceUpdateTimestamp: 0,
+                status: IEigenPod.VALIDATOR_STATUS.ACTIVE
+            });
+
+            mockEigenPodManager.setValidator(podOwner, pubkeyHashes[i], validators[i]);
+
+            console.log("Added validator with index:", validatorIndices[i]);
+        }
+
+        uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
+    }
+
     function _getOperatorSignature(
         uint256 _operatorPrivateKey,
         address operator,
