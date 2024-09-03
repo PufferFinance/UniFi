@@ -37,6 +37,8 @@ contract UnitTestHelper is Test, BaseScript {
     address public operator = vm.addr(operatorPrivateKey);
     address public podOwner = makeAddr("podOwner");
 
+    uint64 public constant DEREGISTRATION_DELAY = 65;
+
     modifier fuzzedAddress(address addr) virtual {
         vm.assume(fuzzedAddressMapping[addr] == false);
         _;
@@ -83,5 +85,9 @@ contract UnitTestHelper is Test, BaseScript {
         // accessManager = AccessManager(avsDeployment.accessManager);
         timelock = avsDeployment.timelock;
         avsManager = UniFiAVSManager(avsDeployment.avsManagerProxy);
+
+        // Set the deregistration delay
+        vm.prank(DAO);
+        avsManager.setDeregistrationDelay(DEREGISTRATION_DELAY);
     }
 }
