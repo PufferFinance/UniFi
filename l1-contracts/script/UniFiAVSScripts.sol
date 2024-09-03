@@ -116,6 +116,31 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
+    function registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk, bytes memory delegateKey) public {
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature;
+
+        vm.startBroadcast();
+        (, operatorSignature) = _getOperatorSignature(
+            signerPk,
+            msg.sender,
+            uniFiAVSManagerAddress,
+            bytes32(keccak256(abi.encodePacked(block.timestamp, msg.sender))),
+            type(uint256).max
+        );
+        uniFiAVSManager.registerOperator(operatorSignature);
+        
+        // Set chainIDBitMap with only index 1 as true (2 in binary is 10, which sets the second bit to 1)
+        uint256 chainIDBitMap = 2;
+        
+        OperatorCommitment memory initialCommitment = OperatorCommitment({
+            delegateKey: delegateKey,
+            chainIDBitMap: chainIDBitMap
+        });
+        
+        uniFiAVSManager.setOperatorCommitment(initialCommitment);
+        vm.stopBroadcast();
+    }
+
     // Action 5: Delegate from PodOwner to Operator using MockDelegationManager
     function delegateFromPodOwner(address podOwner, address operator) public {
         vm.startBroadcast();

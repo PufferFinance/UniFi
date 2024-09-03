@@ -57,13 +57,22 @@ Usage:
 forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVSWithPubkeys(address,bytes[])" "0x1234..." '["0xpubkey1...","0xpubkey2..."]'
 ```
 
-### 4. registerOperatorToUniFiAVS(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature, OperatorCommitment memory initialCommitment)
+### 4. registerOperatorToUniFiAVS(uint256 signerPk, OperatorCommitment memory initialCommitment)
 
 Registers an operator with the UniFiAVSManager and sets the initial commitment.
 
 Usage:
 ```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS((bytes,bytes32,uint256),(bytes,uint256))" '["0xsignature...","0xsalt...",1234567890]' '["0xdelegateKey...",42]'
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS(uint256,(bytes,uint256))" 123456 '["0xdelegateKey...",42]'
+```
+
+### 4a. registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk, bytes memory delegateKey)
+
+Registers an operator with the UniFiAVSManager using only a delegate key. The chainIDBitMap is automatically set with only the bitmap index 1 as true (all other indexes are false).
+
+Usage:
+```
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVSWithDelegateKey(uint256,bytes)" 123456 "0xdelegateKey..."
 ```
 
 ### 5. delegateFromPodOwner(address podOwner, address operator)
