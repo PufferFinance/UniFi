@@ -143,7 +143,7 @@ contract UniFiAVSScripts is Script {
     }
 
     // Action 10: Complete Pod Setup and Validator Registration
-    function setupPodAndRegisterValidators(
+    function setupPodAndRegisterValidatorsFromJsonFile(
         uint256 signerPk,
         address podOwner,
         OperatorCommitment memory initialCommitment,
