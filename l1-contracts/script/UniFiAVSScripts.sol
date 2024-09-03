@@ -89,6 +89,16 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
+    function registerValidatorsToUniFiAVSWithPubkeys(address podOwner, bytes[] memory pubkeys) public {
+        vm.startBroadcast();
+        bytes32[] memory pubkeyHashes = new bytes32[](pubkeys.length);
+        for (uint256 i = 0; i < pubkeys.length; i++) {
+            pubkeyHashes[i] = keccak256(pubkeys[i]);
+        }
+        uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
+        vm.stopBroadcast();
+    }
+
     // Action 4: Register an Operator with UniFiAVSManager and set initial commitment (the caller of this script should be the operator)
     function registerOperatorToUniFiAVS(uint256 signerPk, OperatorCommitment memory initialCommitment) public {
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature;

@@ -41,11 +41,20 @@ forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsToEi
 
 ### 3. registerValidatorsToUniFiAVS(address podOwner, bytes32[] memory blsPubKeyHashes)
 
-Registers validators with the UniFiAVSManager.
+Registers validators with the UniFiAVSManager using pre-hashed public keys.
 
 Usage:
 ```
 forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVS(address,bytes32[])" "0x1234..." '["0xabcd...","0xefgh..."]'
+```
+
+### 3a. registerValidatorsToUniFiAVSWithPubkeys(address podOwner, bytes[] memory pubkeys)
+
+Registers validators with the UniFiAVSManager using raw public keys. This function hashes the public keys before registering.
+
+Usage:
+```
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVSWithPubkeys(address,bytes[])" "0x1234..." '["0xpubkey1...","0xpubkey2..."]'
 ```
 
 ### 4. registerOperatorToUniFiAVS(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature, OperatorCommitment memory initialCommitment)
