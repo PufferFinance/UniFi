@@ -45,6 +45,9 @@ contract UniFiAVSScripts is Script {
         bool finalized;
     }
 
+    // Set chainIDBitMap with only index 1 as true (2 in binary is 10, which sets the second bit to 1)
+    uint256 constant DEFAULT_CHAIN_BITMAP = 2;
+
     MockDelegationManager mockDelegationManager;
     MockEigenPodManager mockEigenPodManager;
     UniFiAVSManager uniFiAVSManager;
@@ -128,15 +131,12 @@ contract UniFiAVSScripts is Script {
             type(uint256).max
         );
         uniFiAVSManager.registerOperator(operatorSignature);
-        
-        // Set chainIDBitMap with only index 1 as true (2 in binary is 10, which sets the second bit to 1)
-        uint256 chainIDBitMap = 2;
-        
-        OperatorCommitment memory initialCommitment = OperatorCommitment({
-            delegateKey: delegateKey,
-            chainIDBitMap: chainIDBitMap
-        });
-        
+
+        uint256 chainIDBitMap = DEFAULT_CHAIN_BITMAP;
+
+        OperatorCommitment memory initialCommitment =
+            OperatorCommitment({ delegateKey: delegateKey, chainIDBitMap: chainIDBitMap });
+
         uniFiAVSManager.setOperatorCommitment(initialCommitment);
         vm.stopBroadcast();
     }
@@ -229,7 +229,11 @@ contract UniFiAVSScripts is Script {
         uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
     }
 
-    function addValidatorsDirectly(address podOwner, bytes[] memory pubkeys, uint64[] memory validatorIndices) public {
+    function addValidatorsToEigenPodAndRegisterToAVS(
+        address podOwner,
+        bytes[] memory pubkeys,
+        uint64[] memory validatorIndices
+    ) public {
         require(pubkeys.length == validatorIndices.length, "Mismatched array lengths");
 
         bytes32[] memory pubkeyHashes = new bytes32[](pubkeys.length);
@@ -252,7 +256,7 @@ contract UniFiAVSScripts is Script {
         uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
     }
 
-    function setupPodAndRegisterValidatorsDirectly(
+    function setupPodAndRegisterValidators(
         uint256 signerPk,
         address podOwner,
         OperatorCommitment memory initialCommitment,
@@ -270,7 +274,7 @@ contract UniFiAVSScripts is Script {
         registerOperatorToUniFiAVS(signerPk, initialCommitment);
 
         // Step 4: Add validators to pod and register them to the AVS
-        addValidatorsDirectly(podOwner, pubkeys, validatorIndices);
+        addValidatorsToEigenPodAndRegisterToAVS(podOwner, pubkeys, validatorIndices);
         vm.stopBroadcast();
     }
 
