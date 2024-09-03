@@ -6,8 +6,11 @@ This document provides guidelines on how to use the UniFiAVSScripts and its func
 
 Before running any scripts, ensure that you have:
 
-1. Deployed the necessary contracts (UniFiAVSManager, MockEigenPodManager, MockDelegationManager).
-2. Updated the contract addresses in the UniFiAVSScripts.sol file.
+1. Deployed the necessary contracts:
+   - For Helder chain: UniFiAVSManager, MockEigenPodManager, MockDelegationManager, MockAVSDirectory
+   - For other chains (e.g., Holesky, Mainnet): UniFiAVSManager, EigenPodManager, DelegationManager, AVSDirectory
+2. Updated the contract addresses in the UniFiAVSScripts.sol file for both Helder and non-Helder chains.
+3. Set the correct chain ID for the Helder chain in the setUp function.
 
 ## Running Scripts
 
@@ -21,59 +24,94 @@ Replace `functionName` with the desired function and provide the necessary param
 
 ## Available Functions
 
-### 1. createEigenPod(address podOwner)
+### Helder-only Functions
 
-Creates a mock EigenPod for the specified podOwner.
+1. createEigenPod(address podOwner)
+   - Creates a mock EigenPod for the specified podOwner.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "createEigenPod(address)" "0x1234..."`
 
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "createEigenPod(address)" "0x1234..."
-```
+2. addValidatorsToEigenPod(address podOwner, bytes32[] memory pubkeyHashes, IEigenPod.ValidatorInfo[] memory validators)
+   - Adds validators to the MockEigenPod for the specified podOwner.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsToEigenPod(address,bytes32[],tuple[])" "0x1234..." '["0xabcd...","0xefgh..."]' '[{"status":1,"validatorIndex":0},{"status":1,"validatorIndex":1}]'`
 
-### 2. addValidatorsToEigenPod(address podOwner, bytes32[] memory pubkeyHashes, MockEigenPod.ValidatorInfo[] memory validators)
+3. delegateFromPodOwner(address podOwner, address operator)
+   - Delegates from PodOwner to Operator using MockDelegationManager.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,address)" "0x1234..." "0x5678..."`
 
-Adds validators to the MockEigenPod for the specified podOwner.
+4. delegateFromPodOwner(address podOwner, address operator, SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)
+   - Delegates from PodOwner to Operator with signature.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,address,(bytes,uint256),bytes32)" "0x1234..." "0x5678..." '["0xsignature...",1234567890]' "0xsalt..."`
 
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsToEigenPod(address,bytes32[],tuple[])" "0x1234..." '["0xabcd...","0xefgh..."]' '[{"status":1,"validatorIndex":0},{"status":1,"validatorIndex":1}]'
-```
+5. addValidatorsFromJsonFile(string memory filePath, address podOwner)
+   - Adds validators from a JSON file and registers them with UniFiAVSManager.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsFromJsonFile(string,address)" "path/to/validators.json" "0x1234..."`
 
-### 3. registerValidatorsToUniFiAVS(address podOwner, bytes32[] memory blsPubKeyHashes)
+6. addValidatorsToEigenPodAndRegisterToAVS(address podOwner, bytes[] memory pubkeys, uint64[] memory validatorIndices)
+   - Adds validators directly to EigenPod and registers them with UniFiAVSManager.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsToEigenPodAndRegisterToAVS(address,bytes[],uint64[])" "0x1234..." '["0xpubkey1...","0xpubkey2..."]' '[1,2]'`
 
-Registers validators with the UniFiAVSManager using pre-hashed public keys.
+7. setupPodAndRegisterValidatorsFromJsonFile(uint256 signerPk, address podOwner, OperatorCommitment memory initialCommitment, string memory filePath)
+   - Sets up a pod and registers validators from a JSON file.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidatorsFromJsonFile(uint256,address,(bytes,uint256),string)" 123456 "0x1234..." '["0xdelegateKey...",42]' "path/to/validators.json"`
 
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVS(address,bytes32[])" "0x1234..." '["0xabcd...","0xefgh..."]'
-```
+8. setupPodAndRegisterValidators(uint256 signerPk, address podOwner, OperatorCommitment memory initialCommitment, bytes[] memory pubkeys, uint64[] memory validatorIndices)
+   - Sets up a pod and registers validators directly.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidators(uint256,address,(bytes,uint256),bytes[],uint64[])" 123456 "0x1234..." '["0xdelegateKey...",42]' '["0xpubkey1...","0xpubkey2..."]' '[1,2]'`
 
-### 3a. registerValidatorsToUniFiAVSWithPubkeys(address podOwner, bytes[] memory pubkeys)
+### Non-Helder Functions
 
-Registers validators with the UniFiAVSManager using raw public keys. This function hashes the public keys before registering.
+9. registerAsOperator(OperatorDetails memory registeringOperatorDetails, string memory metadataURI)
+   - Registers the caller as an operator in the DelegationManager contract.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerAsOperator((address,address,uint32,uint32,uint96,uint96,bool,uint256[]),string)" '["0xoperatorAddress","0xearningsReceiverAddress",1000,2000,1000000000000000000,2000000000000000000,true,[1,2,3]]' "https://metadata.uri"`
 
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVSWithPubkeys(address,bytes[])" "0x1234..." '["0xpubkey1...","0xpubkey2..."]'
-```
+### Common Functions (Both Helder and Non-Helder)
 
-### 4. registerOperatorToUniFiAVS(uint256 signerPk, OperatorCommitment memory initialCommitment)
+10. registerValidatorsToUniFiAVS(address podOwner, bytes32[] memory blsPubKeyHashes)
+    - Registers validators with the UniFiAVSManager using pre-hashed public keys.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVS(address,bytes32[])" "0x1234..." '["0xabcd...","0xefgh..."]'`
 
-Registers an operator with the UniFiAVSManager and sets the initial commitment.
+11. registerValidatorsToUniFiAVS(address podOwner, bytes[] memory pubkeys)
+    - Registers validators with the UniFiAVSManager using raw public keys.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerValidatorsToUniFiAVS(address,bytes[])" "0x1234..." '["0xpubkey1...","0xpubkey2..."]'`
 
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS(uint256,(bytes,uint256))" 123456 '["0xdelegateKey...",42]'
-```
+12. registerOperatorToUniFiAVS(uint256 signerPk, OperatorCommitment memory initialCommitment)
+    - Registers an operator with the UniFiAVSManager and sets the initial commitment.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS(uint256,(bytes,uint256))" 123456 '["0xdelegateKey...",42]'`
 
-### 4a. registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk, bytes memory delegateKey)
+13. registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk, bytes memory delegateKey)
+    - Registers an operator with the UniFiAVSManager using only a delegate key.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVSWithDelegateKey(uint256,bytes)" 123456 "0xdelegateKey..."`
 
-Registers an operator with the UniFiAVSManager using only a delegate key. The chainIDBitMap is automatically set with only the bitmap index 1 as true (all other indexes are false).
+14. delegateFromPodOwnerBySignature(address staker, address operator, SignatureWithExpiry memory stakerSignatureAndExpiry, SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)
+    - Delegates from PodOwner to Operator by signature.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwnerBySignature(address,address,(bytes,uint256),(bytes,uint256),bytes32)" "0x1234..." "0x5678..." '["0xstakerSignature...",1234567890]' '["0xapproverSignature...",1234567890]' "0xsalt..."`
 
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVSWithDelegateKey(uint256,bytes)" 123456 "0xdelegateKey..."
-```
+15. setOperatorCommitment(OperatorCommitment memory newCommitment)
+    - Sets the operator's commitment.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setOperatorCommitment((bytes,uint256))" '["0xnewDelegateKey...",42]'`
+
+16. updateOperatorCommitment()
+    - Updates the operator's commitment after the delay period.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment()"`
+
+17. startDeregisterOperator()
+    - Starts the process of deregistering an operator.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "startDeregisterOperator()"`
+
+18. finishDeregisterOperator()
+    - Finishes the process of deregistering an operator.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "finishDeregisterOperator()"`
+
+19. deregisterValidatorFromUniFiAVS(address podOwner, bytes32 pubkeyHash)
+    - Deregisters a validator from the UniFiAVSManager.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "deregisterValidatorFromUniFiAVS(address,bytes32)" "0x1234..." "0xpubkeyHash"`
+
+## Notes
+
+- Ensure that you have the necessary permissions to execute these functions.
+- Some functions may require specific roles or conditions to be met (e.g., being an operator, having a pod, etc.).
+- Always verify the transaction details before confirming, especially when interacting with mainnet or important testnet deployments.
+- These scripts are primarily for testing and demonstration purposes. Exercise caution when using them in a production environment.
 
 ### 5. delegateFromPodOwner(address podOwner, address operator)
 
@@ -186,6 +224,17 @@ forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegist
 ```
 
 Note: This function combines the steps of creating a pod, registering an operator, and adding validators directly, making it a convenient option for setting up the entire process in one transaction.
+
+### 14. registerAsOperator(OperatorDetails memory registeringOperatorDetails, string memory metadataURI)
+
+Registers the caller as an operator in the DelegationManager contract. This function is only available for non-Helder chains.
+
+Usage:
+```
+forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerAsOperator((address,address,uint32,uint32,uint96,uint96,bool,uint256[]),string)" '["0xoperatorAddress","0xearningsReceiverAddress",1000,2000,1000000000000000000,2000000000000000000,true,[1,2,3]]' "https://metadata.uri"
+```
+
+Note: The `registeringOperatorDetails` parameter is a struct containing the operator's details, and `metadataURI` is a string pointing to the operator's metadata.
 
 ## Notes
 
