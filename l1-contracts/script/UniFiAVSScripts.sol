@@ -41,9 +41,9 @@ contract UniFiAVSScripts is Script {
 
     // Struct for the main object containing execution status, finalized status, and an array of Data
     struct BeaconValidatorData {
+        ValidatorData[] data;
         uint8 execution_optimistic;
         uint8 finalized;
-        ValidatorData[] data;
     }
 
     MockDelegationManager mockDelegationManager;
@@ -51,10 +51,10 @@ contract UniFiAVSScripts is Script {
     UniFiAVSManager uniFiAVSManager;
 
     // update the addresses to the deployed ones
-    address mockDelegationManagerAddress = address(123);
-    address mockEigenPodManagerAddress = address(123);
-    address uniFiAVSManagerAddress = address(123);
-    address avsDirectoryAddress = address(123);
+    address mockDelegationManagerAddress = address(0x239eD3B6B4bd3a1cCaDB79d2A8c4862BB2324D89);
+    address mockEigenPodManagerAddress = address(0x27065dA1e634119b5f50167A650B7109B8965350);
+    address uniFiAVSManagerAddress = address(0x5CcEa336064524a3D7d636e33BFd53f2917F27A0);
+    address avsDirectoryAddress = address(0x5d0F57C63Bd70843dc600A6da78fEcC7c390Cb34);
 
     function setUp() public {
         // Initialize the contract instances with their deployed addresses
