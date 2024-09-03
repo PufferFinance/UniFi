@@ -89,7 +89,7 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
-    function registerValidatorsToUniFiAVSWithPubkeys(address podOwner, bytes[] memory pubkeys) public {
+    function registerValidatorsToUniFiAVS(address podOwner, bytes[] memory pubkeys) public {
         vm.startBroadcast();
         bytes32[] memory pubkeyHashes = new bytes32[](pubkeys.length);
         for (uint256 i = 0; i < pubkeys.length; i++) {
