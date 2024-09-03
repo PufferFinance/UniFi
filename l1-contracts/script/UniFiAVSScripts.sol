@@ -19,31 +19,30 @@ import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
 contract UniFiAVSScripts is Script {
     using Strings for uint256;
 
+    // DO NOT CHANGE THE ORDER OF THE STRUCTS BELOW
     // Struct for Validator information
     struct Validator {
-        bytes32 pubkey;
+        string effective_balance;
+        string activation_eligibility_epoch;
+        string activation_epoch;
+        string exit_epoch;
+        bytes pubkey;
+        bool slashed;
+        string withdrawable_epoch;
         bytes32 withdrawal_credentials;
-        uint256 effective_balance;
-        uint8 slashed;
-        uint256 activation_eligibility_epoch;
-        uint256 activation_epoch;
-        uint256 exit_epoch;
-        uint256 withdrawable_epoch;
     }
 
     // Struct for Data containing validator details
     struct ValidatorData {
-        uint256 index;
-        uint256 balance;
-        string status;
+        string index;
         Validator validator;
     }
 
     // Struct for the main object containing execution status, finalized status, and an array of Data
     struct BeaconValidatorData {
         ValidatorData[] data;
-        uint8 execution_optimistic;
-        uint8 finalized;
+        bool execution_optimistic;
+        bool finalized;
     }
 
     MockDelegationManager mockDelegationManager;
@@ -110,6 +109,7 @@ contract UniFiAVSScripts is Script {
     // Action 5: Delegate from PodOwner to Operator using MockDelegationManager
     function delegateFromPodOwner(address podOwner, address operator) public {
         vm.startBroadcast();
+        mockDelegationManager.setOperator(operator, true);
         mockDelegationManager.setDelegation(podOwner, operator);
         vm.stopBroadcast();
     }
@@ -176,12 +176,9 @@ contract UniFiAVSScripts is Script {
         for (uint256 i = 0; i < beaconData.data.length; i++) {
             // Extract index and pubkey from each object
             ValidatorData memory validatorData = beaconData.data[i];
+            uint256 index = stringToUint(validatorData.index);
 
-            uint256 index = validatorData.index;
-
-            bytes memory pubkey = abi.encode(validatorData.validator.pubkey);
-
-            pubkeyHashes[i] = keccak256(pubkey);
+            pubkeyHashes[i] = keccak256(validatorData.validator.pubkey);
             validators[i] = IEigenPod.ValidatorInfo({
                 validatorIndex: uint64(index),
                 restakedBalanceGwei: 0,
@@ -214,5 +211,16 @@ contract UniFiAVSScripts is Script {
             operatorSignature.signature = abi.encodePacked(r, s, v);
         }
         return (digestHash, operatorSignature);
+    }
+
+    function stringToUint(string memory s) public pure returns (uint256) {
+        bytes memory b = bytes(s);
+        uint256 result = 0;
+        for (uint256 i = 0; i < b.length; i++) {
+            // Check if the character is a digit (0-9)
+            require(b[i] >= 0x30 && b[i] <= 0x39, "Invalid character in string");
+            result = result * 10 + (uint256(uint8(b[i])) - 48);
+        }
+        return result;
     }
 }
