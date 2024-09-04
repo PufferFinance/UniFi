@@ -3,7 +3,6 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Script.sol";
 import { UniFiAVSManager } from "../src/UniFiAVSManager.sol";
-import "../src/structs/ValidatorData.sol";
 import "../src/structs/OperatorData.sol";
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
 import "../test/mocks/MockEigenPodManager.sol";
@@ -77,10 +76,10 @@ contract UniFiAVSScripts is Script {
         } else {
             isHelderChain = false;
             // Set the addresses for Holesky or Mainnet
-            delegationManagerAddress = address(0x...); // Replace with actual address
-            eigenPodManagerAddress = address(0x...); // Replace with actual address
-            uniFiAVSManagerAddress = address(0x...); // Replace with actual address
-            avsDirectoryAddress = address(0x...); // Replace with actual address
+            delegationManagerAddress = address(0x123); // Replace with actual address
+            eigenPodManagerAddress = address(0x123); // Replace with actual address
+            uniFiAVSManagerAddress = address(0x123); // Replace with actual address
+            avsDirectoryAddress = address(0x123); // Replace with actual address
         }
 
         // Initialize the contract instances with their deployed addresses
@@ -135,14 +134,12 @@ contract UniFiAVSScripts is Script {
     }
 
     /// @notice Delegates from PodOwner to Operator with signature (Helder only)
-    /// @param podOwner The address of the pod owner
     /// @param operator The address of the operator
     /// @param approverSignatureAndExpiry The approver's signature and expiry
     /// @param approverSalt The approver's salt
     function delegateFromPodOwner(
-        address podOwner,
         address operator,
-        SignatureWithExpiry memory approverSignatureAndExpiry,
+        ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry,
         bytes32 approverSalt
     ) public {
         require(isHelderChain, "This function can only be called on the Helder chain");
@@ -178,7 +175,7 @@ contract UniFiAVSScripts is Script {
                 status: IEigenPod.VALIDATOR_STATUS.ACTIVE
             });
 
-            mockEigenPodManager.setValidator(podOwner, pubkeyHashes[i], validators[i]);
+            MockEigenPodManager(eigenPodManagerAddress).setValidator(podOwner, pubkeyHashes[i], validators[i]);
 
             console.log("Added validator with index:", index);
         }
@@ -210,7 +207,7 @@ contract UniFiAVSScripts is Script {
                 status: IEigenPod.VALIDATOR_STATUS.ACTIVE
             });
 
-            mockEigenPodManager.setValidator(podOwner, pubkeyHashes[i], validators[i]);
+            MockEigenPodManager(eigenPodManagerAddress).setValidator(podOwner, pubkeyHashes[i], validators[i]);
 
             console.log("Added validator with index:", validatorIndices[i]);
         }
@@ -279,7 +276,7 @@ contract UniFiAVSScripts is Script {
     /// @notice Registers the caller as an operator in the DelegationManager contract (non-Helder only)
     /// @param registeringOperatorDetails The details of the registering operator
     /// @param metadataURI The URI of the operator's metadata
-    function registerAsOperator(OperatorDetails memory registeringOperatorDetails, string memory metadataURI) public {
+    function registerAsOperator(IDelegationManager.OperatorDetails memory registeringOperatorDetails, string memory metadataURI) public {
         require(!isHelderChain, "This function can only be called on non-Helder chains");
         vm.startBroadcast();
         delegationManager.registerAsOperator(registeringOperatorDetails, metadataURI);
@@ -363,8 +360,8 @@ contract UniFiAVSScripts is Script {
     function delegateFromPodOwnerBySignature(
         address staker,
         address operator,
-        SignatureWithExpiry memory stakerSignatureAndExpiry,
-        SignatureWithExpiry memory approverSignatureAndExpiry,
+        ISignatureUtils.SignatureWithExpiry memory stakerSignatureAndExpiry,
+        ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry,
         bytes32 approverSalt
     ) public {
         vm.startBroadcast();
