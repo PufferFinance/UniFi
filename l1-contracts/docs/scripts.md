@@ -41,10 +41,12 @@ The OperatorCommitment is a struct that contains two important pieces of informa
 
 The chainIdBitMap is a bitmap where each bit represents a specific chain ID. If a bit is set to 1, it means the operator is committed to serving that chain. The mapping between bit positions and chain IDs is maintained separately in the UniFiAVSManager contract.
 
+Note: chainId 0 and bitmap index 0 are not allowed to be used.
+
 Examples:
-- chainIdBitMap = 3 (binary: 0011): The operator is committed to chains with IDs at positions 0 and 1.
+- chainIdBitMap = 2 (binary: 0010): The operator is committed to the chain with ID at position 1.
 - chainIdBitMap = 6 (binary: 0110): The operator is committed to chains with IDs at positions 1 and 2.
-- chainIdBitMap = 15 (binary: 1111): The operator is committed to chains with IDs at positions 0, 1, 2, and 3.
+- chainIdBitMap = 14 (binary: 1110): The operator is committed to chains with IDs at positions 1, 2, and 3.
 
 When setting or updating an operator's commitment, you need to provide both the delegateKey and the chainIdBitMap.
 
