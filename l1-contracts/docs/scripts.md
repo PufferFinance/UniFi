@@ -73,10 +73,6 @@ The length of the delay is configurable and can be queried using the getDeregist
    - Delegates from PodOwner to Operator using MockDelegationManager.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,address)" "0x1234..." "0x5678..."`
 
-* `delegateFromPodOwner(address operator, ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)`
-   - Delegates from PodOwner to Operator with signature.
-   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,(bytes,uint256),bytes32)" "0x5678..." '["0xsignature...",1234567890]' "0xsalt..."`
-
 * `addValidatorsFromJsonFile(string memory filePath, address podOwner)`
    - Adds validators from a JSON file and registers them with UniFiAVSManager.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsFromJsonFile(string,address)" "path/to/validators.json" "0x1234..."`
@@ -92,12 +88,6 @@ The length of the delay is configurable and can be queried using the getDeregist
 * `setupPodAndRegisterValidators(uint256 signerPk, address podOwner, bytes memory delegateKey, bytes[] memory pubkeys, uint64[] memory validatorIndices)`
    - Sets up a pod and registers validators directly.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidators(uint256,address,bytes,bytes[],uint64[])" 123456 "0x1234..." "0xdelegateKey..." '["0xpubkey1...","0xpubkey2..."]' '[1,2]'`
-
-### Mainnet/Holesky Functions
-
-* `registerAsOperator(IDelegationManager.OperatorDetails memory registeringOperatorDetails, string memory metadataURI)`
-   - Registers the caller as an operator in the DelegationManager contract.
-   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerAsOperator((address,address,uint32,uint32,uint96,uint96,bool,uint256[]),string)" '["0xoperatorAddress","0xearningsReceiverAddress",1000,2000,1000000000000000000,2000000000000000000,true,[1,2,3]]' "https://metadata.uri"`
 
 ### Common Functions
 
@@ -149,3 +139,13 @@ The length of the delay is configurable and can be queried using the getDeregist
     - Finishes the process of deregistering an operator.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "finishDeregisterOperator()"`
     - Note: This function can only be called after the deregistration delay has passed since startDeregisterOperator() was called.
+
+### Mainnet/Holesky Functions
+
+* `registerAsOperator(IDelegationManager.OperatorDetails memory registeringOperatorDetails, string memory metadataURI)`
+   - Registers the caller as an operator in the DelegationManager contract.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerAsOperator((address,address,uint32,uint32,uint96,uint96,bool,uint256[]),string)" '["0xoperatorAddress","0xearningsReceiverAddress",1000,2000,1000000000000000000,2000000000000000000,true,[1,2,3]]' "https://metadata.uri"`
+
+* `delegateFromPodOwner(address operator, ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)`
+   - Delegates from PodOwner to Operator with signature.
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,(bytes,uint256),bytes32)" "0x5678..." '["0xsignature...",1234567890]' "0xsalt..."`
