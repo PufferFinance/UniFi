@@ -11,6 +11,13 @@ Before running any scripts, ensure that you have:
    - For other chains (e.g., Holesky, Mainnet): UniFiAVSManager, EigenPodManager, DelegationManager, AVSDirectory
 2. Updated the contract addresses in the UniFiAVSScripts.sol file for both Helder and non-Helder chains.
 3. Set the correct chain ID for the Helder chain in the setUp function.
+4. Created a validators JSON file (if needed for certain functions). You can create this file using the following command:
+
+   ```
+   curl -s https://bn.bootnode.helder-devnets.xyz/eth/v1/beacon/states/head/validators -o validators.json
+   ```
+
+   This command fetches the current validator information from the Helder devnet and saves it to a file named `validators.json`.
 
 ## Running Scripts
 
@@ -146,6 +153,7 @@ The length of the delay is configurable and can be queried using the getDeregist
     - Starts the process of deregistering an operator.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "startDeregisterOperator()"`
     - Note: This function initiates the deregistration process, which will be completed after the deregistration delay.
+    - Important: This function will fail if the operator has not already called `deregisterValidatorsFromUniFiAVS` for all of their validators. Ensure all validators are deregistered before calling this function.
 
 22. finishDeregisterOperator()
     - Finishes the process of deregistering an operator.
