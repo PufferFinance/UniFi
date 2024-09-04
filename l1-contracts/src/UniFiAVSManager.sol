@@ -10,7 +10,6 @@ import { IAVSDirectoryExtended } from "./interfaces/EigenLayer/IAVSDirectoryExte
 import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
 import { IEigenPodManager } from "eigenlayer/interfaces/IEigenPodManager.sol";
 import { IEigenPod } from "eigenlayer/interfaces/IEigenPod.sol";
-import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { BLSSignatureCheckerLib } from "./lib/BLSSignatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
@@ -26,7 +25,6 @@ contract UniFiAVSManager is
     UUPSUpgradeable,
     AccessManagedUpgradeable
 {
-    using BN254 for BN254.G1Point;
 
     IEigenPodManager public immutable EIGEN_POD_MANAGER;
     IDelegationManager public immutable EIGEN_DELEGATION_MANAGER;
@@ -69,8 +67,6 @@ contract UniFiAVSManager is
      * @param operatorSignature The signature and associated data for operator registration
      */
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
@@ -151,7 +147,6 @@ contract UniFiAVSManager is
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
             ValidatorData storage validator = $.validators[blsPubKeyHash];
-            OperatorData storage operator = $.operators[validator.operator];
 
             if (validator.index == 0) {
                 revert ValidatorNotFound();
