@@ -19,6 +19,7 @@ Before running any scripts, ensure that you have:
     -H 'Content-Type: application/json' \
     -d '{
     "ids": ["0x86d7e4912c433fce45b60d499ce538c66e7fd722789d773583d5cdf21a86e28d438630770c45c0e75ee7f50500aa02fc", "0xaed5939124f0ca0ebd99496ac744cafaa0e874fb0a3d0cd63ef93f4d63573f3dca3f56d0e7514567c230dbee95f8bd4c"]
+    }' > script/validators.json
    ```
 
    This command fetches the current validator information from the Helder devnet, filter it by the given list of ids (pubkeys) and saves it to a file named `validators.json`.
@@ -31,7 +32,7 @@ To run a script, use the following command format:
 forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "functionName(parameters)" "parameter1" "parameter2" ...
 ```
 
-Replace `functionName` with the desired function and provide the necessary parameters.
+Replace `functionName` with the desired function and provide the necessary parameters. To broadcast the script results on-chain you will also need to include flags like `--rpc-url https://rpc.helder-devnets.xyz/ --broadcast --account <your-cast-wallet-name>`. 
 
 ## Understanding OperatorCommitment and chainIdBitMap
 
@@ -45,7 +46,7 @@ Note: chainId 0 and bitmap index 0 are not allowed to be used.
 
 Examples:
 - chainIdBitMap = 2 (binary: 0010): The operator is committed to the chain with ID at position 1.
-- chainIdBitMap = 6 (binary: 0110): The operator is committed to chains with IDs at positions 1 and 2.
+- chainIdBitMap = 6 (binary: 0110): The operator is committed to chains with IDs at positions 1 and 2. where position 1 may correspond to mainnet (0x1) and position 2 may correspond to a based rollup with chainID (0xabcd).
 - chainIdBitMap = 14 (binary: 1110): The operator is committed to chains with IDs at positions 1, 2, and 3.
 
 When setting or updating an operator's commitment, you need to provide both the delegateKey and the chainIdBitMap.
@@ -67,10 +68,6 @@ The length of the delay is configurable and can be queried using the getDeregist
 createEigenPod(address podOwner)
    - Creates a mock EigenPod for the specified podOwner.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "createEigenPod(address)" "0x1234..."`
-
-addValidatorsToEigenPod(address podOwner, bytes32[] memory pubkeyHashes, IEigenPod.ValidatorInfo[] memory validators)
-   - Adds validators to the MockEigenPod for the specified podOwner.
-   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsToEigenPod(address,bytes32[],tuple[])" "0x1234..." '["0xabcd...","0xefgh..."]' '[{"status":1,"validatorIndex":0},{"status":1,"validatorIndex":1}]'`
 
 delegateFromPodOwner(address podOwner, address operator)
    - Delegates from PodOwner to Operator using MockDelegationManager.
