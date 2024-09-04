@@ -139,8 +139,23 @@ The length of the delay is configurable and can be queried using the getDeregist
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "deregisterValidatorFromUniFiAVS(address,bytes32)" "0x1234..." "0xpubkeyHash"`
 
 20. updateOperatorCommitment(OperatorCommitment memory newCommitment)
-    - Updates the operator's commitment in the UniFiAVSManager.
+    - Updates the operator's commitment.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment((bytes,uint256))" '["0xnewDelegateKey...",42]'`
+
+21. startDeregisterOperator()
+    - Starts the process of deregistering an operator.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "startDeregisterOperator()"`
+    - Note: This function initiates the deregistration process, which will be completed after the deregistration delay.
+
+22. finishDeregisterOperator()
+    - Finishes the process of deregistering an operator.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "finishDeregisterOperator()"`
+    - Note: This function can only be called after the deregistration delay has passed since startDeregisterOperator() was called.
+
+23. updateOperatorCommitment()
+    - Updates the operator's commitment after the delay period.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment()"`
+    - Note: This function can only be called after the deregistration delay has passed since setOperatorCommitment() was called.
 
 ## Notes
 

@@ -67,7 +67,8 @@ contract UniFiAVSScripts is Script {
 
     function setUp() public {
         // Determine which chain we're on and set the appropriate addresses
-        if (block.chainid == 7014190335) { // chain ID for Helder
+        if (block.chainid == 7014190335) {
+            // chain ID for Helder
             isHelderChain = true;
             delegationManagerAddress = address(0x239eD3B6B4bd3a1cCaDB79d2A8c4862BB2324D89);
             eigenPodManagerAddress = address(0x27065dA1e634119b5f50167A650B7109B8965350);
@@ -153,6 +154,7 @@ contract UniFiAVSScripts is Script {
     /// @param podOwner The address of the pod owner
     function addValidatorsFromJsonFile(string memory filePath, address podOwner) public {
         require(isHelderChain, "This function can only be called on the Helder chain");
+        vm.startBroadcast();
         // Read the JSON file as a string
         string memory jsonData = vm.readFile(filePath);
         bytes memory data = vm.parseJson(jsonData);
@@ -181,6 +183,7 @@ contract UniFiAVSScripts is Script {
         }
 
         uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
+        vm.stopBroadcast();
     }
 
     /// @notice Adds validators directly to EigenPod and registers them with UniFiAVSManager (Helder only)
@@ -194,6 +197,7 @@ contract UniFiAVSScripts is Script {
     ) public {
         require(isHelderChain, "This function can only be called on the Helder chain");
         require(pubkeys.length == validatorIndices.length, "Mismatched array lengths");
+        vm.startBroadcast();
 
         bytes32[] memory pubkeyHashes = new bytes32[](pubkeys.length);
         IEigenPod.ValidatorInfo[] memory validators = new IEigenPod.ValidatorInfo[](pubkeys.length);
@@ -213,6 +217,7 @@ contract UniFiAVSScripts is Script {
         }
 
         uniFiAVSManager.registerValidators(podOwner, pubkeyHashes);
+        vm.stopBroadcast();
     }
 
     /// @notice Sets up a pod and registers validators from a JSON file (Helder only)
@@ -226,7 +231,6 @@ contract UniFiAVSScripts is Script {
         string memory filePath
     ) public {
         require(isHelderChain, "This function can only be called on the Helder chain");
-        vm.startBroadcast();
         // Step 1: Create a Mock Pod
         createEigenPod(podOwner);
 
@@ -236,9 +240,11 @@ contract UniFiAVSScripts is Script {
         // Step 3: Register the Operator
         registerOperatorToUniFiAVSWithDelegateKey(signerPk, delegateKey);
 
+        // Step 4: Update the commitment to activate the operator
+        updateOperatorCommitment();
+
         // Step 4: Add validators to pod and register them to the AVS
         addValidatorsFromJsonFile(filePath, podOwner);
-        vm.stopBroadcast();
     }
 
     /// @notice Sets up a pod and registers validators directly (Helder only)
@@ -254,7 +260,7 @@ contract UniFiAVSScripts is Script {
         uint64[] memory validatorIndices
     ) public {
         require(isHelderChain, "This function can only be called on the Helder chain");
-        vm.startBroadcast();
+
         // Step 1: Create a Mock Pod
         createEigenPod(podOwner);
 
@@ -264,9 +270,11 @@ contract UniFiAVSScripts is Script {
         // Step 3: Register the Operator
         registerOperatorToUniFiAVSWithDelegateKey(signerPk, delegateKey);
 
-        // Step 4: Add validators to pod and register them to the AVS
+        // Step 4: Update the commitment to activate the operator
+        updateOperatorCommitment();
+
+        // Step 5: Add validators to pod and register them to the AVS
         addValidatorsToEigenPodAndRegisterToAVS(podOwner, pubkeys, validatorIndices);
-        vm.stopBroadcast();
     }
 
     // Non-Helder functions
@@ -274,7 +282,10 @@ contract UniFiAVSScripts is Script {
     /// @notice Registers the caller as an operator in the DelegationManager contract (non-Helder only)
     /// @param registeringOperatorDetails The details of the registering operator
     /// @param metadataURI The URI of the operator's metadata
-    function registerAsOperator(IDelegationManager.OperatorDetails memory registeringOperatorDetails, string memory metadataURI) public {
+    function registerAsOperator(
+        IDelegationManager.OperatorDetails memory registeringOperatorDetails,
+        string memory metadataURI
+    ) public {
         require(!isHelderChain, "This function can only be called on non-Helder chains");
         vm.startBroadcast();
         delegationManager.registerAsOperator(registeringOperatorDetails, metadataURI);
@@ -383,6 +394,7 @@ contract UniFiAVSScripts is Script {
     }
 
     /// @notice Updates the operator's commitment after the delay period
+    /// @dev This function can only be called after the deregistration delay has passed since setOperatorCommitment() was called
     function updateOperatorCommitment() public {
         vm.startBroadcast();
         uniFiAVSManager.updateOperatorCommitment();
@@ -390,6 +402,7 @@ contract UniFiAVSScripts is Script {
     }
 
     /// @notice Starts the process of deregistering an operator
+    /// @dev This function initiates the deregistration process, which will be completed after the deregistration delay
     function startDeregisterOperator() public {
         vm.startBroadcast();
         uniFiAVSManager.startDeregisterOperator();
@@ -397,6 +410,7 @@ contract UniFiAVSScripts is Script {
     }
 
     /// @notice Finishes the process of deregistering an operator
+    /// @dev This function can only be called after the deregistration delay has passed since startDeregisterOperator() was called
     function finishDeregisterOperator() public {
         vm.startBroadcast();
         uniFiAVSManager.finishDeregisterOperator();
