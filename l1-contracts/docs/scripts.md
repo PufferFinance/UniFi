@@ -22,6 +22,31 @@ forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "functionName(para
 
 Replace `functionName` with the desired function and provide the necessary parameters.
 
+## Understanding OperatorCommitment and chainIdBitMap
+
+The OperatorCommitment is a struct that contains two important pieces of information:
+1. delegateKey: A bytes array representing the delegate key for the operator.
+2. chainIDBitMap: A uint256 representing the chains the operator is committed to serve.
+
+The chainIdBitMap is a bitmap where each bit represents a specific chain ID. If a bit is set to 1, it means the operator is committed to serving that chain. The mapping between bit positions and chain IDs is maintained separately in the UniFiAVSManager contract.
+
+Examples:
+- chainIdBitMap = 3 (binary: 0011): The operator is committed to chains with IDs at positions 0 and 1.
+- chainIdBitMap = 6 (binary: 0110): The operator is committed to chains with IDs at positions 1 and 2.
+- chainIdBitMap = 15 (binary: 1111): The operator is committed to chains with IDs at positions 0, 1, 2, and 3.
+
+When setting or updating an operator's commitment, you need to provide both the delegateKey and the chainIdBitMap.
+
+## Deregistration Delay
+
+The UniFiAVSManager implements a deregistration delay mechanism for security purposes. This delay is a period that must pass before certain actions (like deregistering an operator or updating commitments) can be completed.
+
+Functions affected by the deregistration delay:
+- finishDeregisterOperator(): Can only be called after the delay period since startDeregisterOperator() was called.
+- updateOperatorCommitment(): Updates the operator's commitment after the delay period since setOperatorCommitment() was called.
+
+The length of the delay is configurable and can be queried using the getDeregistrationDelay() function.
+
 ## Available Functions
 
 ### Helder-only Functions
@@ -38,9 +63,9 @@ Replace `functionName` with the desired function and provide the necessary param
    - Delegates from PodOwner to Operator using MockDelegationManager.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,address)" "0x1234..." "0x5678..."`
 
-4. delegateFromPodOwner(address podOwner, address operator, SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)
+4. delegateFromPodOwner(address operator, ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)
    - Delegates from PodOwner to Operator with signature.
-   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,address,(bytes,uint256),bytes32)" "0x1234..." "0x5678..." '["0xsignature...",1234567890]' "0xsalt..."`
+   - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,(bytes,uint256),bytes32)" "0x5678..." '["0xsignature...",1234567890]' "0xsalt..."`
 
 5. addValidatorsFromJsonFile(string memory filePath, address podOwner)
    - Adds validators from a JSON file and registers them with UniFiAVSManager.
@@ -60,7 +85,7 @@ Replace `functionName` with the desired function and provide the necessary param
 
 ### Non-Helder Functions
 
-9. registerAsOperator(OperatorDetails memory registeringOperatorDetails, string memory metadataURI)
+9. registerAsOperator(IDelegationManager.OperatorDetails memory registeringOperatorDetails, string memory metadataURI)
    - Registers the caller as an operator in the DelegationManager contract.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerAsOperator((address,address,uint32,uint32,uint96,uint96,bool,uint256[]),string)" '["0xoperatorAddress","0xearningsReceiverAddress",1000,2000,1000000000000000000,2000000000000000000,true,[1,2,3]]' "https://metadata.uri"`
 
@@ -82,17 +107,19 @@ Replace `functionName` with the desired function and provide the necessary param
     - Registers an operator with the UniFiAVSManager using only a delegate key.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVSWithDelegateKey(uint256,bytes)" 123456 "0xdelegateKey..."`
 
-14. delegateFromPodOwnerBySignature(address staker, address operator, SignatureWithExpiry memory stakerSignatureAndExpiry, SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)
+14. delegateFromPodOwnerBySignature(address staker, address operator, ISignatureUtils.SignatureWithExpiry memory stakerSignatureAndExpiry, ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)
     - Delegates from PodOwner to Operator by signature.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwnerBySignature(address,address,(bytes,uint256),(bytes,uint256),bytes32)" "0x1234..." "0x5678..." '["0xstakerSignature...",1234567890]' '["0xapproverSignature...",1234567890]' "0xsalt..."`
 
 15. setOperatorCommitment(OperatorCommitment memory newCommitment)
     - Sets the operator's commitment.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setOperatorCommitment((bytes,uint256))" '["0xnewDelegateKey...",42]'`
+    - Note: This initiates the commitment change process. The new commitment will not be active until updateOperatorCommitment() is called after the deregistration delay.
 
 16. updateOperatorCommitment()
     - Updates the operator's commitment after the delay period.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment()"`
+    - Note: This can only be called after the deregistration delay has passed since setOperatorCommitment() was called.
 
 17. startDeregisterOperator()
     - Starts the process of deregistering an operator.
@@ -101,140 +128,15 @@ Replace `functionName` with the desired function and provide the necessary param
 18. finishDeregisterOperator()
     - Finishes the process of deregistering an operator.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "finishDeregisterOperator()"`
+    - Note: This can only be called after the deregistration delay has passed since startDeregisterOperator() was called.
 
 19. deregisterValidatorFromUniFiAVS(address podOwner, bytes32 pubkeyHash)
     - Deregisters a validator from the UniFiAVSManager.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "deregisterValidatorFromUniFiAVS(address,bytes32)" "0x1234..." "0xpubkeyHash"`
 
-## Notes
-
-- Ensure that you have the necessary permissions to execute these functions.
-- Some functions may require specific roles or conditions to be met (e.g., being an operator, having a pod, etc.).
-- Always verify the transaction details before confirming, especially when interacting with mainnet or important testnet deployments.
-- These scripts are primarily for testing and demonstration purposes. Exercise caution when using them in a production environment.
-
-### 5. delegateFromPodOwner(address podOwner, address operator)
-
-Delegates from the podOwner to the operator using MockDelegationManager.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "delegateFromPodOwner(address,address)" "0x1234..." "0x5678..."
-```
-
-### 6. setOperatorCommitment(OperatorCommitment memory newCommitment)
-
-Sets the operator's commitment.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setOperatorCommitment((bytes,uint256))" '["0xnewDelegateKey...",42]'
-```
-
-### 7. updateOperatorCommitment()
-
-Updates the operator's commitment after the delay period.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment()"
-```
-
-### 8. startDeregisterOperator()
-
-Starts the process of deregistering an operator.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "startDeregisterOperator()"
-```
-
-### 9. finishDeregisterOperator()
-
-Finishes the process of deregistering an operator.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "finishDeregisterOperator()"
-```
-
-### 10. setupPodAndRegisterValidators(address podOwner, address operator, OperatorCommitment memory initialCommitment, bytes32[] memory pubkeyHashes, MockEigenPod.ValidatorInfo[] memory validators, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
-
-Performs the complete process of setting up a pod, adding validators, delegating to an operator, registering the operator, and registering the validators.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidators(address,address,(bytes,uint256),bytes32[],tuple[],(bytes,bytes32,uint256))" "0x1234..." "0x5678..." '["0xdelegateKey...",42]' '["0xabcd...","0xefgh..."]' '[{"status":1,"validatorIndex":0},{"status":1,"validatorIndex":1}]' '["0xsignature...","0xsalt...",1234567890]'
-```
-
-### 11. addValidatorsFromJsonFile(string memory filePath, address podOwner)
-
-Adds validators from a JSON file and registers them with UniFiAVSManager. The JSON file should follow the format of the Ethereum Beacon Chain API response for the `/eth/v1/beacon/states/head/validators` endpoint.
-
-JSON Schema:
-```json
-{
-  "execution_optimistic": boolean,
-  "finalized": boolean,
-  "data": [
-    {
-      "index": string,
-      "balance": string,
-      "status": string,
-      "validator": {
-        "pubkey": string,
-        "withdrawal_credentials": string,
-        "effective_balance": string,
-        "slashed": boolean,
-        "activation_eligibility_epoch": string,
-        "activation_epoch": string,
-        "exit_epoch": string,
-        "withdrawable_epoch": string
-      }
-    }
-  ]
-}
-```
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsFromJsonFile(string,address)" "path/to/validators.json" "0x1234..."
-```
-
-Note: Ensure that the JSON file contains the validator data in the format specified above, which is typically obtained from the Ethereum Beacon Chain API.
-
-### 12. addValidatorsDirectly(address podOwner, bytes[] memory pubkeys, uint64[] memory validatorIndices)
-
-Adds validators directly by passing their public keys and validator indices. This function allows you to add validators without using a JSON file.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "addValidatorsDirectly(address,bytes[],uint64[])" "0x1234..." '["0xpubkey1...","0xpubkey2..."]' '[1,2]'
-```
-
-Note: Ensure that the `pubkeys` and `validatorIndices` arrays have the same length and correspond to each other.
-
-### 13. setupPodAndRegisterValidatorsDirectly(uint256 signerPk, address podOwner, OperatorCommitment memory initialCommitment, bytes[] memory pubkeys, uint64[] memory validatorIndices)
-
-Performs the complete process of setting up a pod, adding validators directly, delegating to an operator, registering the operator, and registering the validators.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidatorsDirectly(uint256,address,(bytes,uint256),bytes[],uint64[])" "123456" "0x1234..." '["0xdelegateKey...",42]' '["0xpubkey1...","0xpubkey2..."]' '[1,2]'
-```
-
-Note: This function combines the steps of creating a pod, registering an operator, and adding validators directly, making it a convenient option for setting up the entire process in one transaction.
-
-### 14. registerAsOperator(OperatorDetails memory registeringOperatorDetails, string memory metadataURI)
-
-Registers the caller as an operator in the DelegationManager contract. This function is only available for non-Helder chains.
-
-Usage:
-```
-forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerAsOperator((address,address,uint32,uint32,uint96,uint96,bool,uint256[]),string)" '["0xoperatorAddress","0xearningsReceiverAddress",1000,2000,1000000000000000000,2000000000000000000,true,[1,2,3]]' "https://metadata.uri"
-```
-
-Note: The `registeringOperatorDetails` parameter is a struct containing the operator's details, and `metadataURI` is a string pointing to the operator's metadata.
+20. updateOperatorCommitment(OperatorCommitment memory newCommitment)
+    - Updates the operator's commitment in the UniFiAVSManager.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment((bytes,uint256))" '["0xnewDelegateKey...",42]'`
 
 ## Notes
 
@@ -242,3 +144,4 @@ Note: The `registeringOperatorDetails` parameter is a struct containing the oper
 - Some functions may require specific roles or conditions to be met (e.g., being an operator, having a pod, etc.).
 - Always verify the transaction details before confirming, especially when interacting with mainnet or important testnet deployments.
 - These scripts are primarily for testing and demonstration purposes. Exercise caution when using them in a production environment.
+- Be aware of the deregistration delay when calling functions that involve deregistration or commitment updates. These actions may not take effect immediately.
