@@ -218,12 +218,11 @@ contract UniFiAVSScripts is Script {
     /// @notice Sets up a pod and registers validators from a JSON file (Helder only)
     /// @param signerPk The private key of the signer
     /// @param podOwner The address of the pod owner
-    /// @param initialCommitment The initial commitment for the operator
     /// @param filePath The path to the JSON file containing validator data
     function setupPodAndRegisterValidatorsFromJsonFile(
         uint256 signerPk,
         address podOwner,
-        OperatorCommitment memory initialCommitment,
+        bytes memory delegateKey,
         string memory filePath
     ) public {
         require(isHelderChain, "This function can only be called on the Helder chain");
@@ -235,7 +234,7 @@ contract UniFiAVSScripts is Script {
         delegateFromPodOwner(podOwner, msg.sender);
 
         // Step 3: Register the Operator
-        registerOperatorToUniFiAVS(signerPk, initialCommitment);
+        registerOperatorToUniFiAVSWithDelegateKey(signerPk, delegateKey);
 
         // Step 4: Add validators to pod and register them to the AVS
         addValidatorsFromJsonFile(filePath, podOwner);
@@ -245,13 +244,12 @@ contract UniFiAVSScripts is Script {
     /// @notice Sets up a pod and registers validators directly (Helder only)
     /// @param signerPk The private key of the signer
     /// @param podOwner The address of the pod owner
-    /// @param initialCommitment The initial commitment for the operator
     /// @param pubkeys The public keys of the validators
     /// @param validatorIndices The indices of the validators
     function setupPodAndRegisterValidators(
         uint256 signerPk,
         address podOwner,
-        OperatorCommitment memory initialCommitment,
+        bytes memory delegateKey,
         bytes[] memory pubkeys,
         uint64[] memory validatorIndices
     ) public {
@@ -264,7 +262,7 @@ contract UniFiAVSScripts is Script {
         delegateFromPodOwner(podOwner, msg.sender);
 
         // Step 3: Register the Operator
-        registerOperatorToUniFiAVS(signerPk, initialCommitment);
+        registerOperatorToUniFiAVSWithDelegateKey(signerPk, delegateKey);
 
         // Step 4: Add validators to pod and register them to the AVS
         addValidatorsToEigenPodAndRegisterToAVS(podOwner, pubkeys, validatorIndices);
