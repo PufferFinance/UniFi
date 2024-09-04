@@ -6,12 +6,11 @@ This document provides guidelines on how to use the UniFiAVSScripts and its func
 
 Before running any scripts, ensure that you have:
 
-1. Deployed the necessary contracts:
+1. Added the necessary contract addresses:
    - For Helder chain: UniFiAVSManager, MockEigenPodManager, MockDelegationManager, MockAVSDirectory
    - For other chains (e.g., Holesky, Mainnet): UniFiAVSManager, EigenPodManager, DelegationManager, AVSDirectory
-2. Updated the contract addresses in the UniFiAVSScripts.sol file for both Helder and non-Helder chains.
-3. Set the correct chain ID for the Helder chain in the setUp function.
-4. Created a validators JSON file (if needed for certain functions). You can create this file using the following command:
+2. Set the correct chain ID for the Helder chain in the setUp function.
+3. Created a validators JSON file (if needed for certain functions). You can create this file using the following command:
 
    ```
    curl -s https://bn.bootnode.helder-devnets.xyz/eth/v1/beacon/states/head/validators -o validators.json
@@ -164,11 +163,3 @@ The length of the delay is configurable and can be queried using the getDeregist
     - Updates the operator's commitment after the delay period.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "updateOperatorCommitment()"`
     - Note: This function can only be called after the deregistration delay has passed since setOperatorCommitment() was called.
-
-## Notes
-
-- Ensure that you have the necessary permissions to execute these functions.
-- Some functions may require specific roles or conditions to be met (e.g., being an operator, having a pod, etc.).
-- Always verify the transaction details before confirming, especially when interacting with mainnet or important testnet deployments.
-- These scripts are primarily for testing and demonstration purposes. Exercise caution when using them in a production environment.
-- Be aware of the deregistration delay when calling functions that involve deregistration or commitment updates. These actions may not take effect immediately.
