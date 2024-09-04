@@ -83,13 +83,13 @@ The length of the delay is configurable and can be queried using the getDeregist
    - Sets up a pod and registers validators directly.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "setupPodAndRegisterValidators(uint256,address,(bytes,uint256),bytes[],uint64[])" 123456 "0x1234..." '["0xdelegateKey...",42]' '["0xpubkey1...","0xpubkey2..."]' '[1,2]'`
 
-### Non-Helder Functions
+### Mainnet/Holesky Functions
 
 9. registerAsOperator(IDelegationManager.OperatorDetails memory registeringOperatorDetails, string memory metadataURI)
    - Registers the caller as an operator in the DelegationManager contract.
    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerAsOperator((address,address,uint32,uint32,uint96,uint96,bool,uint256[]),string)" '["0xoperatorAddress","0xearningsReceiverAddress",1000,2000,1000000000000000000,2000000000000000000,true,[1,2,3]]' "https://metadata.uri"`
 
-### Common Functions (Both Helder and Non-Helder)
+### Common Functions
 
 10. registerValidatorsToUniFiAVS(address podOwner, bytes32[] memory blsPubKeyHashes)
     - Registers validators with the UniFiAVSManager using pre-hashed public keys.
@@ -101,6 +101,10 @@ The length of the delay is configurable and can be queried using the getDeregist
 
 12. registerOperatorToUniFiAVS(uint256 signerPk, OperatorCommitment memory initialCommitment)
     - Registers an operator with the UniFiAVSManager and sets the initial commitment.
+    - The signerPk is used to sign the operator signature for both EOA and EIP-1271 compliant smart contracts:
+      - For EOA: The signer address (derived from signerPk) is the same as the operator address.
+      - For EIP-1271: The signer can be an EOA (using signerPk) while the operator is a smart contract.
+    - Note: When using a smart contract as the operator, it must implement EIP-1271 for signature verification.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS(uint256,(bytes,uint256))" 123456 '["0xdelegateKey...",42]'`
 
 13. registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk, bytes memory delegateKey)
