@@ -13,10 +13,15 @@ Before running any scripts, ensure that you have:
 3. Created a validators JSON file (if needed for certain functions). You can create this file using the following command:
 
    ```
-   curl -s https://bn.bootnode.helder-devnets.xyz/eth/v1/beacon/states/head/validators -o validators.json
+    curl -X 'POST' \
+    'https://bn.bootnode.helder-devnets.xyz/eth/v1/beacon/states/head/validators' \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "ids": ["0x86d7e4912c433fce45b60d499ce538c66e7fd722789d773583d5cdf21a86e28d438630770c45c0e75ee7f50500aa02fc", "0xaed5939124f0ca0ebd99496ac744cafaa0e874fb0a3d0cd63ef93f4d63573f3dca3f56d0e7514567c230dbee95f8bd4c"]
    ```
 
-   This command fetches the current validator information from the Helder devnet and saves it to a file named `validators.json`.
+   This command fetches the current validator information from the Helder devnet, filter it by the given list of ids (pubkeys) and saves it to a file named `validators.json`.
 
 ## Running Scripts
 
