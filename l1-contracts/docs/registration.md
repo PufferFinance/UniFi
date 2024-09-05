@@ -1,7 +1,6 @@
-# Operator Registration Process
+# Registering to UniFi AVS
 
-The following sequence diagram illustrates the process of an operator registering with the UniFi AVS manager.
-
+## Registering an Operator
 ```mermaid
 sequenceDiagram
     autonumber
@@ -18,13 +17,11 @@ sequenceDiagram
         UniFiAVSManager-->>Operator: Error: OperatorAlreadyRegistered
     end
 ```
-
-## Operator Registration Process
-The registration process is simplified compared to the previous version, focusing on the interaction between the Operator, UniFiAVSManager, and AVSDirectory.
+Step one to joining the AVS is to register an `Operator` in EigenLayer's `AVSDirectory`. It is assumed that the `Operator` is already known to the EigenLayer contracts, meaning they have previously registered as an operator at the `DelegationManager` contract. 
 
 1. The `Operator` calls `registerOperator()` on the `UniFiAVSManager`, providing a signature (`operatorSignature`) that signals their intent to opt-in to the AVS.
 
-2. The `UniFiAVSManager` checks the operator's status with the `AVSDirectory` to ensure they are not already registered.
+2. The `UniFiAVSManager` checks the operator's status with the `AVSDirectory` to ensure they are not already registered to the AVS.
 
 3. If the operator is not registered:
    - The `UniFiAVSManager` calls `registerOperatorToAVS()` on the `AVSDirectory`, passing the operator's address and signature.
@@ -33,13 +30,13 @@ The registration process is simplified compared to the previous version, focusin
 4. If the operator is already registered:
    - The `UniFiAVSManager` reverts the transaction with an `OperatorAlreadyRegistered` error.
 
-This streamlined process ensures that operators can register directly with the UniFi AVS manager, which then handles the interaction with the AVSDirectory. The process is more straightforward and aligns with the actual implementation in the `UniFiAVSManager` contract.
+### Set a Preconf Commitment
 
-Note: The previous steps involving the PodOwner, EigenPodManager, and DelegationManager are not part of the direct registration process in the `UniFiAVSManager` contract. These steps may be prerequisites handled separately before an operator attempts to register with the UniFi AVS.
+After the initial registration, the Operator needs to set their `OperatorCommitment`, which consists of a delegate key and a set of rollup IDs. This commitment serves two purposes:
 
-### Operator Commitment Registration
+1. On-chain: It signals which chains the validator will accept preconfs for and the key they will use to sign off on them.
+2. Off-chain: Other participants in the preconf ecosystem (such as rollups, gateways, or users) can use this information to determine which operators are available for preconfs on specific chains and how to verify their signatures.
 
-After the initial registration, the Operator needs to set their commitment, which includes a delegate key and a chain ID bitmap. This commitment is used to signal which chains the validator will accept preconfs for and the key that they will use to sign off on them.
 
 ```mermaid
 sequenceDiagram
@@ -79,8 +76,8 @@ This two-step process with a delay prevents a malicious Operator from switching 
 The `chainIDBitMap` is a 256-bit integer where each bit represents a specific chain ID. If a bit is set to 1, it means the Operator is committed to supporting that chain. This bitmap allows for efficient storage and quick checking of supported chains.
 
 For example:
-- If `chainIDBitMap` is 5 (binary: 101), the Operator supports chains with IDs 0 and 2.
-- If `chainIDBitMap` is 7 (binary: 111), the Operator supports chains with IDs 0, 1, and 2.
+- If `chainIDBitMap` is 5 (binary: 101), the Operator supports chains with index 0 and 2.
+- If `chainIDBitMap` is 7 (binary: 111), the Operator supports chains with index 0, 1, and 2.
 
 The `UniFiAVSManager` contract provides a `bitmapToChainIDs` function to convert this bitmap into an array of 4-byte chain IDs, making it easy to retrieve the list of supported chains for any Operator. For example calling `bitmapToChainIDs(0b101)` may return two stored chainIDs `[0x11111111, 0x22222222]`.
 
@@ -96,13 +93,14 @@ An important design decision is to use a single delegate key that applies to all
 - Reduced complexity in key management
 
 **Limitation:**
-- Only one entity can be delegated to at once for all of an Operator's validators
+- Only one entity can be delegated to at once for all of an Operators' validators
 
 This design choice prioritizes efficiency and simplicity. While it limits the granularity of delegation, it provides a streamlined experience for what will likely be the common case: delegating to a single Gateway.
 
 ### Validator Registration
+Validator registration is essential in the UniFi AVS because preconfs fall under the umbrella proposer commitments, requiring participation from Ethereum validators. In the context of EigenLayer, this means we need the Operator to register validators that have been deployed in EigenPods and are natively restaked. 
 
-Before any validators can be registered, the `UniFiAVSManager` contract performs a crucial check using the `podIsDelegated` modifier. This check demonstrates the mutual trust between the operator and the podOwner:
+Before the Operator can register any validators, the `UniFiAVSManager` contract performs a check using the `podIsDelegated` modifier. This check demonstrates the mutual trust between the operator and the EigenPod owner (podOwner):
 
 ```solidity
 modifier podIsDelegated(address podOwner) {
@@ -126,9 +124,7 @@ This modifier ensures that:
 
 By delegating to the `Operator`, the `podOwner` is effectively giving permission for the `Operator` to register validators associated with their EigenPod. This relationship underscores the importance of trust between the podOwner and the Operator.
 
-After this check, the Operator can proceed to register the individual validators that will engage in pre-confs. 
-
-The process for registering validators is illustrated in the following sequence diagram:
+After this check, the Operator can proceed to register the individual validators that will engage in pre-confs:
 
 ```mermaid
 sequenceDiagram
@@ -140,7 +136,7 @@ sequenceDiagram
 
     Operator->>UniFiAVSManager: registerValidators(podOwner, blsPubKeyHashes[])
     UniFiAVSManager->>AVSDirectory: Check operator registration
-    UniFiAVSManager->>UniFiAVSManager: Check delegate key is set
+    UniFiAVSManager->>UniFiAVSManager: Check OperatorCommitment is set
     loop For each blsPubKeyHash
         UniFiAVSManager->>EigenPod: Get validator info
         EigenPod-->>UniFiAVSManager: Return validator info
@@ -157,12 +153,119 @@ sequenceDiagram
 
 2. The `UniFiAVSManager` checks if the operator is registered with the AVS using the `AVSDirectory`.
 
-3. The `UniFiAVSManager` verifies that the operator has set a delegate key.
+3. The `UniFiAVSManager` verifies that the operator has set an OperatorCommitment.
 
-4. For each BLS public key hash in the provided array:
+4. For each BLS public key hash in provided:
     - The `UniFiAVSManager` retrieves the validator information from the `EigenPod`.
     - It checks if the validator is active in the EigenPod.
     - It verifies that the validator is not already registered in the UniFi AVS.
     - If all checks pass, it registers the validator, associating it with the operator and storing relevant information.
 
 5. The `UniFiAVSManager` updates the operator's validator count and resets their deregistration state if they had previously queued to deregister their operator.
+
+These checks will ensure that a validator can only be registered exactly once in the AVS, and that it can only be to the Operator whom the validator's podOwner is delegated to.
+
+
+# Deregistering from UniFi AVS
+
+## Deregistering Validators
+
+Deregistering validators is the first step in the process of deregistering an operator from the UniFi AVS. An operator must deregister all validators they previously added during the `registerValidators()` step before they can proceed with deregistering themselves.
+
+```mermaid
+sequenceDiagram
+    participant Operator
+    participant UniFiAVSManager
+    participant EigenPod
+    Operator->>UniFiAVSManager: deregisterValidators(blsPubKeyHashes[])
+    loop For each blsPubKeyHash
+        UniFiAVSManager->>UniFiAVSManager: Check validator exists
+        UniFiAVSManager->>UniFiAVSManager: Check caller is operator
+        alt Caller is not operator
+            UniFiAVSManager->>EigenPod: Check validator status
+            alt Validator is not active
+                UniFiAVSManager->>UniFiAVSManager: Allow deregistration
+            end
+        end
+        UniFiAVSManager->>UniFiAVSManager: Set deregistration time
+        UniFiAVSManager->>UniFiAVSManager: Decrease operator's validator count
+    end
+    UniFiAVSManager-->>Operator: Validators deregistered
+```
+
+1. Operator calls `deregisterValidators()` with BLS public key hashes.
+2. For each validator:
+   - Check if validator exists
+   - If caller is operator, proceed
+   - If not, check if validator is inactive in EigenPod (allows non-operators to remove inactive validators)
+   - Set deregistration time to `current block + deregistrationDelay`
+   - Decrease operator's validator count
+3. Emit `ValidatorDeregistered` event for each validator
+
+Important notes:
+- When `deregisterValidators()` is called, the validators remain active for `deregistrationDelay` blocks. During this delay period, validators are still liable for penalties and are expected to perform their duties.
+
+## Deregistering Operators
+After deregistering all validators, an operator can initiate their own deregistration from the UniFi AVS. This process also involves a delay to ensure a smooth transition.
+
+The operator deregistration process consists of two steps:
+
+
+#### Start Deregistration:
+```mermaid
+sequenceDiagram
+    participant Operator
+    participant UniFiAVSManager
+    participant AVSDirectory
+    Operator->>UniFiAVSManager: startDeregisterOperator()
+    UniFiAVSManager->>AVSDirectory: Check operator registration status
+    AVSDirectory-->>UniFiAVSManager: Return registration status
+    UniFiAVSManager->>UniFiAVSManager: Check operator has no active validators
+    UniFiAVSManager->>UniFiAVSManager: Check deregistration not already started
+    alt All checks pass
+    UniFiAVSManager->>UniFiAVSManager: Set startDeregisterOperatorBlock
+    UniFiAVSManager-->>Operator: Emit OperatorDeregisterStarted event
+    else Checks fail
+    UniFiAVSManager-->>Operator: Revert with appropriate error
+end
+```
+   - Operator calls `startDeregisterOperator()`
+   - UniFiAVSManager checks:
+     - Operator is registered
+     - Operator has no active validators
+     - Deregistration hasn't already been started
+   - If checks pass, sets `startDeregisterOperatorBlock` to current block number
+   - Emits `OperatorDeregisterStarted` event
+
+
+#### Finish Deregistration:
+```mermaid
+    sequenceDiagram
+        participant Operator
+        participant UniFiAVSManager
+        participant AVSDirectory
+        Operator->>UniFiAVSManager: finishDeregisterOperator()
+        UniFiAVSManager->>UniFiAVSManager: Check operator is registered
+        UniFiAVSManager->>UniFiAVSManager: Check deregistration was started
+        UniFiAVSManager->>UniFiAVSManager: Check deregistration delay elapsed
+        alt All checks pass
+        UniFiAVSManager->>AVSDirectory: Deregister operator
+        UniFiAVSManager->>UniFiAVSManager: Delete operator data
+        UniFiAVSManager-->>Operator: Emit OperatorDeregistered event
+        else Checks fail
+        UniFiAVSManager-->>Operator: Revert with appropriate error
+end
+```
+   - After the deregistration delay period, operator calls `finishDeregisterOperator()`
+   - UniFiAVSManager checks:
+     - Operator is registered
+     - Deregistration was started (startDeregisterOperatorBlock != 0)
+     - Deregistration delay period has elapsed
+   - If checks pass:
+     - Calls AVS Directory to deregister operator
+     - Deletes operator data from UniFiAVSManager
+     - Emits `OperatorDeregistered` event
+
+Important notes:
+- During the delay period, the operator is still considered active and may be liable for penalties.
+- Once deregistration is complete, the operator will no longer be able to participate in the UniFi AVS without re-registering.

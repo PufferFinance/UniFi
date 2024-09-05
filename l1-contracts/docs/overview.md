@@ -135,9 +135,11 @@ UniFi AVS leverages EigenLayer's restaking capabilities to address the slashing 
 
 3. **Slashing Mechanism**: The AVS incorporates slashing conditions to enforce accountability. Validators who break their preconfirmation promises can be penalized, creating a strong incentive for honest behavior.
 
+4. **Off-Chain Protocol**: The off-chain protocol coordinates validators and Gateways to provide preconfs for L1 and L2 inclusion, as well as guarantees on the transaction orderings.
+
 ### Requirements
 
-The primary requirement for participating in the  UniFi AVS is:
+The primary requirement for participating in the UniFi AVS is:
 
 - **EigenPod Ownership**: EigenPods are the vehicle for Ethereum validators to interface with EigenLayer. They are necessary for the AVS to be able to slash validators that break their preconf promises. 
 
