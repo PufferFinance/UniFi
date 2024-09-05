@@ -75,9 +75,12 @@ This two-step process with a delay prevents a malicious Operator from switching 
 
 The `chainIDBitMap` is a 256-bit integer where each bit represents a specific chain ID. If a bit is set to 1, it means the Operator is committed to supporting that chain. This bitmap allows for efficient storage and quick checking of supported chains.
 
+Note: chainId 0 and bitmap position 0 are not allowed to be used.
+
 For example:
-- If `chainIDBitMap` is 5 (binary: 101), the Operator supports chains with index 0 and 2.
-- If `chainIDBitMap` is 7 (binary: 111), the Operator supports chains with index 0, 1, and 2.
+- chainIdBitMap = 2 (binary: 0010): The operator is committed to the chain with ID at position 1.
+- chainIdBitMap = 6 (binary: 0110): The operator is committed to chains with IDs at positions 1 and 2. where position 1 may correspond to mainnet (0x1) and position 2 may correspond to a based rollup with chainID (0xabcd).
+
 
 The `UniFiAVSManager` contract provides a `bitmapToChainIDs` function to convert this bitmap into an array of 4-byte chain IDs, making it easy to retrieve the list of supported chains for any Operator. For example calling `bitmapToChainIDs(0b101)` may return two stored chainIDs `[0x11111111, 0x22222222]`.
 
