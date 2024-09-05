@@ -25,7 +25,6 @@ contract UniFiAVSManager is
     UUPSUpgradeable,
     AccessManagedUpgradeable
 {
-
     IEigenPodManager public immutable EIGEN_POD_MANAGER;
     IDelegationManager public immutable EIGEN_DELEGATION_MANAGER;
     IAVSDirectoryExtended internal immutable AVS_DIRECTORY;
@@ -66,7 +65,10 @@ contract UniFiAVSManager is
      * @dev This function checks if the operator is already registered and if not, registers them in EigenLayer's AVSDirectory
      * @param operatorSignature The signature and associated data for operator registration
      */
-    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
+    function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature)
+        external
+        restricted
+    {
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
@@ -87,6 +89,7 @@ contract UniFiAVSManager is
      */
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
         external
+        restricted
         podIsDelegated(podOwner)
     {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
@@ -133,7 +136,6 @@ contract UniFiAVSManager is
         OperatorData storage operator = $.operators[msg.sender];
         operator.validatorCount += uint128(newValidatorCount);
         operator.startDeregisterOperatorBlock = 0; // Reset the deregistration start block
-        operator.commitmentValidAfter = 0; // Reset the commitment valid after block
     }
 
     /**
@@ -182,7 +184,7 @@ contract UniFiAVSManager is
      * @notice Starts the process of deregistering an operator from the UniFi AVS.
      * @dev This function initiates the deregistration process for an operator. The Operator is not immediately deregistered, but can complete the process by calling finishDeregisterOperator after the deregistrationDelay and is liable for penalties during this period.
      */
-    function startDeregisterOperator() external {
+    function startDeregisterOperator() external restricted {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         OperatorData storage operator = $.operators[msg.sender];

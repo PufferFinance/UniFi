@@ -28,8 +28,8 @@ contract DeployUniFiAVSManager is BaseScript {
             )
         );
 
-        // console.log("UniFiAVSManager proxy:", address(uniFiAVSManagerProxy));
-        // console.log("UniFiAVSManager implementation:", address(uniFiAVSManagerImplementation));
+        console.log("UniFiAVSManager proxy:", address(uniFiAVSManagerProxy));
+        console.log("UniFiAVSManager implementation:", address(uniFiAVSManagerImplementation));
 
         return (address(uniFiAVSManagerImplementation), address(uniFiAVSManagerProxy));
     }
