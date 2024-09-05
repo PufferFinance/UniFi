@@ -84,13 +84,9 @@ contract UniFiAVSScripts is Script {
         }
 
         // Initialize the contract instances with their deployed addresses
-        if (isHelderChain) {
-            delegationManager = IDelegationManager(delegationManagerAddress);
-            eigenPodManager = IEigenPodManager(eigenPodManagerAddress);
-        } else {
-            delegationManager = IDelegationManager(delegationManagerAddress);
-            eigenPodManager = IEigenPodManager(eigenPodManagerAddress);
-        }
+
+        delegationManager = IDelegationManager(delegationManagerAddress);
+        eigenPodManager = IEigenPodManager(eigenPodManagerAddress);
         uniFiAVSManager = UniFiAVSManager(uniFiAVSManagerAddress);
         avsDirectory = IAVSDirectory(avsDirectoryAddress);
     }
@@ -131,21 +127,6 @@ contract UniFiAVSScripts is Script {
         vm.startBroadcast();
         MockDelegationManager(address(delegationManager)).setOperator(operator, true);
         MockDelegationManager(address(delegationManager)).setDelegation(podOwner, operator);
-        vm.stopBroadcast();
-    }
-
-    /// @notice Delegates from PodOwner to Operator with signature (Helder only)
-    /// @param operator The address of the operator
-    /// @param approverSignatureAndExpiry The approver's signature and expiry
-    /// @param approverSalt The approver's salt
-    function delegateFromPodOwner(
-        address operator,
-        ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry,
-        bytes32 approverSalt
-    ) public {
-        require(isHelderChain, "This function can only be called on the Helder chain");
-        vm.startBroadcast();
-        delegationManager.delegateTo(operator, approverSignatureAndExpiry, approverSalt);
         vm.stopBroadcast();
     }
 
@@ -292,6 +273,45 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
+    /// @notice Delegates from PodOwner to Operator with signature (non-Helder only)
+    /// @param operator The address of the operator
+    /// @param approverSignatureAndExpiry The approver's signature and expiry
+    /// @param approverSalt The approver's salt
+    function delegateFromPodOwner(
+        address operator,
+        ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry,
+        bytes32 approverSalt
+    ) public {
+        vm.startBroadcast();
+        delegationManager.delegateTo(operator, approverSignatureAndExpiry, approverSalt);
+        vm.stopBroadcast();
+    }
+
+    /// @notice Delegates from PodOwner to Operator by signature (non-Helder only)
+    /// @param staker The address of the staker
+    /// @param operator The address of the operator
+    /// @param stakerSignatureAndExpiry The staker's signature and expiry
+    /// @param approverSignatureAndExpiry The approver's signature and expiry
+    /// @param approverSalt The approver's salt
+    function delegateFromPodOwnerBySignature(
+        address staker,
+        address operator,
+        ISignatureUtils.SignatureWithExpiry memory stakerSignatureAndExpiry,
+        ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry,
+        bytes32 approverSalt
+    ) public {
+        vm.startBroadcast();
+        if (isHelderChain) {
+            MockDelegationManager(address(delegationManager)).setOperator(operator, true);
+            MockDelegationManager(address(delegationManager)).setDelegation(staker, operator);
+        } else {
+            delegationManager.delegateToBySignature(
+                staker, operator, stakerSignatureAndExpiry, approverSignatureAndExpiry, approverSalt
+            );
+        }
+        vm.stopBroadcast();
+    }
+
     // Common functions for both Helder and non-Helder chains
 
     /// @notice Registers validators with the UniFiAVSManager using pre-hashed public keys
@@ -337,6 +357,24 @@ contract UniFiAVSScripts is Script {
 
     /// @notice Registers an operator with the UniFiAVSManager using only a delegate key
     /// @param signerPk The private key of the signer
+    function registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk) public {
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature;
+
+        vm.startBroadcast();
+        (, operatorSignature) = _getOperatorSignature(
+            signerPk,
+            msg.sender,
+            uniFiAVSManagerAddress,
+            bytes32(keccak256(abi.encodePacked(block.timestamp, msg.sender))),
+            type(uint256).max
+        );
+        uniFiAVSManager.registerOperator(operatorSignature);
+
+        vm.stopBroadcast();
+    }
+
+    /// @notice Registers an operator with the UniFiAVSManager using only a delegate key
+    /// @param signerPk The private key of the signer
     /// @param delegateKey The delegate key for the operator
     function registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk, bytes memory delegateKey) public {
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature;
@@ -360,30 +398,6 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
-    /// @notice Delegates from PodOwner to Operator by signature
-    /// @param staker The address of the staker
-    /// @param operator The address of the operator
-    /// @param stakerSignatureAndExpiry The staker's signature and expiry
-    /// @param approverSignatureAndExpiry The approver's signature and expiry
-    /// @param approverSalt The approver's salt
-    function delegateFromPodOwnerBySignature(
-        address staker,
-        address operator,
-        ISignatureUtils.SignatureWithExpiry memory stakerSignatureAndExpiry,
-        ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry,
-        bytes32 approverSalt
-    ) public {
-        vm.startBroadcast();
-        if (isHelderChain) {
-            MockDelegationManager(address(delegationManager)).setOperator(operator, true);
-            MockDelegationManager(address(delegationManager)).setDelegation(staker, operator);
-        } else {
-            delegationManager.delegateToBySignature(
-                staker, operator, stakerSignatureAndExpiry, approverSignatureAndExpiry, approverSalt
-            );
-        }
-        vm.stopBroadcast();
-    }
 
     /// @notice Sets the operator's commitment
     /// @param newCommitment The new commitment for the operator
