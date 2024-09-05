@@ -460,4 +460,8 @@ contract UniFiAVSScripts is Script {
         }
         return result;
     }
+
+    function getOperator(address operator) public view returns (OperatorDataExtended memory) {
+        return uniFiAVSManager.getOperator(operator);
+    }
 }
