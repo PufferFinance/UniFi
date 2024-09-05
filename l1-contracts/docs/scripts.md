@@ -114,6 +114,8 @@ The length of the delay is configurable and can be queried using the getDeregist
 * `registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk, bytes memory delegateKey)`
     - Registers an operator with the UniFiAVSManager using only a delegate key.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVSWithDelegateKey(uint256,bytes)" 123456 "0xdelegateKey..."`
+    - To verify your operator registration, call the function getOperator(address) like this: 
+      `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "getOperator(address)" "OPERATOR_ADDRESS"`
 
 * `delegateFromPodOwnerBySignature(address staker, address operator, ISignatureUtils.SignatureWithExpiry memory stakerSignatureAndExpiry, ISignatureUtils.SignatureWithExpiry memory approverSignatureAndExpiry, bytes32 approverSalt)`
     - Delegates from PodOwner to Operator by signature.
