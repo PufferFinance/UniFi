@@ -357,7 +357,7 @@ contract UniFiAVSScripts is Script {
 
     /// @notice Registers an operator with the UniFiAVSManager using only a delegate key
     /// @param signerPk The private key of the signer
-    function registerOperatorToUniFiAVSWithDelegateKey(uint256 signerPk) public {
+    function registerOperatorToUniFiAVS(uint256 signerPk) public {
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature;
 
         vm.startBroadcast();
