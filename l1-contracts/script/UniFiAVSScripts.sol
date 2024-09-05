@@ -148,7 +148,7 @@ contract UniFiAVSScripts is Script {
         for (uint256 i = 0; i < beaconData.data.length; i++) {
             // Extract index and pubkey from each object
             ValidatorData memory validatorData = beaconData.data[i];
-            uint256 index = stringToUint(validatorData.index);
+            uint256 index = _stringToUint(validatorData.index);
 
             pubkeyHashes[i] = keccak256(validatorData.validator.pubkey);
             validators[i] = IEigenPod.ValidatorInfo({
@@ -450,7 +450,7 @@ contract UniFiAVSScripts is Script {
         return (digestHash, operatorSignature);
     }
 
-    function stringToUint(string memory s) public pure returns (uint256) {
+    function _stringToUint(string memory s) internal pure returns (uint256) {
         bytes memory b = bytes(s);
         uint256 result = 0;
         for (uint256 i = 0; i < b.length; i++) {
