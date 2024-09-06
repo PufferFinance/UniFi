@@ -61,6 +61,9 @@ interface IUniFiAVSManager {
     /// @notice Thrown when trying to update an operator commitment before the change delay has passed
     error CommitmentChangeNotReady();
 
+    /// @notice Thrown when an index is out of bounds
+    error IndexOutOfBounds();
+
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS system.
      * @param operator The address of the registered operator.

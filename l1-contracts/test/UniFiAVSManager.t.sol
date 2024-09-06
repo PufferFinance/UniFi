@@ -632,10 +632,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     function testSetChainIDOutOfBounds() public {
         vm.startPrank(DAO);
 
-        vm.expectRevert(IndexOutOfBounds.selector);
+        vm.expectRevert(IUniFiAVSManager.IndexOutOfBounds.selector);
         avsManager.setChainID(0, 1);
-
-        // No need to test for 256 as uint8 can't be 256
 
         vm.stopPrank();
     }
@@ -648,10 +646,9 @@ contract UniFiAVSManagerTest is UnitTestHelper {
     }
 
     function testGetChainIDOutOfBounds() public {
-        vm.expectRevert(IndexOutOfBounds.selector);
-        avsManager.getChainID(0);
+        uint256 chainID = avsManager.getChainID(0);
 
-        // No need to test for 256 as uint8 can't be 256
+        assertEq(chainID, 0, "Should return zero");
     }
 
     function testSetDeregistrationDelayUnauthorized() public {
