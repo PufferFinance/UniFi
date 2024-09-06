@@ -24,7 +24,7 @@ contract DeployEverything is BaseScript {
     {
         AVSDeployment memory deployment;
 
-        vm.startBroadcast();
+        vm.startBroadcast(_deployerPrivateKey);
         AccessManager accessManager = new AccessManager(_broadcaster);
         vm.stopBroadcast();
 

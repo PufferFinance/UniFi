@@ -16,7 +16,7 @@ contract DeployUniFiAVSManager is BaseScript {
         public
         returns (address, address)
     {
-        vm.startBroadcast();
+        vm.startBroadcast(_deployerPrivateKey);
         UniFiAVSManager uniFiAVSManagerImplementation = new UniFiAVSManager(
             IEigenPodManager(eigenPodManager), IDelegationManager(eigenDelegationManager), IAVSDirectory(avsDirectory)
         );
