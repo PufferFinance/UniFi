@@ -398,7 +398,6 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
-
     /// @notice Sets the operator's commitment
     /// @param newCommitment The new commitment for the operator
     function setOperatorCommitment(OperatorCommitment memory newCommitment) public {
