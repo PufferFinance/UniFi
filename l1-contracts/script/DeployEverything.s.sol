@@ -44,7 +44,7 @@ contract DeployEverything is BaseScript {
         }
 
         // TODO turn back on
-        // new SetupAccess().run(deployment, DAO);
+        new SetupAccess().run(deployment, DAO);
 
         console.log("Deployment completed");
         _writeJson(deployment);
