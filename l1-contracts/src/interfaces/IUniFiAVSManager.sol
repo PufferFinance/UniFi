@@ -135,6 +135,24 @@ interface IUniFiAVSManager {
     event DeregistrationDelaySet(uint64 oldDelay, uint64 newDelay);
 
     /**
+     * @notice Returns the EigenPodManager contract.
+     * @return IEigenPodManager The EigenPodManager contract.
+     */
+    function EIGEN_POD_MANAGER() external view returns (IEigenPodManager);
+
+    /**
+     * @notice Returns the EigenDelegationManager contract.
+     * @return IDelegationManager The EigenDelegationManager contract.
+     */
+    function EIGEN_DELEGATION_MANAGER() external view returns (IDelegationManager);
+
+    /**
+     * @notice Returns the AVSDirectoryExtended contract.
+     * @return IAVSDirectoryExtended The AVSDirectoryExtended contract.
+     */
+    function AVS_DIRECTORY() external view returns (IAVSDirectoryExtended);
+
+    /**
      * @notice Registers a new operator in the UniFi AVS system.
      * @param operatorSignature The signature and associated data for operator registration.
      */
@@ -162,6 +180,31 @@ interface IUniFiAVSManager {
      * @notice Finishes the process of deregistering an operator from the UniFi AVS system.
      */
     function finishDeregisterOperator() external;
+    /**
+     * @notice Sets the commitment for an operator.
+     * @param newCommitment The new commitment to set.
+     */
+    function setOperatorCommitment(OperatorCommitment memory newCommitment) external;
+
+    /**
+     * @notice Updates the operator's commitment after the delay period.
+     */
+    function updateOperatorCommitment() external;
+
+    /**
+     * @notice Sets a new deregistration delay for operators.
+     * @param newDelay The new deregistration delay in seconds.
+     * @dev This function can only be called by the contract owner.
+     */
+    function setDeregistrationDelay(uint64 newDelay) external;
+
+    /**
+     * @notice Sets the chain ID for a specific index in the bitmap.
+     * @param index The index in the bitmap to set.
+     * @param chainID The chain ID to set for the given index.
+     * @dev This function can only be called by the contract owner.
+     */
+    function setChainID(uint8 index, uint256 chainID) external;
 
     /**
      * @notice Retrieves information about a specific operator.
@@ -192,17 +235,6 @@ interface IUniFiAVSManager {
     function getValidators(bytes32[] calldata blsPubKeyHashes) external view returns (ValidatorDataExtended[] memory);
 
     /**
-     * @notice Sets the commitment for an operator.
-     * @param newCommitment The new commitment to set.
-     */
-    function setOperatorCommitment(OperatorCommitment memory newCommitment) external;
-
-    /**
-     * @notice Updates the operator's commitment after the delay period.
-     */
-    function updateOperatorCommitment() external;
-
-    /**
      * @notice Checks if a validator is registered for a specific chain ID.
      * @param blsPubKeyHash The BLS public key hash of the validator.
      * @param chainId The chain ID to check.
@@ -211,20 +243,29 @@ interface IUniFiAVSManager {
     function isValidatorInChainId(bytes32 blsPubKeyHash, uint256 chainId) external view returns (bool);
 
     /**
-     * @notice Returns the EigenPodManager contract.
-     * @return IEigenPodManager The EigenPodManager contract.
+     * @notice Retrieves the current deregistration delay for operators.
+     * @return The current deregistration delay in seconds.
      */
-    function EIGEN_POD_MANAGER() external view returns (IEigenPodManager);
+    function getDeregistrationDelay() external view returns (uint64);
 
     /**
-     * @notice Returns the EigenDelegationManager contract.
-     * @return IDelegationManager The EigenDelegationManager contract.
+     * @notice Converts a bitmap to an array of chain IDs.
+     * @param bitmap The bitmap to convert.
+     * @return An array of chain IDs represented by the bitmap.
      */
-    function EIGEN_DELEGATION_MANAGER() external view returns (IDelegationManager);
+    function bitmapToChainIDs(uint256 bitmap) external view returns (uint256[] memory);
 
     /**
-     * @notice Returns the AVSDirectoryExtended contract.
-     * @return IAVSDirectoryExtended The AVSDirectoryExtended contract.
+     * @notice Retrieves the chain ID for a specific index.
+     * @param index The index to query.
+     * @return The chain ID associated with the given index.
      */
-    function AVS_DIRECTORY() external view returns (IAVSDirectoryExtended);
+    function getChainID(uint8 index) external view returns (uint256);
+
+    /**
+     * @notice Gets the bitmap index for a given chain ID.
+     * @param chainID The chain ID to query.
+     * @return The bitmap index associated with the given chain ID.
+     */
+    function getBitmapIndex(uint256 chainID) external view returns (uint8);
 }
