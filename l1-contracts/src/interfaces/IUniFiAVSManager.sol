@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
-import { IBLSApkRegistry } from "eigenlayer-middleware/interfaces/IRegistryCoordinator.sol";
+import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
+import { IAVSDirectoryExtended } from "../interfaces/EigenLayer/IAVSDirectoryExtended.sol";
 import "../structs/ValidatorData.sol";
 import "../structs/OperatorData.sol";
 
@@ -13,18 +13,6 @@ import "../structs/OperatorData.sol";
  * @dev This interface defines the main functions and events for operator and validator management.
  */
 interface IUniFiAVSManager {
-    /**
-     * @notice Thrown when an operator registration has expired.
-     */
-    /// @notice Thrown when an operator's registration has expired
-    error RegistrationExpired();
-
-    /// @notice Thrown when an invalid salt is used for operator registration
-    error InvalidOperatorSalt();
-
-    /// @notice Thrown when a signature for registration has expired
-    error SignatureExpired();
-
     /// @notice Thrown when an operator attempts to deregister while still having validators
     error OperatorHasValidators();
 
@@ -49,9 +37,6 @@ interface IUniFiAVSManager {
     /// @notice Thrown when a validator is not in the active state
     error ValidatorNotActive();
 
-    /// @notice Thrown when attempting to register an operator that already exists
-    error OperatorAlreadyExists();
-
     /// @notice Thrown when an action requires a registered operator, but the operator is not registered
     error OperatorNotRegistered();
 
@@ -67,26 +52,11 @@ interface IUniFiAVSManager {
     /// @notice Thrown when an operator's delegate key is not set
     error DelegateKeyNotSet();
 
-    /// @notice Thrown when an invalid operator address is provided
-    error InvalidOperator();
-
-    /// @notice Thrown when an action is attempted by someone who is not the pod owner
-    error NotPodOwner();
-
     /// @notice Thrown when a validator cannot be found
     error ValidatorNotFound();
 
     /// @notice Thrown when an unauthorized action is attempted
     error Unauthorized();
-
-    /// @notice Thrown when an invalid address is provided
-    error InvalidAddress();
-
-    /// @notice Thrown when an invalid amount is provided
-    error InvalidAmount();
-
-    /// @notice Thrown when trying to update a delegate key before the change delay has passed
-    error DelegateKeyChangeNotReady();
 
     /// @notice Thrown when trying to update an operator commitment before the change delay has passed
     error CommitmentChangeNotReady();
@@ -149,6 +119,7 @@ interface IUniFiAVSManager {
     event OperatorCommitmentSet(
         address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment
     );
+
     event OperatorCommitmentChangeInitiated(
         address indexed operator, OperatorCommitment oldCommitment, OperatorCommitment newCommitment, uint128 validAfter
     );
@@ -235,4 +206,22 @@ interface IUniFiAVSManager {
      * @return bool True if the validator is registered for the given chain ID, false otherwise.
      */
     function isValidatorInChainId(bytes32 blsPubKeyHash, uint256 chainId) external view returns (bool);
+
+    /**
+     * @notice Returns the EigenPodManager contract.
+     * @return IEigenPodManager The EigenPodManager contract.
+     */
+    function EIGEN_POD_MANAGER() external view returns (IEigenPodManager);
+
+    /**
+     * @notice Returns the EigenDelegationManager contract.
+     * @return IDelegationManager The EigenDelegationManager contract.
+     */
+    function EIGEN_DELEGATION_MANAGER() external view returns (IDelegationManager);
+
+    /**
+     * @notice Returns the AVSDirectoryExtended contract.
+     * @return IAVSDirectoryExtended The AVSDirectoryExtended contract.
+     */
+    function AVS_DIRECTORY() external view returns (IAVSDirectoryExtended);
 }

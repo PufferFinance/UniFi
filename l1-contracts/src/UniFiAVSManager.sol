@@ -10,32 +10,34 @@ import { IAVSDirectoryExtended } from "./interfaces/EigenLayer/IAVSDirectoryExte
 import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
 import { IEigenPodManager } from "eigenlayer/interfaces/IEigenPodManager.sol";
 import { IEigenPod } from "eigenlayer/interfaces/IEigenPod.sol";
-import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { BLSSignatureCheckerLib } from "./lib/BLSSignatureCheckerLib.sol";
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
 import { IndexOutOfBounds } from "./Errors.sol";
 
-contract UniFiAVSManager is
-    UniFiAVSManagerStorage,
-    IUniFiAVSManager,
-    EIP712,
-    UUPSUpgradeable,
-    AccessManagedUpgradeable
-{
-    using BN254 for BN254.G1Point;
+contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgradeable, AccessManagedUpgradeable {
+    /**
+     * @notice The EigenPodManager
+     * @custom:oz-upgrades-unsafe-allow state-variable-immutable
+     */
+    IEigenPodManager public immutable override EIGEN_POD_MANAGER;
+    /**
+     * @notice The EigenDelegationManager
+     * @custom:oz-upgrades-unsafe-allow state-variable-immutable
+     */
+    IDelegationManager public immutable override EIGEN_DELEGATION_MANAGER;
+    /**
+     * @notice The AVSDirectory contract
+     * @custom:oz-upgrades-unsafe-allow state-variable-immutable
+     */
+    IAVSDirectoryExtended public immutable override AVS_DIRECTORY;
 
-    IEigenPodManager public immutable EIGEN_POD_MANAGER;
-    IDelegationManager public immutable EIGEN_DELEGATION_MANAGER;
-    IAVSDirectoryExtended internal immutable AVS_DIRECTORY;
-
-    bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
-        keccak256("BN254ValidatorRegistration(bytes delegatePubKey,bytes32 salt,uint256 expiry)");
-
-    modifier podIsDelegated(address podOwner) {
+    /**
+     * @dev Modifier to check if the pod is delegated to the msg.sender
+     * @param podOwner The address of the pod owner
+     */
+    modifier podIsDelegatedToMsgSender(address podOwner) {
         if (!EIGEN_DELEGATION_MANAGER.isOperator(msg.sender)) {
             revert NotOperator();
         }
@@ -48,9 +50,14 @@ contract UniFiAVSManager is
         _;
     }
 
-    constructor(IEigenPodManager eigenPodManager, IDelegationManager eigenDelegationManager, IAVSDirectory avsDirectory)
-        EIP712("UniFiAVSManager", "v0.0.1")
-    {
+    /**
+     * @custom:oz-upgrades-unsafe-allow constructor
+     */
+    constructor(
+        IEigenPodManager eigenPodManager,
+        IDelegationManager eigenDelegationManager,
+        IAVSDirectory avsDirectory
+    ) {
         EIGEN_POD_MANAGER = eigenPodManager;
         EIGEN_DELEGATION_MANAGER = eigenDelegationManager;
         AVS_DIRECTORY = IAVSDirectoryExtended(address(avsDirectory));
@@ -69,8 +76,6 @@ contract UniFiAVSManager is
      * @param operatorSignature The signature and associated data for operator registration
      */
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
@@ -91,10 +96,11 @@ contract UniFiAVSManager is
      */
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
         external
-        podIsDelegated(podOwner)
+        podIsDelegatedToMsgSender(podOwner)
     {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
+        //@audit this check is repeated 4x in this contract, it should be a modifier / internal function
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
@@ -151,7 +157,6 @@ contract UniFiAVSManager is
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
             ValidatorData storage validator = $.validators[blsPubKeyHash];
-            OperatorData storage operator = $.operators[validator.operator];
 
             if (validator.index == 0) {
                 revert ValidatorNotFound();
@@ -192,6 +197,7 @@ contract UniFiAVSManager is
 
         OperatorData storage operator = $.operators[msg.sender];
 
+        //@audit this check is repeated 4x in this contract, it should be a modifier / internal function
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
@@ -221,6 +227,7 @@ contract UniFiAVSManager is
 
         OperatorData storage operator = $.operators[msg.sender];
 
+        //@audit this check is repeated 4x in this contract, it should be a modifier / internal function
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
@@ -275,6 +282,7 @@ contract UniFiAVSManager is
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         OperatorData storage operator = $.operators[msg.sender];
 
+        //@audit this check is repeated 4x in this contract, it should be a modifier / internal function
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
                 == IAVSDirectory.OperatorAVSRegistrationStatus.UNREGISTERED
@@ -359,6 +367,7 @@ contract UniFiAVSManager is
      * @param chainID The chain ID to set
      */
     function setChainID(uint8 index, uint256 chainID) external restricted {
+        //@audit uint8 is 255 max, second check is unnecessary
         if (index == 0 || index > 255) revert IndexOutOfBounds();
 
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
@@ -367,6 +376,7 @@ contract UniFiAVSManager is
     }
 
     function getChainID(uint8 index) external view returns (uint256) {
+        //@audit uint8 is 255 max, second check is unnecessary
         if (index == 0 || index > 255) revert IndexOutOfBounds();
 
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
@@ -402,10 +412,12 @@ contract UniFiAVSManager is
         });
     }
 
-    function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory) {
+    function _getValidator(bytes32 blsPubKeyHash) internal view returns (ValidatorDataExtended memory validator) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         ValidatorData memory validatorData = $.validators[blsPubKeyHash];
+
+        //@audit what if validatorData.index is 0?
 
         if (validatorData.index != 0) {
             IEigenPod eigenPod = IEigenPod(validatorData.eigenPod);
