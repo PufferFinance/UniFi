@@ -49,6 +49,10 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         _;
     }
 
+    /**
+     * @dev Modifier to check if the operator is registered in the AVS
+     * @param operator The address of the operator
+     */
     modifier registeredOperator(address operator) {
         if (
             AVS_DIRECTORY.avsOperatorStatus(address(this), operator)
@@ -121,27 +125,33 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
 
         uint256 newValidatorCount = blsPubKeyHashes.length;
         for (uint256 i = 0; i < newValidatorCount; i++) {
-            bytes32 blsPubkeyHash = blsPubKeyHashes[i];
-            IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubkeyHash);
+            bytes32 blsPubKeyHash = blsPubKeyHashes[i];
+            IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHash);
 
             if (validatorInfo.status != IEigenPod.VALIDATOR_STATUS.ACTIVE) {
                 revert ValidatorNotActive();
             }
 
-            if ($.validators[blsPubkeyHash].index != 0) {
+            if ($.validators[blsPubKeyHash].index != 0) {
                 revert ValidatorAlreadyRegistered();
             }
 
-            $.validators[blsPubkeyHash] = ValidatorData({
+            $.validators[blsPubKeyHash] = ValidatorData({
                 eigenPod: address(eigenPod),
                 index: validatorInfo.validatorIndex,
                 operator: msg.sender,
                 registeredUntil: type(uint64).max
             });
 
-            $.validatorIndexes[validatorInfo.validatorIndex] = blsPubkeyHash;
+            $.validatorIndexes[validatorInfo.validatorIndex] = blsPubKeyHash;
 
-            emit ValidatorRegistered(podOwner, msg.sender, delegateKey, blsPubkeyHash, validatorInfo.validatorIndex);
+            emit ValidatorRegistered({
+                podOwner: podOwner,
+                operator: msg.sender,
+                delegateKey: delegateKey,
+                blsPubKeyHash: blsPubKeyHash,
+                validatorIndex: validatorInfo.validatorIndex
+            });
         }
 
         OperatorData storage operator = $.operators[msg.sender];
@@ -180,13 +190,13 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
 
             validator.registeredUntil = uint64(block.number) + $.deregistrationDelay;
 
-            emit ValidatorDeregistered(
-                IEigenPod(validator.eigenPod).podOwner(),
-                validator.operator,
-                $.operators[validator.operator].commitment.delegateKey,
-                blsPubKeyHash,
-                validator.index
-            );
+            emit ValidatorDeregistered({
+                podOwner: IEigenPod(validator.eigenPod).podOwner(),
+                operator: validator.operator,
+                delegateKey: $.operators[validator.operator].commitment.delegateKey,
+                blsPubKeyHash: blsPubKeyHash,
+                validatorIndex: validator.index
+            });
         }
     }
 
