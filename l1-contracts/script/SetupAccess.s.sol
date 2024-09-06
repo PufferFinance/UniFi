@@ -24,8 +24,7 @@ contract SetupAccess is BaseScript {
 
     AVSDeployment internal avsDeployment;
 
-    function run(AVSDeployment memory deployment, address dao) external {
-        vm.startBroadcast(_deployerPrivateKey);
+    function run(AVSDeployment memory deployment, address dao) external broadcast {
         avsDeployment = deployment;
         accessManager = AccessManager(payable(deployment.accessManager));
 
@@ -39,8 +38,7 @@ contract SetupAccess is BaseScript {
         bytes memory multicallData = abi.encodeCall(Multicall.multicall, (calldatas));
         // console.logBytes(multicallData);
         (bool s,) = address(accessManager).call(multicallData);
-        require(s, "failed setupAccess GenerateAccessManagerCallData 1");
-        vm.stopBroadcast();
+        require(s, "failed setupAccess 1");
     }
 
     function _generateAccessCalldata(

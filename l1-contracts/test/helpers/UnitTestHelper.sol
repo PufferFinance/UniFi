@@ -73,13 +73,8 @@ contract UnitTestHelper is Test, BaseScript {
         mockDelegationManager = new MockDelegationManager();
         mockAVSDirectory = new MockAVSDirectory();
 
-        accessManager = new AccessManager(DAO);
-
         AVSDeployment memory avsDeployment = new DeployEverything().run(
-            address(accessManager),
-            address(mockEigenPodManager),
-            address(mockDelegationManager),
-            address(mockAVSDirectory)
+            address(mockEigenPodManager), address(mockDelegationManager), address(mockAVSDirectory)
         );
 
         // accessManager = AccessManager(avsDeployment.accessManager);
