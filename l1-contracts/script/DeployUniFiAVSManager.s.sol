@@ -7,15 +7,16 @@ import { IEigenPodManager } from "eigenlayer/interfaces/IEigenPodManager.sol";
 import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
 import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { console } from "forge-std/console.sol";
 
 contract DeployUniFiAVSManager is BaseScript {
     UniFiAVSManager public uniFiAVSManagerProxy;
 
     function run(address accessManager, address eigenPodManager, address eigenDelegationManager, address avsDirectory)
         public
-        broadcast
         returns (address, address)
     {
+        vm.startBroadcast(_deployerPrivateKey);
         UniFiAVSManager uniFiAVSManagerImplementation = new UniFiAVSManager(
             IEigenPodManager(eigenPodManager), IDelegationManager(eigenDelegationManager), IAVSDirectory(avsDirectory)
         );
@@ -27,9 +28,7 @@ contract DeployUniFiAVSManager is BaseScript {
                 )
             )
         );
-
-        // console.log("UniFiAVSManager proxy:", address(uniFiAVSManagerProxy));
-        // console.log("UniFiAVSManager implementation:", address(uniFiAVSManagerImplementation));
+        vm.stopBroadcast();
 
         return (address(uniFiAVSManagerImplementation), address(uniFiAVSManagerProxy));
     }

@@ -18,19 +18,24 @@ import { console } from "forge-std/console.sol";
 contract DeployEverything is BaseScript {
     address DAO;
 
-    function run(address accessManager, address eigenPodManager, address eigenDelegationManager, address avsDirectory)
+    function run(address eigenPodManager, address eigenDelegationManager, address avsDirectory)
         public
         returns (AVSDeployment memory)
     {
         AVSDeployment memory deployment;
 
+        vm.startBroadcast(_deployerPrivateKey);
+        AccessManager accessManager = new AccessManager(_broadcaster);
+        vm.stopBroadcast();
+
         // 1. Deploy AVSManager
-        (address avsManagerImplementation, address avsManagerProxy) =
-            new DeployUniFiAVSManager().run(accessManager, eigenPodManager, eigenDelegationManager, avsDirectory);
+        (address avsManagerImplementation, address avsManagerProxy) = new DeployUniFiAVSManager().run(
+            address(accessManager), eigenPodManager, eigenDelegationManager, avsDirectory
+        );
 
         deployment.avsManagerImplementation = avsManagerImplementation;
         deployment.avsManagerProxy = avsManagerProxy;
-        deployment.accessManager = accessManager;
+        deployment.accessManager = address(accessManager);
 
         // `anvil` in the terminal
         if (_localAnvil) {
@@ -43,10 +48,8 @@ contract DeployEverything is BaseScript {
             DAO = _broadcaster;
         }
 
-        // TODO turn back on
-        // new SetupAccess().run(deployment, DAO);
+        new SetupAccess().run(deployment, DAO);
 
-        console.log("Deployment completed");
         _writeJson(deployment);
 
         return deployment;
