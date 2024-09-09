@@ -167,6 +167,7 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
         uint128 msgSenderValidatorCount;
+        uint64 deregistrationDelay = $.deregistrationDelay;
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
@@ -191,7 +192,7 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
                 msgSenderValidatorCount++;
             }
 
-            validator.registeredUntil = uint64(block.number) + $.deregistrationDelay;
+            validator.registeredUntil = uint64(block.number) + deregistrationDelay;
 
             emit ValidatorDeregistered({ operator: operator, blsPubKeyHash: blsPubKeyHash });
         }
