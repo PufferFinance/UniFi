@@ -166,8 +166,8 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external restricted {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
-        uint128 msgSenderValidatorCount;
-        uint64 deregistrationDelay = $.deregistrationDelay;
+        uint256 msgSenderValidatorCount;
+        uint256 deregistrationDelay = $.deregistrationDelay;
 
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
@@ -192,12 +192,12 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
                 msgSenderValidatorCount++;
             }
 
-            validator.registeredUntil = uint64(block.number) + deregistrationDelay;
+            validator.registeredUntil = uint64(block.number) + uint64(deregistrationDelay);
 
             emit ValidatorDeregistered({ operator: operator, blsPubKeyHash: blsPubKeyHash });
         }
 
-        $.operators[msg.sender].validatorCount -= msgSenderValidatorCount;
+        $.operators[msg.sender].validatorCount -= uint128(msgSenderValidatorCount);
     }
 
     /**
