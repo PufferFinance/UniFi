@@ -99,19 +99,10 @@ interface IUniFiAVSManager {
 
     /**
      * @notice Emitted when a validator is deregistered from the UniFi AVS system.
-     * @param podOwner The address of the EigenPod owner.
      * @param operator The address of the operator managing the validator.
-     * @param delegateKey The delegate public key for the validator.
      * @param blsPubKeyHash The BLS public key hash of the deregistered validator.
-     * @param validatorIndex The index of the deregistered validator.
      */
-    event ValidatorDeregistered(
-        address indexed podOwner,
-        address indexed operator,
-        bytes delegateKey,
-        bytes32 blsPubKeyHash,
-        uint256 validatorIndex
-    );
+    event ValidatorDeregistered(address indexed operator, bytes32 blsPubKeyHash);
 
     /**
      * @notice Emitted when an operator's commitment is set or updated.
