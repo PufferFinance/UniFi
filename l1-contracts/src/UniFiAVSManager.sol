@@ -166,15 +166,18 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external restricted {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
+        uint128 msgSenderValidatorCount;
+
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
             ValidatorData storage validator = $.validators[blsPubKeyHash];
 
-            if (validator.index == 0) {
+            address operator = validator.operator;
+            if (operator == address(0)) {
                 revert ValidatorNotFound();
             }
 
-            if (validator.operator != msg.sender) {
+            if (operator != msg.sender) {
                 // eject if no longer active
                 IEigenPod eigenPod = IEigenPod(validator.eigenPod);
                 IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHashes[i]);
@@ -183,21 +186,17 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
                 }
 
                 // update the actual operator's validator count
-                $.operators[validator.operator].validatorCount -= 1;
+                $.operators[operator].validatorCount -= 1;
             } else {
-                $.operators[msg.sender].validatorCount -= 1;
+                msgSenderValidatorCount++;
             }
 
             validator.registeredUntil = uint64(block.number) + $.deregistrationDelay;
 
-            emit ValidatorDeregistered({
-                podOwner: IEigenPod(validator.eigenPod).podOwner(),
-                operator: validator.operator,
-                delegateKey: $.operators[validator.operator].commitment.delegateKey,
-                blsPubKeyHash: blsPubKeyHash,
-                validatorIndex: validator.index
-            });
+            emit ValidatorDeregistered({ operator: operator, blsPubKeyHash: blsPubKeyHash });
         }
+
+        $.operators[msg.sender].validatorCount -= msgSenderValidatorCount;
     }
 
     /**
