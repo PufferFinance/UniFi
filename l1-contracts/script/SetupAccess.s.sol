@@ -7,7 +7,6 @@ import { BaseScript } from "script/BaseScript.s.sol";
 import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
 import { UniFiAVSManager } from "../src/UniFiAVSManager.sol";
-import { GenerateAccessManagerCallData } from "../script/GenerateAccessManagerCallData.sol";
 import { AVSDeployment } from "script/DeploymentStructs.sol";
 
 import {
