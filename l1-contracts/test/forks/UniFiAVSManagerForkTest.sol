@@ -40,7 +40,7 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
         )
     );
 
-    bytes32 public exitedValidatorPubKeyHash = sha256( // an active validator in the pod
+    bytes32 public exitedValidatorPubKeyHash = sha256( // an exited validator in the pod
         abi.encodePacked(
             abi.encodePacked(
                 hex"90ba70225a0ab658a629431cfc0bde70eb4dc4022e6ab60ac020dea6d9b3ff14a9d17395bd6bfa90c7d999a184a77b33"
