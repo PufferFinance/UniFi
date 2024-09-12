@@ -9,4 +9,5 @@ struct AVSDeployment {
     address avsManagerProxy;
     address accessManager;
     address timelock;
+    address dao;
 }
