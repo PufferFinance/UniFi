@@ -31,10 +31,19 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
     address public constant podOwner = 0xe60cA7AbF24De99aF64e7d9057659aE2dBC2eB2C; // PUFFER_MODULE_0
     uint64 public constant DEREGISTRATION_DELAY = 50400; // Approximately 7 days worth of blocks (assuming ~12 second block time)
 
-    bytes32 public validatorPubKeyHash = sha256( // an active validator in the pod
+    bytes32 public activeValidatorPubKeyHash = sha256( // an active validator in the pod
         abi.encodePacked(
             abi.encodePacked(
                 hex"8f77ef4427e190559eb6f8f2f4759e88f10deea104da8f8c0925d233192706974c49018abf8310cb8282a93d18fb1c9b"
+            ),
+            bytes16(0)
+        )
+    );
+
+    bytes32 public exitedValidatorPubKeyHash = sha256( // an active validator in the pod
+        abi.encodePacked(
+            abi.encodePacked(
+                hex"90ba70225a0ab658a629431cfc0bde70eb4dc4022e6ab60ac020dea6d9b3ff14a9d17395bd6bfa90c7d999a184a77b33"
             ),
             bytes16(0)
         )
@@ -123,30 +132,40 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
         vm.prank(operator);
         avsManager.updateOperatorCommitment();
 
-        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
-        blsPubKeyHashes[0] = validatorPubKeyHash;
-
-        // Register validators
+        // Register active validator
+        bytes32[] memory activeValidators = new bytes32[](1);
+        activeValidators[0] = activeValidatorPubKeyHash;
         vm.prank(operator);
-        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+        avsManager.registerValidators(podOwner, activeValidators);
 
-        ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[0]);
-        assertTrue(validatorData.registered, "Validator should be registered");
+        // Attempt to register exited validator (should fail)
+        bytes32[] memory exitedValidators = new bytes32[](1);
+        exitedValidators[0] = exitedValidatorPubKeyHash;
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.ValidatorNotActive.selector);
+        avsManager.registerValidators(podOwner, exitedValidators);
+
+        // Check registration status
+        ValidatorDataExtended memory activeValidatorData = avsManager.getValidator(activeValidatorPubKeyHash);
+        assertTrue(activeValidatorData.registered, "Active validator should be registered");
+
+        ValidatorDataExtended memory exitedValidatorData = avsManager.getValidator(exitedValidatorPubKeyHash);
+        assertFalse(exitedValidatorData.registered, "Exited validator should not be registered");
 
         // Deregister validators
         vm.prank(operator);
-        avsManager.deregisterValidators(blsPubKeyHashes);
+        avsManager.deregisterValidators(activeValidators);
 
         // Check validator status immediately after deregistration
-        validatorData = avsManager.getValidator(blsPubKeyHashes[0]);
-        assertTrue(validatorData.registered, "Validator should still be registered before delay");
+        activeValidatorData = avsManager.getValidator(activeValidatorPubKeyHash);
+        assertTrue(activeValidatorData.registered, "Validator should still be registered before delay");
 
-        // Advance block number instead of time
+        // Advance block number
         vm.roll(block.number + DEREGISTRATION_DELAY + 1);
 
         // Check validator status after delay
-        validatorData = avsManager.getValidator(blsPubKeyHashes[0]);
-        assertFalse(validatorData.registered, "Validator should be deregistered after delay");
+        activeValidatorData = avsManager.getValidator(activeValidatorPubKeyHash);
+        assertFalse(activeValidatorData.registered, "Validator should be deregistered after delay");
     }
 
     function test_updateOperatorCommitment() public {
