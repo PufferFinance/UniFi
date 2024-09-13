@@ -207,6 +207,121 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
         );
     }
 
+    function test_registerOperatorWithInvalidSignature() public {
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+
+        // Generate an invalid signature
+        (bytes32 digestHash, ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) =
+            _getOperatorSignature(operator, address(avsManager), salt, expiry);
+        operatorSignature.signature = abi.encodePacked(bytes32(0), bytes32(0), uint8(0));
+
+        // Attempt to register operator with invalid signature
+        bytes memory registerOperatorCallData =
+            abi.encodeWithSelector(IUniFiAVSManager.registerOperator.selector, operatorSignature);
+
+        vm.prank(MODULE_MANAGER);
+        vm.expectRevert();
+        IRestakingOperator(operator).customCalldataCall(address(avsManager), registerOperatorCallData);
+    }
+
+    function test_registerValidatorsWithInvalidPodOwner() public {
+        _registerOperator();
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = activeValidatorPubKeyHash;
+
+        // Attempt to register validators with an invalid pod owner
+        address invalidPodOwner = address(0x1234);
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.NoEigenPod.selector);
+        avsManager.registerValidators(invalidPodOwner, blsPubKeyHashes);
+    }
+
+    function test_deregisterValidatorsWithNonExistentValidator() public {
+        _registerOperator();
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = keccak256(abi.encodePacked("nonExistentValidator"));
+
+        // Attempt to deregister a non-existent validator
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.ValidatorNotFound.selector);
+        avsManager.deregisterValidators(blsPubKeyHashes);
+    }
+
+    function test_startDeregisterOperatorWithValidators() public {
+        _registerOperator();
+
+        OperatorCommitment memory newCommitment =
+            OperatorCommitment({ delegateKey: abi.encodePacked(uint256(1337)), chainIDBitMap: 3 });
+
+        // Set new commitment
+        vm.prank(operator);
+        avsManager.setOperatorCommitment(newCommitment);
+
+        // Advance block number
+        vm.roll(block.number + DEREGISTRATION_DELAY + 1);
+
+        // Update commitment
+        vm.prank(operator);
+        avsManager.updateOperatorCommitment();
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = activeValidatorPubKeyHash;
+
+        // Register validators
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, blsPubKeyHashes);
+
+        // Attempt to start deregistration with active validators
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.OperatorHasValidators.selector);
+        avsManager.startDeregisterOperator();
+    }
+
+    function test_finishDeregisterOperatorBeforeDelay() public {
+        _registerOperator();
+
+        // Start deregistration
+        vm.prank(operator);
+        avsManager.startDeregisterOperator();
+
+        // Attempt to finish deregistration before delay
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.DeregistrationDelayNotElapsed.selector);
+        avsManager.finishDeregisterOperator();
+    }
+
+    function test_setAndGetChainID() public {
+        vm.prank(DAO);
+        avsManager.setChainID(1, 1); // Ethereum Mainnet
+
+        uint256 chainID = avsManager.getChainID(1);
+        assertEq(chainID, 1, "ChainID should match");
+    }
+
+    function test_bitmapToChainIDsWithGaps() public {
+        vm.prank(DAO);
+        avsManager.setChainID(1, 1); // Ethereum Mainnet
+        vm.prank(DAO);
+        avsManager.setChainID(3, 137); // Polygon
+
+        uint256 bitmap = 0xA; // 0b1010
+
+        uint256[] memory chainIDs = avsManager.bitmapToChainIDs(bitmap);
+        assertEq(chainIDs.length, 2, "Should return 2 chainIDs");
+        assertEq(chainIDs[0], 1, "First chainID should match");
+        assertEq(chainIDs[1], 137, "Second chainID should match");
+    }
+
+    function test_getBitmapIndexForNonExistentChainID() public {
+        uint32 nonExistentChainID = 999;
+
+        uint8 index = avsManager.getBitmapIndex(nonExistentChainID);
+        assertEq(index, 0, "Bitmap index for non-existent chainID should be 0");
+    }
+
     function _registerOperator() internal {
         bytes32 salt = bytes32(uint256(1));
         uint256 expiry = block.timestamp + 1 days;
