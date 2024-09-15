@@ -15,6 +15,7 @@ import "../../src/structs/ValidatorData.sol";
 import "../../src/structs/OperatorData.sol";
 import { AVSDeployment } from "script/DeploymentStructs.sol";
 import { BaseScript } from "script/BaseScript.s.sol";
+import { IAccessManaged } from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 
 contract UniFiAVSManagerForkTest is Test, BaseScript {
     UniFiAVSManager public avsManager;
@@ -320,6 +321,18 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
 
         uint8 index = avsManager.getBitmapIndex(nonExistentChainID);
         assertEq(index, 0, "Bitmap index for non-existent chainID should be 0");
+    }
+
+    function test_setChainIDFromUnauthorizedAddress() public {
+        vm.prank(operator); // Using operator instead of DAO
+        vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, operator));
+        avsManager.setChainID(1, 1); // Attempt to set chain ID without authorization
+    }
+
+    function test_setDeregistrationDelayFromUnauthorizedAddress() public {
+        vm.prank(operator); // Using operator instead of DAO
+        vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, operator));
+        avsManager.setDeregistrationDelay(DEREGISTRATION_DELAY); // Attempt to set deregistration delay without authorization
     }
 
     function _registerOperator() internal {
