@@ -8,7 +8,7 @@ import "forge-std/Script.sol";
  * @author Puffer Finance
  */
 abstract contract BaseScript is Script {
-    uint256 internal PK = 0xa990c824d7f6928806d93674ef4acd4b240ad60c9ce575777c87b36f9a3c32a8; // makeAddr("pufferDeployer")
+    uint256 internal PK = 55358659325830545179143827536745912452716312441367500916455484419538098489698; // makeAddr("pufferDeployer")
 
     // Anvil and `forge test` environment share the same chainId
     // Our shell-scripts/deploy_puffer_protocol.sh is setting this env variable
