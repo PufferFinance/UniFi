@@ -354,9 +354,9 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         uint256[] memory result = new uint256[](256);
         uint256 count = 0;
-        for (uint256 i = 1; i < 256; i++) {
-            if ((bitmap & (1 << i)) != 0) {
-                result[count] = $.bitmapIndexToChainId[uint8(i)];
+        for (uint8 i = 0; i < 255; i++) {
+            if ((bitmap & (1 << (i + 1))) != 0) {
+                result[count] = $.bitmapIndexToChainId[i + 1];
                 count++;
             }
         }
