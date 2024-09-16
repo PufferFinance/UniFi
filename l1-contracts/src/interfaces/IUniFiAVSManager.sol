@@ -64,6 +64,9 @@ interface IUniFiAVSManager {
     /// @notice Thrown when an index is out of bounds
     error IndexOutOfBounds();
 
+    /// @notice Thrown when attempting to deregister a validator that is already deregistered
+    error ValidatorAlreadyDeregistered();
+
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS system.
      * @param operator The address of the registered operator.
@@ -124,6 +127,13 @@ interface IUniFiAVSManager {
      * @param newDelay The new deregistration delay value.
      */
     event DeregistrationDelaySet(uint64 oldDelay, uint64 newDelay);
+
+    /**
+     * @notice Emitted when a chain ID is set for a specific index.
+     * @param index The index in the bitmap.
+     * @param chainID The chain ID set for the given index.
+     */
+    event ChainIDSet(uint8 index, uint256 chainID);
 
     /**
      * @notice Returns the EigenPodManager contract.
