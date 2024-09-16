@@ -18,10 +18,12 @@ import { console } from "forge-std/console.sol";
 contract DeployEverything is BaseScript {
     address DAO;
 
-    function run(address eigenPodManager, address eigenDelegationManager, address avsDirectory)
-        public
-        returns (AVSDeployment memory)
-    {
+    function run(
+        address eigenPodManager,
+        address eigenDelegationManager,
+        address avsDirectory,
+        uint64 initialDeregistrationDelay
+    ) public returns (AVSDeployment memory) {
         AVSDeployment memory deployment;
 
         vm.startBroadcast(_deployerPrivateKey);
@@ -30,7 +32,7 @@ contract DeployEverything is BaseScript {
 
         // 1. Deploy AVSManager
         (address avsManagerImplementation, address avsManagerProxy) = new DeployUniFiAVSManager().run(
-            address(accessManager), eigenPodManager, eigenDelegationManager, avsDirectory
+            address(accessManager), eigenPodManager, eigenDelegationManager, avsDirectory, initialDeregistrationDelay
         );
 
         deployment.avsManagerImplementation = avsManagerImplementation;

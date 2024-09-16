@@ -13,10 +13,12 @@ contract DeployUnifiToHolesky is BaseScript {
         address eigenPodManager = 0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338;
         address eigenDelegationManager = 0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A;
         address avsDirectory = 0x135DDa560e946695d6f155dACaFC6f1F25C1F5AF;
+        uint64 initialDeregistrationDelay = 0;
 
         // Deploy everything else
         DeployEverything deployEverything = new DeployEverything();
-        AVSDeployment memory deployment = deployEverything.run(eigenPodManager, eigenDelegationManager, avsDirectory);
+        AVSDeployment memory deployment =
+            deployEverything.run(eigenPodManager, eigenDelegationManager, avsDirectory, initialDeregistrationDelay);
 
         console.log("AccessManager:", address(deployment.accessManager));
         console.log("UniFiAVSManager proxy:", address(deployment.avsManagerProxy));

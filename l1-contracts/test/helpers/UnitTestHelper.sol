@@ -74,15 +74,14 @@ contract UnitTestHelper is Test, BaseScript {
         mockAVSDirectory = new MockAVSDirectory();
 
         AVSDeployment memory avsDeployment = new DeployEverything().run(
-            address(mockEigenPodManager), address(mockDelegationManager), address(mockAVSDirectory)
+            address(mockEigenPodManager),
+            address(mockDelegationManager),
+            address(mockAVSDirectory),
+            DEREGISTRATION_DELAY
         );
 
         // accessManager = AccessManager(avsDeployment.accessManager);
         timelock = avsDeployment.timelock;
         avsManager = UniFiAVSManager(avsDeployment.avsManagerProxy);
-
-        // Set the deregistration delay
-        vm.prank(DAO);
-        avsManager.setDeregistrationDelay(DEREGISTRATION_DELAY);
     }
 }

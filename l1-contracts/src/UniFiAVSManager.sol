@@ -14,7 +14,6 @@ import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
-import { console } from "forge-std/console.sol";
 
 contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgradeable, AccessManagedUpgradeable {
     /**
@@ -78,8 +77,9 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         _disableInitializers();
     }
 
-    function initialize(address accessManager) public initializer {
+    function initialize(address accessManager, uint64 initialDeregistrationDelay) public initializer {
         __AccessManaged_init(accessManager);
+        _setDeregistrationDelay(initialDeregistrationDelay);
     }
 
     // EXTERNAL FUNCTIONS
@@ -285,11 +285,7 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
      * @dev Restricted to the DAO
      */
     function setDeregistrationDelay(uint64 newDelay) external restricted {
-        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
-        uint64 oldDelay = $.deregistrationDelay;
-        $.deregistrationDelay = newDelay;
-
-        emit DeregistrationDelaySet(oldDelay, newDelay);
+        _setDeregistrationDelay(newDelay);
     }
 
     /**
@@ -466,6 +462,18 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
             return operatorData.pendingCommitment;
         }
         return operatorData.commitment;
+    }
+
+    /**
+     * @dev Internal function to set or update the deregistration delay
+     * @param newDelay The new deregistration delay to set
+     */
+    function _setDeregistrationDelay(uint64 newDelay) internal {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        uint64 oldDelay = $.deregistrationDelay;
+        $.deregistrationDelay = newDelay;
+
+        emit DeregistrationDelaySet(oldDelay, newDelay);
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
