@@ -170,7 +170,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         // 2nd registration
         vm.prank(operator);
-        vm.expectRevert(IUniFiAVSManager.OperatorAlreadyRegistered.selector);
+        vm.expectRevert();
         avsManager.registerOperator(operatorSignature);
     }
 

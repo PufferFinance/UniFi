@@ -92,13 +92,6 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         external
         restricted
     {
-        if (
-            AVS_DIRECTORY.avsOperatorStatus(address(this), msg.sender)
-                == IAVSDirectory.OperatorAVSRegistrationStatus.REGISTERED
-        ) {
-            revert OperatorAlreadyRegistered();
-        }
-
         AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
 
         emit OperatorRegistered(msg.sender);
@@ -157,7 +150,7 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
 
         OperatorData storage operator = $.operators[msg.sender];
         operator.validatorCount += uint128(newValidatorCount);
-        operator.startDeregisterOperatorBlock = 0; // Reset the deregistration start block
+        operator.startDeregisterOperatorBlock = 0;
     }
 
     /**
@@ -355,6 +348,8 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         uint256[] memory result = new uint256[](256);
         uint256 count = 0;
         for (uint8 i = 0; i < 255; i++) {
+            // Check if the bit at position i+1 is set in the bitmap
+            // We use i+1 because index 0 is reserved (not used)
             if ((bitmap & (1 << (i + 1))) != 0) {
                 result[count] = $.bitmapIndexToChainId[i + 1];
                 count++;
