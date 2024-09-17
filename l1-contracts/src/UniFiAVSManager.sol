@@ -101,6 +101,23 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
      * @inheritdoc IUniFiAVSManager
      * @dev Restricted in this context is like `whenNotPaused` modifier from Pausable.sol
      */
+    function registerOperatorWithCommitment(
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature,
+        OperatorCommitment memory initialCommitment
+    ) external restricted {
+        AVS_DIRECTORY.registerOperatorToAVS(msg.sender, operatorSignature);
+
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        OperatorData storage operator = $.operators[msg.sender];
+        operator.commitment = initialCommitment;
+
+        emit OperatorRegisteredWithCommitment(msg.sender, initialCommitment);
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted in this context is like `whenNotPaused` modifier from Pausable.sol
+     */
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes)
         external
         podIsDelegatedToMsgSender(podOwner)
@@ -432,8 +449,8 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
 
             bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
 
-            OperatorData storage operatorData = $.operators[validatorData.operator];
-            OperatorCommitment memory activeCommitment = _getActiveCommitment(operatorData);
+            OperatorData storage operator = $.operators[validatorData.operator];
+            OperatorCommitment memory activeCommitment = _getActiveCommitment(operator);
 
             return ValidatorDataExtended({
                 operator: validatorData.operator,

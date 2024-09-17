@@ -174,6 +174,35 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.registerOperator(operatorSignature);
     }
 
+    function testRegisterOperatorWithCommitment() public {
+        _setupOperator();
+        assertFalse(mockAVSDirectory.isOperatorRegistered(operator));
+
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature =
+            _registerOperatorParams({ salt: bytes32(uint256(1)), expiry: uint256(block.timestamp + 1 days) });
+
+        OperatorCommitment memory initialCommitment =
+            OperatorCommitment({ delegateKey: delegatePubKey, chainIDBitMap: 2 });
+
+        vm.expectEmit(true, false, false, true);
+        emit IUniFiAVSManager.OperatorRegisteredWithCommitment(operator, initialCommitment);
+
+        vm.prank(operator);
+        avsManager.registerOperatorWithCommitment(operatorSignature, initialCommitment);
+
+        assertTrue(mockAVSDirectory.isOperatorRegistered(operator));
+
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 0);
+        assertEq(operatorData.commitment.delegateKey, delegatePubKey);
+        assertEq(operatorData.commitment.chainIDBitMap, 2);
+        assertEq(operatorData.pendingCommitment.delegateKey, "");
+        assertEq(operatorData.pendingCommitment.chainIDBitMap, 0);
+        assertEq(operatorData.startDeregisterOperatorBlock, 0);
+        assertEq(operatorData.commitmentValidAfter, 0);
+        assertTrue(operatorData.isRegistered);
+    }
+
     function _setupValidators(bytes32[] memory blsPubKeyHashes) internal {
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             mockEigenPodManager.setValidatorStatus(podOwner, blsPubKeyHashes[i], IEigenPod.VALIDATOR_STATUS.ACTIVE);

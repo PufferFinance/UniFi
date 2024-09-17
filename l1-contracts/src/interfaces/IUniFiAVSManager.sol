@@ -9,7 +9,7 @@ import "../structs/OperatorData.sol";
 
 /**
  * @title IUniFiAVSManager
- * @notice Interface for the UniFiAVSManager contract, which manages operators and validators in the UniFi AVS system.
+ * @notice Interface for the UniFiAVSManager contract, which manages operators and validators in the UniFi AVS.
  * @dev This interface defines the main functions and events for operator and validator management.
  */
 interface IUniFiAVSManager {
@@ -68,13 +68,20 @@ interface IUniFiAVSManager {
     error ValidatorAlreadyDeregistered();
 
     /**
-     * @notice Emitted when a new operator is registered in the UniFi AVS system.
+     * @notice Emitted when a new operator is registered in the UniFi AVS.
      * @param operator The address of the registered operator.
      */
     event OperatorRegistered(address indexed operator);
 
     /**
-     * @notice Emitted when a new validator is registered in the UniFi AVS system.
+     * @notice Emitted when a new operator is registered in the UniFi AVS with a commitment.
+     * @param operator The address of the registered operator.
+     * @param commitment The commitment set for the operator.
+     */
+    event OperatorRegisteredWithCommitment(address indexed operator, OperatorCommitment commitment);
+
+    /**
+     * @notice Emitted when a new validator is registered in the UniFi AVS .
      * @param podOwner The address of the validator's EigenPod owner.
      * @param delegateKey The delegate public key for the validator.
      * @param blsPubKeyHash The BLS public key hash of the validator.
@@ -95,13 +102,13 @@ interface IUniFiAVSManager {
     event OperatorDeregisterStarted(address indexed operator);
 
     /**
-     * @notice Emitted when an operator is deregistered from the UniFi AVS system.
+     * @notice Emitted when an operator is deregistered from the UniFi AVS.
      * @param operator The address of the deregistered operator.
      */
     event OperatorDeregistered(address indexed operator);
 
     /**
-     * @notice Emitted when a validator is deregistered from the UniFi AVS system.
+     * @notice Emitted when a validator is deregistered from the UniFi AVS.
      * @param operator The address of the operator managing the validator.
      * @param blsPubKeyHash The BLS public key hash of the deregistered validator.
      */
@@ -154,10 +161,20 @@ interface IUniFiAVSManager {
     function AVS_DIRECTORY() external view returns (IAVSDirectoryExtended);
 
     /**
-     * @notice Registers a new operator in the UniFi AVS system.
+     * @notice Registers a new operator in the UniFi AVS.
      * @param operatorSignature The signature and associated data for operator registration.
      */
     function registerOperator(ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature) external;
+
+    /**
+     * @notice Registers a new operator in the UniFi AVS with a commitment.
+     * @param operatorSignature The signature and associated data for operator registration.
+     * @param initialCommitment The initial commitment for the operator.
+     */
+    function registerOperatorWithCommitment(
+        ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature,
+        OperatorCommitment memory initialCommitment
+    ) external;
 
     /**
      * @notice Registers validators for a given pod owner.
@@ -167,18 +184,18 @@ interface IUniFiAVSManager {
     function registerValidators(address podOwner, bytes32[] calldata blsPubKeyHashes) external;
 
     /**
-     * @notice Deregisters validators from the UniFi AVS system.
+     * @notice Deregisters validators from the UniFi AVS.
      * @param blsPubKeyHashes The BLS public key hashes of the validators to deregister.
      */
     function deregisterValidators(bytes32[] calldata blsPubKeyHashes) external;
 
     /**
-     * @notice Starts the process of deregistering an operator from the UniFi AVS system.
+     * @notice Starts the process of deregistering an operator from the UniFi AVS.
      */
     function startDeregisterOperator() external;
 
     /**
-     * @notice Finishes the process of deregistering an operator from the UniFi AVS system.
+     * @notice Finishes the process of deregistering an operator from the UniFi AVS.
      */
     function finishDeregisterOperator() external;
     /**
