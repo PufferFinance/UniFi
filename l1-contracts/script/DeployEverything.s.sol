@@ -50,6 +50,8 @@ contract DeployEverything is BaseScript {
             DAO = _broadcaster;
         }
 
+        deployment.dao = DAO;
+
         new SetupAccess().run(deployment, DAO);
 
         _writeJson(deployment);
