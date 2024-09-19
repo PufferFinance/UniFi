@@ -6,19 +6,31 @@ import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessMana
 import { DeployEverything } from "./DeployEverything.s.sol";
 import { AVSDeployment } from "./DeploymentStructs.sol";
 import { console } from "forge-std/console.sol";
+import { ROLE_ID_OPERATIONS_MULTISIG, ROLE_ID_DAO } from "./Roles.sol";
 
-contract DeployUnifiToHolesky is BaseScript {
-    function run() public {
+contract DeployUniFiToMainnet is BaseScript {
+    function run() public returns (AVSDeployment memory deployment) {
         // Set addresses for EigenLayer contracts
-        address eigenPodManager = 0x30770d7E3e71112d7A6b7259542D1f680a70e315;
-        address eigenDelegationManager = 0xA44151489861Fe9e3055d95adC98FbD462B948e7;
-        address avsDirectory = 0x055733000064333CaDDbC92763c58BF0192fFeBf;
+        address eigenPodManager = 0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338;
+        address eigenDelegationManager = 0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A;
+        address avsDirectory = 0x135DDa560e946695d6f155dACaFC6f1F25C1F5AF;
+        address opsWallet = 0xC0896ab1A8cae8c2C1d27d011eb955Cca955580d;
         uint64 initialDeregistrationDelay = 0;
 
         // Deploy everything else
         DeployEverything deployEverything = new DeployEverything();
-        AVSDeployment memory deployment =
+        deployment =
             deployEverything.run(eigenPodManager, eigenDelegationManager, avsDirectory, initialDeregistrationDelay);
+
+        vm.startBroadcast(_deployerPrivateKey);
+        AccessManager accessManager = AccessManager(deployment.accessManager);
+        accessManager.grantRole(accessManager.ADMIN_ROLE(), opsWallet, 0);
+        accessManager.grantRole(ROLE_ID_DAO, opsWallet, 0);
+        accessManager.grantRole(ROLE_ID_OPERATIONS_MULTISIG, opsWallet, 0);
+
+        accessManager.revokeRole(ROLE_ID_DAO, _broadcaster);
+        accessManager.revokeRole(accessManager.ADMIN_ROLE(), _broadcaster);
+        vm.stopBroadcast();
 
         console.log("AccessManager:", address(deployment.accessManager));
         console.log("UniFiAVSManager proxy:", address(deployment.avsManagerProxy));

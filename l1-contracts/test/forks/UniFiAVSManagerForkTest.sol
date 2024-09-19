@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
-import { DeployEverything } from "../../script/DeployEverything.s.sol";
+import { DeployUniFiToMainnet } from "../../script/DeployUniFiToMainnet.s.sol";
 import { UniFiAVSManager } from "../../src/UniFiAVSManager.sol";
 import { IUniFiAVSManager } from "../../src/interfaces/IUniFiAVSManager.sol";
 import { IRestakingOperator } from "../../src/interfaces/IRestakingOperator.sol";
@@ -23,6 +23,7 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
     IDelegationManager public delegationManager;
     IAVSDirectory public avsDirectory;
 
+    // notice the addresses are duplicated here and in the deploy script to ensure they match
     address public constant EIGEN_POD_MANAGER = address(0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338);
     address public constant EIGEN_DELEGATION_MANAGER = address(0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A);
     address public constant AVS_DIRECTORY = address(0x135DDa560e946695d6f155dACaFC6f1F25C1F5AF);
@@ -53,7 +54,7 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
     address public operatorSigner;
     uint256 public operatorPrivateKey;
 
-    address public DAO;
+    address public DAO = 0xC0896ab1A8cae8c2C1d27d011eb955Cca955580d;
 
     function setUp() public virtual {
         vm.createSelectFork(vm.rpcUrl("mainnet"), 20731077); // Replace with an appropriate block number
@@ -66,11 +67,10 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
         avsDirectory = IAVSDirectory(AVS_DIRECTORY);
 
         // Deploy UniFiAVSManager
-        DeployEverything deployScript = new DeployEverything();
-        AVSDeployment memory avsDeployment =
-            deployScript.run(address(eigenPodManager), address(delegationManager), address(avsDirectory));
-        DAO = avsDeployment.dao;
-        address avsManagerProxy = avsDeployment.avsManagerProxy;
+        DeployUniFiToMainnet deployScript = new DeployUniFiToMainnet();
+        AVSDeployment memory deployment = deployScript.run();
+
+        address avsManagerProxy = deployment.avsManagerProxy;
 
         avsManager = UniFiAVSManager(payable(avsManagerProxy));
         // Set deregistration delay
@@ -247,7 +247,7 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
 
         // Attempt to deregister a non-existent validator
         vm.prank(operator);
-        vm.expectRevert(IUniFiAVSManager.ValidatorNotFound.selector);
+        vm.expectRevert(IUniFiAVSManager.NotValidatorOperator.selector);
         avsManager.deregisterValidators(blsPubKeyHashes);
     }
 
