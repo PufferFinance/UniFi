@@ -8,8 +8,8 @@ import { AVSDeployment } from "./DeploymentStructs.sol";
 import { console } from "forge-std/console.sol";
 import { ROLE_ID_OPERATIONS_MULTISIG, ROLE_ID_DAO } from "./Roles.sol";
 
-contract DeployUnifiToMainnet is BaseScript {
-    function run() public {
+contract DeployUniFiToMainnet is BaseScript {
+    function run() public returns (AVSDeployment memory deployment) {
         // Set addresses for EigenLayer contracts
         address eigenPodManager = 0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338;
         address eigenDelegationManager = 0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A;
@@ -19,7 +19,7 @@ contract DeployUnifiToMainnet is BaseScript {
 
         // Deploy everything else
         DeployEverything deployEverything = new DeployEverything();
-        AVSDeployment memory deployment =
+        deployment =
             deployEverything.run(eigenPodManager, eigenDelegationManager, avsDirectory, initialDeregistrationDelay);
 
         vm.startBroadcast(_deployerPrivateKey);
