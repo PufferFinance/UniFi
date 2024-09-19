@@ -20,6 +20,7 @@ contract DeployUniFiAVSManagerWithMocks is BaseScript {
     address eigenPodManager;
     address eigenDelegationManager;
     address avsDirectory;
+    uint64 initialDeregistrationDelay = 0;
 
     function run() public broadcast returns (address, address) {
         eigenPodManager = address(new MockEigenPodManager());
@@ -36,7 +37,7 @@ contract DeployUniFiAVSManagerWithMocks is BaseScript {
             address(
                 new ERC1967Proxy{ salt: bytes32("UniFiAVSManager") }(
                     address(uniFiAVSManagerImplementation),
-                    abi.encodeCall(UniFiAVSManager.initialize, (address(accessManager)))
+                    abi.encodeCall(UniFiAVSManager.initialize, (address(accessManager), initialDeregistrationDelay))
                 )
             )
         );

@@ -21,9 +21,9 @@ struct OperatorData {
     /// @notice The number of validators associated with this operator.
     uint128 validatorCount;
     /// @notice The block number when the operator started the deregistration process.
-    uint128 startDeregisterOperatorBlock;
+    uint64 startDeregisterOperatorBlock;
     /// @notice The block number after which the pending commitment becomes valid.
-    uint128 commitmentValidAfter;
+    uint64 commitmentValidAfter;
 }
 
 /**

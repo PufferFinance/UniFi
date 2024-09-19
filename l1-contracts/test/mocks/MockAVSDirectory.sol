@@ -21,6 +21,10 @@ contract MockAVSDirectory {
         address operator,
         ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature
     ) external {
+        require(
+            registeredOperators[operator] != true, "AVSDirectory.registerOperatorToAVS: operator already registered"
+        );
+
         registeredOperators[operator] = true;
     }
 

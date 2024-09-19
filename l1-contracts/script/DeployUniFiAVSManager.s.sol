@@ -12,10 +12,13 @@ import { console } from "forge-std/console.sol";
 contract DeployUniFiAVSManager is BaseScript {
     UniFiAVSManager public uniFiAVSManagerProxy;
 
-    function run(address accessManager, address eigenPodManager, address eigenDelegationManager, address avsDirectory)
-        public
-        returns (address, address)
-    {
+    function run(
+        address accessManager,
+        address eigenPodManager,
+        address eigenDelegationManager,
+        address avsDirectory,
+        uint64 initialDeregistrationDelay
+    ) public returns (address, address) {
         vm.startBroadcast(_deployerPrivateKey);
         UniFiAVSManager uniFiAVSManagerImplementation = new UniFiAVSManager(
             IEigenPodManager(eigenPodManager), IDelegationManager(eigenDelegationManager), IAVSDirectory(avsDirectory)
@@ -24,7 +27,8 @@ contract DeployUniFiAVSManager is BaseScript {
         uniFiAVSManagerProxy = UniFiAVSManager(
             address(
                 new ERC1967Proxy{ salt: bytes32("UniFiAVSManager") }(
-                    address(uniFiAVSManagerImplementation), abi.encodeCall(UniFiAVSManager.initialize, (accessManager))
+                    address(uniFiAVSManagerImplementation),
+                    abi.encodeCall(UniFiAVSManager.initialize, (accessManager, initialDeregistrationDelay))
                 )
             )
         );
