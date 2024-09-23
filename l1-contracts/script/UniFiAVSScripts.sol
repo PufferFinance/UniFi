@@ -66,6 +66,7 @@ contract UniFiAVSScripts is Script {
     bool isHelderChain;
 
     function setUp() public {
+        isHelderChain = false;
         // Determine which chain we're on and set the appropriate addresses
         if (block.chainid == 7014190335) {
             // chain ID for Helder
@@ -74,17 +75,24 @@ contract UniFiAVSScripts is Script {
             eigenPodManagerAddress = address(0x27065dA1e634119b5f50167A650B7109B8965350);
             uniFiAVSManagerAddress = address(0x5CcEa336064524a3D7d636e33BFd53f2917F27A0);
             avsDirectoryAddress = address(0x5d0F57C63Bd70843dc600A6da78fEcC7c390Cb34);
+        } else if (block.chainid == 1) {
+            // Ethereum mainnet
+            delegationManagerAddress = address(0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A);
+            eigenPodManagerAddress = address(0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338);
+            uniFiAVSManagerAddress = address(0x2d86E90ED40a034C753931eE31b1bD5E1970113d);
+            avsDirectoryAddress = address(0x135DDa560e946695d6f155dACaFC6f1F25C1F5AF);
+        } else if (block.chainid == 17000) {
+            // Holesky testnet
+            delegationManagerAddress = address(0xA44151489861Fe9e3055d95adC98FbD462B948e7);
+            eigenPodManagerAddress = address(0x30770d7E3e71112d7A6b7259542D1f680a70e315);
+            uniFiAVSManagerAddress = address(0x89F967F4548705809c1a5B85a33C29B1A83434E1);
+            avsDirectoryAddress = address(0x055733000064333CaDDbC92763c58BF0192fFeBf);
         } else {
-            isHelderChain = false;
-            // Set the addresses for Holesky or Mainnet
-            delegationManagerAddress = address(0x123); // Replace with actual address
-            eigenPodManagerAddress = address(0x123); // Replace with actual address
-            uniFiAVSManagerAddress = address(0x123); // Replace with actual address
-            avsDirectoryAddress = address(0x123); // Replace with actual address
+            // For other networks, you might want to revert or set default values
+            revert("Unsupported network");
         }
 
         // Initialize the contract instances with their deployed addresses
-
         delegationManager = IDelegationManager(delegationManagerAddress);
         eigenPodManager = IEigenPodManager(eigenPodManagerAddress);
         uniFiAVSManager = UniFiAVSManager(uniFiAVSManagerAddress);
