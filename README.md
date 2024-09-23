@@ -48,7 +48,7 @@ Validators participating in UniFi AVS run Commit-Boost alongside their standard 
 
 ## Deployments
 
-For detailed information on deployments (Mainnet, Testnet, etc.) and ABIs, please check our [Deployments and ACL](./deployments-and-acl/README.md) doc.
+For detailed information on deployments (Mainnet, Testnet, etc.) and ABIs, please check our [Deployments and ACL](./docs/README.md) doc.
 
 ## Audits
 
