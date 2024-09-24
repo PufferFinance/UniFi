@@ -210,6 +210,12 @@ interface IUniFiAVSManager {
     function updateOperatorCommitment() external;
 
     /**
+     * @notice Updates the metadata URI for the AVS
+     * @param _metadataURI is the metadata URI for the AVS
+     */
+    function updateAVSMetadataURI(string memory _metadataURI) external;
+
+    /**
      * @notice Sets a new deregistration delay for operators.
      * @param newDelay The new deregistration delay in seconds.
      * @dev This function can only be called by the contract owner.
@@ -286,4 +292,24 @@ interface IUniFiAVSManager {
      * @return The bitmap index associated with the given chain ID.
      */
     function getBitmapIndex(uint256 chainID) external view returns (uint8);
+
+    /**
+     * @notice Returns the list of strategies that the operator has potentially restaked on the AVS
+     * @param operator The address of the operator to get restaked strategies for
+     * @dev This function is intended to be called off-chain
+     * @dev No guarantee is made on whether the operator has shares for a strategy in a quorum or uniqueness
+     *      of each element in the returned array. The off-chain service should do that validation separately
+     */
+    function getOperatorRestakedStrategies(address operator) external view returns (address[] memory);
+
+    /**
+     * @notice Returns the list of strategies that the AVS supports for restaking
+     * @dev This function is intended to be called off-chain
+     * @dev No guarantee is made on uniqueness of each element in the returned array.
+     *      The off-chain service should do that validation separately
+     */
+    function getRestakeableStrategies() external view returns (address[] memory);
+
+    /// @notice Returns the EigenLayer AVSDirectory contract.
+    function avsDirectory() external view returns (address);
 }

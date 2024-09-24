@@ -761,6 +761,49 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         );
     }
 
+    function testGetOperatorRestakedStrategies() public {
+        _setupOperator();
+        _registerOperator();
+
+        // Set shares for the operator
+        mockDelegationManager.setShares(operator, IStrategy(avsManager.BEACON_CHAIN_STRATEGY()), 100);
+
+        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
+
+        assertEq(restakedStrategies.length, 1, "Should return one restaked strategy");
+        assertEq(restakedStrategies[0], avsManager.BEACON_CHAIN_STRATEGY(), "Should return BEACON_CHAIN_STRATEGY");
+    }
+
+    function testGetOperatorRestakedStrategies_NoShares() public {
+        _setupOperator();
+        _registerOperator();
+
+        // Don't set any shares for the operator
+
+        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
+
+        assertEq(restakedStrategies.length, 0, "Should return no restaked strategies");
+    }
+
+    function testGetOperatorRestakedStrategies_NotRegistered() public {
+        _setupOperator();
+        // Don't register the operator
+
+        // Set shares for the operator
+        mockDelegationManager.setShares(operator, IStrategy(avsManager.BEACON_CHAIN_STRATEGY()), 100);
+
+        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
+
+        assertEq(restakedStrategies.length, 0, "Should return no restaked strategies for unregistered operator");
+    }
+
+    function testGetRestakeableStrategies() public {
+        address[] memory restakeableStrategies = avsManager.getRestakeableStrategies();
+
+        assertEq(restakeableStrategies.length, 1, "Should return one restakeable strategy");
+        assertEq(restakeableStrategies[0], avsManager.BEACON_CHAIN_STRATEGY(), "Should return BEACON_CHAIN_STRATEGY");
+    }
+
     function testIsValidatorInChainId_AfterCommitmentChange() public {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
