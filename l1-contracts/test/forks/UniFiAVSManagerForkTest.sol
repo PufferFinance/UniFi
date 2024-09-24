@@ -335,6 +335,45 @@ contract UniFiAVSManagerForkTest is Test, BaseScript {
         avsManager.setDeregistrationDelay(DEREGISTRATION_DELAY); // Attempt to set deregistration delay without authorization
     }
 
+    function test_getOperatorRestakedStrategies() public {
+        // Register operator
+        _registerOperator();
+        OperatorCommitment memory newCommitment =
+            OperatorCommitment({ delegateKey: abi.encodePacked(uint256(1337)), chainIDBitMap: 3 });
+
+        // Set new commitment
+        vm.prank(operator);
+        avsManager.setOperatorCommitment(newCommitment);
+
+        // Advance block number
+        vm.roll(block.number + DEREGISTRATION_DELAY + 1);
+
+        // Update commitment
+        vm.prank(operator);
+        avsManager.updateOperatorCommitment();
+        // Register active validator
+        bytes32[] memory activeValidators = new bytes32[](1);
+        activeValidators[0] = activeValidatorPubKeyHash;
+        vm.prank(operator);
+        avsManager.registerValidators(podOwner, activeValidators);
+
+        // Get restaked strategies
+        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
+
+        // Assert
+        assertEq(restakedStrategies.length, 1, "Should have one restaked strategy");
+        assertEq(restakedStrategies[0], avsManager.BEACON_CHAIN_STRATEGY(), "Should be the Beacon Chain strategy");
+    }
+
+    function test_getRestakeableStrategies() public {
+        // Get restakeable strategies
+        address[] memory restakeableStrategies = avsManager.getRestakeableStrategies();
+
+        // Assert
+        assertEq(restakeableStrategies.length, 1, "Should have one restakeable strategy");
+        assertEq(restakeableStrategies[0], avsManager.BEACON_CHAIN_STRATEGY(), "Should be the Beacon Chain strategy");
+    }
+
     function _registerOperator() internal {
         bytes32 salt = bytes32(uint256(1));
         uint256 expiry = block.timestamp + 1 days;
