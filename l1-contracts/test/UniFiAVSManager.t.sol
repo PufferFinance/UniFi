@@ -4,6 +4,7 @@ pragma solidity >=0.8.0 <0.9.0;
 import "forge-std/Test.sol";
 import "../src/UniFiAVSManager.sol";
 import "../src/interfaces/IUniFiAVSManager.sol";
+import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
 import "../src/structs/ValidatorData.sol";
 import "../src/structs/OperatorData.sol";
 import "./mocks/MockEigenPodManager.sol";
@@ -917,5 +918,15 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         validator = avsManager.getValidator(blsPubKeyHashes[0]);
         assertFalse(validator.registered, "First validator should be deregistered");
+    }
+
+    function testUpdateAVSMetadataURI() public {
+        string memory newMetadataURI = "https://example.com/new-metadata";
+
+        vm.expectEmit(true, true, false, true);
+        emit IAVSDirectory.AVSMetadataURIUpdated(address(avsManager), newMetadataURI);
+
+        vm.prank(DAO);
+        avsManager.updateAVSMetadataURI(newMetadataURI);
     }
 }

@@ -5,6 +5,8 @@ import "eigenlayer/interfaces/IAVSDirectory.sol";
 import "eigenlayer/interfaces/ISignatureUtils.sol";
 
 contract MockAVSDirectory {
+    event AVSMetadataURIUpdated(address indexed avs, string metadataURI);
+
     mapping(address => bool) public registeredOperators;
 
     function avsOperatorStatus(address, address operator)
@@ -44,6 +46,10 @@ contract MockAVSDirectory {
         returns (bytes32)
     {
         return keccak256(abi.encodePacked(operator, avs, salt, expiry));
+    }
+
+    function updateAVSMetadataURI(string calldata metadataURI) external {
+        emit AVSMetadataURIUpdated(msg.sender, metadataURI);
     }
 
     // Implement other functions from IAVSDirectory as needed for testing

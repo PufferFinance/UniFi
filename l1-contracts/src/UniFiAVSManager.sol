@@ -444,7 +444,6 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         uint256[] memory shares = EIGEN_DELEGATION_MANAGER.getOperatorShares(operator, strategies);
 
         if (operatorData.isRegistered && shares[0] > 0) {
-            // Get strategies for each quorum in operator bitmap
             restakedStrategies = new address[](1);
             restakedStrategies[0] = BEACON_CHAIN_STRATEGY;
         }
