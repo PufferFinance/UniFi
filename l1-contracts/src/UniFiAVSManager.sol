@@ -5,6 +5,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { AccessManagedUpgradeable } from
     "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
+import { IStrategy } from "eigenlayer/interfaces/IStrategy.sol";
 import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
 import { IAVSDirectoryExtended } from "./interfaces/EigenLayer/IAVSDirectoryExtended.sol";
 import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
@@ -16,6 +17,8 @@ import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
 
 contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgradeable, AccessManagedUpgradeable {
+    address public constant BEACON_CHAIN_STRATEGY = 0xbeaC0eeEeeeeEEeEeEEEEeeEEeEeeeEeeEEBEaC0;
+
     /**
      * @notice The EigenPodManager
      * @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -67,13 +70,13 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
      * @custom:oz-upgrades-unsafe-allow constructor
      */
     constructor(
-        IEigenPodManager eigenPodManager,
-        IDelegationManager eigenDelegationManager,
-        IAVSDirectory avsDirectory
+        IEigenPodManager eigenPodManagerAddress,
+        IDelegationManager eigenDelegationManagerAddress,
+        IAVSDirectory avsDirectoryAddress
     ) {
-        EIGEN_POD_MANAGER = eigenPodManager;
-        EIGEN_DELEGATION_MANAGER = eigenDelegationManager;
-        AVS_DIRECTORY = IAVSDirectoryExtended(address(avsDirectory));
+        EIGEN_POD_MANAGER = eigenPodManagerAddress;
+        EIGEN_DELEGATION_MANAGER = eigenDelegationManagerAddress;
+        AVS_DIRECTORY = IAVSDirectoryExtended(address(avsDirectoryAddress));
         _disableInitializers();
     }
 
@@ -312,6 +315,14 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         emit ChainIDSet(index, chainID);
     }
 
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted to the DAO
+     */
+    function updateAVSMetadataURI(string memory _metadataURI) external restricted {
+        AVS_DIRECTORY.updateAVSMetadataURI(_metadataURI);
+    }
+
     // GETTERS
 
     /**
@@ -417,6 +428,44 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         }
 
         return (activeCommitment.chainIDBitMap & (1 << (bitmapIndex - 1))) != 0;
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     */
+    function getOperatorRestakedStrategies(address operator)
+        external
+        view
+        returns (address[] memory restakedStrategies)
+    {
+        OperatorDataExtended memory operatorData = _getOperator(operator);
+        IStrategy[] memory strategies = new IStrategy[](1);
+        strategies[0] = IStrategy(BEACON_CHAIN_STRATEGY);
+        uint256[] memory shares = EIGEN_DELEGATION_MANAGER.getOperatorShares(operator, strategies);
+
+        if (operatorData.isRegistered && shares[0] > 0) {
+            restakedStrategies = new address[](1);
+            restakedStrategies[0] = BEACON_CHAIN_STRATEGY;
+        }
+
+        return restakedStrategies;
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     */
+    function getRestakeableStrategies() external view returns (address[] memory) {
+        address[] memory strategies = new address[](1);
+        strategies[0] = BEACON_CHAIN_STRATEGY;
+
+        return strategies;
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     */
+    function avsDirectory() external view returns (address) {
+        return address(AVS_DIRECTORY);
     }
 
     // INTERNAL FUNCTIONS
