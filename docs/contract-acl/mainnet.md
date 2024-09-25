@@ -18,6 +18,7 @@
 |:---------------------------------------:|:-------:|:-------------------:|:--------------------------------------|
 | setDeregistrationDelay                  | 77      | DAO                 |                                       |
 | setChainID                              | 77      | DAO                 |                                       |
+| updateAVSMetadataURI                          | 77      | DAO                 |                                       |
 | registerOperator                        | max_int | Public              |                                       |
 | registerValidators                      | max_int | Public              |                                       |
 | startDeregisterOperator                 | max_int | Public              |                                       |
