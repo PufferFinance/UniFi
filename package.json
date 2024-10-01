@@ -6,9 +6,8 @@
     "npm": ">=9.8.0"
   },
   "version": "1.0.0",
-  "description": "Bsed Rollup",
-  "scripts": {
-  },
+  "description": "Based Rollup",
+  "scripts": {},
   "keywords": [
     "ethereum",
     "puffer",
@@ -24,9 +23,15 @@
   "license": "ISC",
   "private": true,
   "workspaces": {
-    "packages": ["l1-contracts", "l2-contracts"],
+    "packages": [
+      "l1-contracts",
+      "l2-contracts"
+    ],
     "nohoist": [
       "**/*"
     ]
+  },
+  "dependencies": {
+    "ethers": "^6.13.2"
   }
 }
