@@ -363,6 +363,12 @@ contract UniFiAVSScripts is Script {
         vm.stopBroadcast();
     }
 
+    /// @notice Registers an operator with the UniFiAVSManager
+    /// @param signerPk The private key of the signer
+    function registerOperatorToUniFiAVS(bytes32 signerPk) public {
+        registerOperatorToUniFiAVS(uint256(signerPk));
+    }
+
     /// @notice Registers an operator with the UniFiAVSManager using only a delegate key
     /// @param signerPk The private key of the signer
     function registerOperatorToUniFiAVS(uint256 signerPk) public {
