@@ -1,0 +1,12 @@
+
+§Ÿtype Operator @entity {
+  id: ID!
+  address: Bytes!
+  shares: BigInt!
+  isRegistered: Boolean!
+}
+
+type TotalShares @entity {
+  id: ID!
+  totalShares: BigInt!
+}Ÿ

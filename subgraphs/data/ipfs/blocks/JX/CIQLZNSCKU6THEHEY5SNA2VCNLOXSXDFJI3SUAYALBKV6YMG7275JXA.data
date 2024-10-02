@@ -1,0 +1,61 @@
+
+”ŒdataSources:
+  - kind: ethereum/contract
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/QmUU1QjCBHzcdfVetPqmaWwdtTE6o7Xpky5aGNAtyoNT1f
+          name: UniFiAVSManager
+      apiVersion: 0.0.6
+      entities:
+        - Operator
+        - TotalShares
+      eventHandlers:
+        - event: OperatorRegistered(indexed address)
+          handler: handleOperatorRegistered
+        - event: OperatorDeregistered(indexed address)
+          handler: handleOperatorDeregistered
+      file:
+        /: /ipfs/QmYqdP4inDe5RjkrRUTnE11VFETQEfri94PA2dgC92xgZZ
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: UniFiAVSManager
+    network: mainnet
+    source:
+      abi: UniFiAVSManager
+      address: '0x2d86E90ED40a034C753931eE31b1bD5E1970113d'
+      startBlock: 20787377
+  - kind: ethereum/contract
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/QmWbmmMhJDMFeE1GXmDZZnRgibv45VDRhoFXx8D1Ca7vKB
+          name: DelegationManager
+      apiVersion: 0.0.6
+      entities:
+        - Operator
+        - TotalShares
+      eventHandlers:
+        - event: 'OperatorSharesIncreased(indexed address,address,address,uint256)'
+          handler: handleOperatorSharesIncreased
+        - event: 'OperatorSharesDecreased(indexed address,address,address,uint256)'
+          handler: handleOperatorSharesDecreased
+      file:
+        /: /ipfs/QmYqdP4inDe5RjkrRUTnE11VFETQEfri94PA2dgC92xgZZ
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: DelegationManager
+    network: mainnet
+    source:
+      abi: DelegationManager
+      address: '0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A'
+      startBlock: 20787377
+description: >-
+  Tracks the total delegated beacon_chain_strategy shares of all registered
+  operators in UniFiAVSManager.
+repository: 'https://github.com/your-repo/unifi-avs-subgraph'
+schema:
+  file:
+    /: /ipfs/QmNuo8QdEoPeyYV4x71h1HBLijxjNhSq4YZKKikLTi8sQ3
+specVersion: 0.0.4
+Œ
