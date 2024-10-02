@@ -1,0 +1,59 @@
+specVersion: 0.0.4
+description: Tracks the total delegated beacon_chain_strategy shares of all registered operators in UniFiAVSManager.
+repository: https://github.com/your-repo/unifi-avs-subgraph
+
+schema:
+  file: ./schema.graphql
+
+dataSources:
+  - kind: ethereum/contract
+    name: UniFiAVSManager
+    network: mainnet
+    source:
+      address: "0x2d86E90ED40a034C753931eE31b1bD5E1970113d"
+      abi: UniFiAVSManager
+      startBlock: 20787377
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Operator
+        - TotalShares
+      abis:
+        - name: UniFiAVSManager
+          file: ./abis/UniFiAVSManager.json
+        - name: DelegationManager
+          file: ./abis/DelegationManager.json
+      eventHandlers:
+        - event: OperatorRegistered(indexed address)
+          handler: handleOperatorRegistered
+        - event: OperatorDeregistered(indexed address)
+          handler: handleOperatorDeregistered
+      file: ./src/tvl-tracker.ts
+
+  - kind: ethereum/contract
+    name: DelegationManager
+    network: mainnet
+    source:
+      address: "0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A"
+      abi: DelegationManager
+      startBlock: 20787377
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Operator
+        - TotalShares
+      abis:
+        - name: DelegationManager
+          file: ./abis/DelegationManager.json
+        - name: UniFiAVSManager
+          file: ./abis/UniFiAVSManager.json
+      eventHandlers:
+        - event: OperatorSharesIncreased(indexed address,address,address,uint256)
+          handler: handleOperatorSharesIncreased
+        - event: OperatorSharesDecreased(indexed address,address,address,uint256)
+          handler: handleOperatorSharesDecreased
+      file: ./src/tvl-tracker.ts
