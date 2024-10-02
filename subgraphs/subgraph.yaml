@@ -23,6 +23,8 @@ dataSources:
       abis:
         - name: UniFiAVSManager
           file: ./abis/UniFiAVSManager.json
+        - name: DelegationManager
+          file: ./abis/DelegationManager.json
       eventHandlers:
         - event: OperatorRegistered(indexed address)
           handler: handleOperatorRegistered
@@ -47,6 +49,8 @@ dataSources:
       abis:
         - name: DelegationManager
           file: ./abis/DelegationManager.json
+        - name: UniFiAVSManager
+          file: ./abis/UniFiAVSManager.json
       eventHandlers:
         - event: OperatorSharesIncreased(indexed address,address,address,uint256)
           handler: handleOperatorSharesIncreased
