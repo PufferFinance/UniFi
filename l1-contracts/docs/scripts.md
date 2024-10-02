@@ -107,8 +107,15 @@ The length of the delay is configurable and can be queried using the getDeregist
     - Note: When using a smart contract as the operator, it must implement EIP-1271 for signature verification.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS(uint256,(bytes,uint256))" 123456 '["0xdelegateKey...",42]'`
 
+* `registerOperatorToUniFiAVS(bytes32 signerPk)`
+    - Registers an operator with the UniFiAVSManager using hex private key.
+    - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS(bytes32)" 0x123456abcdef...`
+    - To verify your operator registration, call the function getOperator(address) like this: 
+      `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "getOperator(address)" "OPERATOR_ADDRESS"`
+
+
 * `registerOperatorToUniFiAVS(uint256 signerPk)`
-    - Registers an operator with the UniFiAVSManager.
+    - Registers an operator with the UniFiAVSManager using uint256 private key.
     - Usage: `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "registerOperatorToUniFiAVS(uint256)" 123456`
     - To verify your operator registration, call the function getOperator(address) like this: 
       `forge script script/UniFiAVSScripts.sol:UniFiAVSScripts --sig "getOperator(address)" "OPERATOR_ADDRESS"`
