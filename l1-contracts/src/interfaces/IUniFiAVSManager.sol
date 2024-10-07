@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
+// EigenLayer Imports
 import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
+import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
+// Local Imports
 import { IAVSDirectoryExtended } from "../interfaces/EigenLayer/IAVSDirectoryExtended.sol";
 import "../structs/ValidatorData.sol";
 import "../structs/OperatorData.sol";
@@ -69,6 +72,12 @@ interface IUniFiAVSManager {
 
     /// @notice Thrown when a restaking strategy allowlist update fails
     error RestakingStrategyAllowlistUpdateFailed();
+
+    /// @notice Thrown when a salt is already used for a registration
+    error SaltAlreadyUsed();
+
+    /// @notice Thrown when a signature is expired
+    error SignatureExpired();
 
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS.
@@ -151,6 +160,13 @@ interface IUniFiAVSManager {
      * @param allowed Whether the strategy is allowed (true) or disallowed (false).
      */
     event RestakingStrategyAllowlistUpdated(address indexed strategy, bool allowed);
+
+    /**
+     * @notice Emitted when a validator is slashed.
+     * @param operator The address of the operator managing the validator.
+     * @param blsPubKeyHash The BLS public key hash of the slashed validator.
+     */
+    event ValidatorSlashed(address indexed operator, bytes32 indexed blsPubKeyHash);
 
     /**
      * @notice Returns the EigenPodManager contract.
@@ -249,6 +265,18 @@ interface IUniFiAVSManager {
     function setAllowlistRestakingStrategy(address strategy, bool allowed) external;
 
     /**
+     * @notice Registers validators optimistically.
+     * @param paramsArray The array of ValidatorRegistrationParams.
+     */
+    function registerValidatorsOptimistically(ValidatorRegistrationParams[] calldata paramsArray) external;
+
+    /**
+     * @notice Verifies the signatures of validators.
+     * @param blsPubKeyHashes The BLS public key hashes of the validators.
+     */
+    function verifyValidatorSignatures(bytes32[] calldata blsPubKeyHashes) external;
+
+    /**
      * @notice Retrieves information about a specific operator.
      * @param operator The address of the operator.
      * @return OperatorDataExtended struct containing information about the operator.
@@ -330,4 +358,18 @@ interface IUniFiAVSManager {
 
     /// @notice Returns the EigenLayer AVSDirectory contract.
     function avsDirectory() external view returns (address);
+
+    /**
+     * @notice Returns the BLS message hash for a validator registration.
+     * @param typeHash The type hash for the message.
+     * @param operator The address of the operator.
+     * @param salt The salt for the message.
+     * @param expiry The expiry for the message.
+     * @param index The index for the message.
+     * @return BN254.G1Point The BLS message hash.
+     */
+    function blsMessageHash(bytes32 typeHash, address operator, uint64 salt, uint64 expiry, uint256 index)
+        external
+        view
+        returns (BN254.G1Point memory);
 }

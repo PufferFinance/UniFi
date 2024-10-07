@@ -56,6 +56,36 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         g2Point.Y[0] = abi.decode(res, (uint256));
     }
 
+    function _getValidatorSignature(
+        uint256 validatorPrivateKey,
+        uint64 validatorIndex,
+        address operator,
+        bytes32 salt,
+        uint256 expiry
+    ) internal returns (BN254.G1Point memory registrationSignature, bytes32 pubkeyHash) {
+        // Generate BLS key pair
+        IBLSApkRegistry.PubkeyRegistrationParams memory blsKeyPair = _generateBlsPubkeyParams(validatorPrivateKey);
+
+        // Create ValidatorRegistrationParams
+        ValidatorRegistrationParams memory params;
+
+        params.pubkeyG1 = blsKeyPair.pubkeyG1;
+        params.pubkeyG2 = blsKeyPair.pubkeyG2;
+        params.salt = salt;
+        params.expiry = expiry;
+        params.index = validatorIndex;
+
+        // Generate a valid signature
+        BN254.G1Point memory messagePoint = avsManager.blsMessageHash(
+            avsManager.VALIDATOR_REGISTRATION_TYPEHASH(), operator, params.salt, params.expiry, params.index
+        );
+
+        registrationSignature = messagePoint.scalar_mul(validatorPrivateKey);
+        pubkeyHash = BN254.hashG1Point(params.pubkeyG1);
+
+        return (registrationSignature, pubkeyHash);
+    }
+
     // With ECDSA key, he sign the hash confirming that the operator wants to be registered to a certain restaking service
     function _getOperatorSignature(
         uint256 _operatorPrivateKey,
@@ -230,7 +260,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
             assertEq(validatorData.eigenPod, address(mockEigenPodManager.getPod(podOwner)));
             assertEq(validatorData.operator, operator);
-            assertTrue(validatorData.backedByStake);
+            assertTrue(validatorData.backedByEigenPodStake);
         }
     }
 
@@ -506,7 +536,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(avsManager.getDeregistrationDelay(), newDelay, "Deregistration delay should be updated");
     }
 
-    function testGetValidator_BackedByStakeFalse() public {
+    function testGetValidator_backedByEigenPodStakeFalse() public {
         bytes32[] memory blsPubKeyHashes = new bytes32[](1);
         blsPubKeyHashes[0] = keccak256(abi.encodePacked("validator1"));
 
@@ -524,7 +554,10 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[0]);
 
         assertEq(validatorData.operator, operator);
-        assertFalse(validatorData.backedByStake, "backedByStake should be false when delegated to a different address");
+        assertFalse(
+            validatorData.backedByEigenPodStake,
+            "backedByEigenPodStake should be false when delegated to a different address"
+        );
     }
 
     function testSetOperatorCommitment() public {
@@ -1021,5 +1054,170 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
 
         assertEq(restakedStrategies.length, 0, "Should return no restaked strategies for unregistered operator");
+    }
+
+    function testRegisterValidatorsOptimistically() public {
+        _setupOperator();
+        _registerOperator();
+
+        uint256 validatorPrivateKey1 = 123;
+        uint256 validatorPrivateKey2 = 456;
+        uint64 validatorIndex1 = 1;
+        uint64 validatorIndex2 = 2;
+        bytes32 salt1 = bytes32(uint256(1));
+        bytes32 salt2 = bytes32(uint256(2));
+        uint256 expiry = block.timestamp + 1 days;
+
+        (BN254.G1Point memory signature1, bytes32 pubkeyHash1) =
+            _getValidatorSignature(validatorPrivateKey1, validatorIndex1, operator, salt1, expiry);
+
+        (BN254.G1Point memory signature2, bytes32 pubkeyHash2) =
+            _getValidatorSignature(validatorPrivateKey2, validatorIndex2, operator, salt2, expiry);
+
+        ValidatorRegistrationParams[] memory paramsArray = new ValidatorRegistrationParams[](2);
+        paramsArray[0] = ValidatorRegistrationParams({
+            pubkeyG1: _generateBlsPubkeyParams(validatorPrivateKey1).pubkeyG1,
+            pubkeyG2: _generateBlsPubkeyParams(validatorPrivateKey1).pubkeyG2,
+            salt: salt1,
+            expiry: expiry,
+            index: validatorIndex1,
+            registrationSignature: signature1
+        });
+        paramsArray[1] = ValidatorRegistrationParams({
+            pubkeyG1: _generateBlsPubkeyParams(validatorPrivateKey2).pubkeyG1,
+            pubkeyG2: _generateBlsPubkeyParams(validatorPrivateKey2).pubkeyG2,
+            salt: salt2,
+            expiry: expiry,
+            index: validatorIndex2,
+            registrationSignature: signature2
+        });
+
+        vm.prank(operator);
+        avsManager.registerValidatorsOptimistically(paramsArray);
+
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 2, "Validator count should be 2");
+
+        ValidatorDataExtended memory validator1 = avsManager.getValidator(pubkeyHash1);
+        ValidatorDataExtended memory validator2 = avsManager.getValidator(pubkeyHash2);
+
+        assertTrue(validator1.registered, "Validator 1 should be registered");
+        assertTrue(validator2.registered, "Validator 2 should be registered");
+        assertEq(validator1.operator, operator, "Validator 1 should be assigned to the correct operator");
+        assertEq(validator2.operator, operator, "Validator 2 should be assigned to the correct operator");
+    }
+
+    function testRegisterValidatorsOptimistically_AlreadyRegistered() public {
+        _setupOperator();
+        _registerOperator();
+
+        uint256 validatorPrivateKey = 123;
+        uint64 validatorIndex = 1;
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+
+        (BN254.G1Point memory signature, bytes32 pubkeyHash) =
+            _getValidatorSignature(validatorPrivateKey, validatorIndex, operator, salt, expiry);
+
+        ValidatorRegistrationParams[] memory paramsArray = new ValidatorRegistrationParams[](1);
+        paramsArray[0] = ValidatorRegistrationParams({
+            pubkeyG1: _generateBlsPubkeyParams(validatorPrivateKey).pubkeyG1,
+            pubkeyG2: _generateBlsPubkeyParams(validatorPrivateKey).pubkeyG2,
+            salt: salt,
+            expiry: expiry,
+            index: validatorIndex,
+            registrationSignature: signature
+        });
+
+        vm.prank(operator);
+        avsManager.registerValidatorsOptimistically(paramsArray);
+
+        vm.prank(operator);
+        vm.expectRevert(IUniFiAVSManager.ValidatorAlreadyRegistered.selector);
+        avsManager.registerValidatorsOptimistically(paramsArray);
+    }
+
+    function testVerifyValidatorSignatures() public {
+        _setupOperator();
+        _registerOperator();
+
+        uint256 validatorPrivateKey = 123;
+        uint64 validatorIndex = 1;
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+
+        (BN254.G1Point memory signature, bytes32 pubkeyHash) =
+            _getValidatorSignature(validatorPrivateKey, validatorIndex, operator, salt, expiry);
+
+        ValidatorRegistrationParams[] memory paramsArray = new ValidatorRegistrationParams[](1);
+        paramsArray[0] = ValidatorRegistrationParams({
+            pubkeyG1: _generateBlsPubkeyParams(validatorPrivateKey).pubkeyG1,
+            pubkeyG2: _generateBlsPubkeyParams(validatorPrivateKey).pubkeyG2,
+            salt: salt,
+            expiry: expiry,
+            index: validatorIndex,
+            registrationSignature: signature
+        });
+
+        vm.prank(operator);
+        avsManager.registerValidatorsOptimistically(paramsArray);
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = pubkeyHash;
+
+        avsManager.verifyValidatorSignatures(blsPubKeyHashes);
+
+        ValidatorDataExtended memory validator = avsManager.getValidator(pubkeyHash);
+        assertTrue(validator.registered, "Validator should still be registered after verification");
+    }
+
+    function testVerifyValidatorSignatures_InvalidSignature() public {
+        _setupOperator();
+        _registerOperator();
+
+        uint256 validatorPrivateKey = 123;
+        uint64 validatorIndex = 1;
+        bytes32 salt = bytes32(uint256(1));
+        uint256 expiry = block.timestamp + 1 days;
+
+        (BN254.G1Point memory validSignature, bytes32 pubkeyHash) =
+            _getValidatorSignature(validatorPrivateKey, validatorIndex, operator, salt, expiry);
+
+        // Create an invalid signature by using a different private key
+        (BN254.G1Point memory invalidSignature,) = _getValidatorSignature(
+            456, // Different private key
+            validatorIndex,
+            operator,
+            salt,
+            expiry
+        );
+
+        ValidatorRegistrationParams[] memory paramsArray = new ValidatorRegistrationParams[](1);
+        paramsArray[0] = ValidatorRegistrationParams({
+            pubkeyG1: _generateBlsPubkeyParams(validatorPrivateKey).pubkeyG1,
+            pubkeyG2: _generateBlsPubkeyParams(validatorPrivateKey).pubkeyG2,
+            salt: salt,
+            expiry: expiry,
+            index: validatorIndex,
+            registrationSignature: invalidSignature // Use the invalid signature
+         });
+
+        vm.prank(operator);
+        avsManager.registerValidatorsOptimistically(paramsArray);
+
+        bytes32[] memory blsPubKeyHashes = new bytes32[](1);
+        blsPubKeyHashes[0] = pubkeyHash;
+
+        vm.expectEmit(true, true, false, false);
+        emit IUniFiAVSManager.ValidatorSlashed(operator, pubkeyHash);
+
+        avsManager.verifyValidatorSignatures(blsPubKeyHashes);
+
+        vm.roll(block.number + avsManager.getDeregistrationDelay() + 1);
+        ValidatorDataExtended memory validator = avsManager.getValidator(pubkeyHash);
+        assertFalse(validator.registered, "Validator should be deregistered after invalid signature verification");
+
+        OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
+        assertEq(operatorData.validatorCount, 0, "Operator should have no validators after slashing");
     }
 }

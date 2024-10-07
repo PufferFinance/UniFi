@@ -88,7 +88,7 @@ contract SetupAccess is BaseScript {
         );
 
         bytes4[] memory publicSelectors = new bytes4[](0);
-        publicSelectors = new bytes4[](8);
+        publicSelectors = new bytes4[](10);
         publicSelectors[0] = UniFiAVSManager.registerOperator.selector;
         publicSelectors[1] = UniFiAVSManager.registerValidators.selector;
         publicSelectors[2] = UniFiAVSManager.startDeregisterOperator.selector;
@@ -97,6 +97,8 @@ contract SetupAccess is BaseScript {
         publicSelectors[5] = UniFiAVSManager.setOperatorCommitment.selector;
         publicSelectors[6] = UniFiAVSManager.updateOperatorCommitment.selector;
         publicSelectors[7] = UniFiAVSManager.registerOperatorWithCommitment.selector;
+        publicSelectors[8] = UniFiAVSManager.registerValidatorsOptimistically.selector;
+        publicSelectors[9] = UniFiAVSManager.verifyValidatorSignatures.selector;
 
         calldatas[1] = abi.encodeWithSelector(
             AccessManager.setTargetFunctionRole.selector,

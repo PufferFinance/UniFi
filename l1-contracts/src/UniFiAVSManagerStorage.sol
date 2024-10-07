@@ -22,6 +22,10 @@ abstract contract UniFiAVSManagerStorage {
         mapping(uint256 => uint8) chainIdToBitmapIndex;
         // Set of allowlisted restaking strategies
         EnumerableSet.AddressSet allowlistedRestakingStrategies;
+        // Mapping to store validator registration data
+        mapping(bytes32 => ValidatorRegistrationData) validatorRegistrations;
+        // Slashed operators mapping
+        mapping(address => InvalidValidator[]) slashedOperators; // operator => InvalidValidator[]
     }
 
     /**
