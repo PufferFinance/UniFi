@@ -4,6 +4,7 @@ pragma solidity >=0.8.0 <0.9.0;
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { AccessManagedUpgradeable } from
     "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
 import { IStrategy } from "eigenlayer/interfaces/IStrategy.sol";
 import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
@@ -17,6 +18,8 @@ import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
 
 contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgradeable, AccessManagedUpgradeable {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     address public constant BEACON_CHAIN_STRATEGY = 0xbeaC0eeEeeeeEEeEeEEEEeeEEeEeeeEeeEEBEaC0;
 
     /**
@@ -83,6 +86,10 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
     function initialize(address accessManager, uint64 initialDeregistrationDelay) public initializer {
         __AccessManaged_init(accessManager);
         _setDeregistrationDelay(initialDeregistrationDelay);
+        
+        // Initialize BEACON_CHAIN_STRATEGY as an allowed restaking strategy
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        $.allowlistedRestakingStrategies.add(BEACON_CHAIN_STRATEGY);
     }
 
     // EXTERNAL FUNCTIONS
@@ -323,6 +330,23 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         AVS_DIRECTORY.updateAVSMetadataURI(_metadataURI);
     }
 
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted to the DAO
+     */
+    function setAllowlistRestakingStrategy(address strategy, bool allowed) external restricted {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        bool success;
+        if (allowed) {
+            success = $.allowlistedRestakingStrategies.add(strategy);
+        } else {
+            success = $.allowlistedRestakingStrategies.remove(strategy);
+        }
+        if (success) {
+            emit RestakingStrategyAllowlistUpdated(strategy, allowed);
+        }
+    }
+
     // GETTERS
 
     /**
@@ -439,26 +463,40 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         returns (address[] memory restakedStrategies)
     {
         OperatorDataExtended memory operatorData = _getOperator(operator);
-        IStrategy[] memory strategies = new IStrategy[](1);
-        strategies[0] = IStrategy(BEACON_CHAIN_STRATEGY);
-        uint256[] memory shares = EIGEN_DELEGATION_MANAGER.getOperatorShares(operator, strategies);
-
-        if (operatorData.isRegistered && shares[0] > 0) {
-            restakedStrategies = new address[](1);
-            restakedStrategies[0] = BEACON_CHAIN_STRATEGY;
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        if (operatorData.isRegistered) {
+            uint256 allowlistedCount = $.allowlistedRestakingStrategies.length();
+            IStrategy[] memory strategies = new IStrategy[](allowlistedCount);
+            
+            for (uint256 i = 0; i < allowlistedCount; i++) {
+                strategies[i] = IStrategy($.allowlistedRestakingStrategies.at(i));
+            }
+            
+            uint256[] memory shares = EIGEN_DELEGATION_MANAGER.getOperatorShares(operator, strategies);
+            
+            uint256 restakedCount = 0;
+            restakedStrategies = new address[](allowlistedCount);
+            
+            for (uint256 i = 0; i < allowlistedCount; i++) {
+                if (shares[i] > 0) {
+                    restakedStrategies[restakedCount] = address(strategies[i]);
+                    restakedCount++;
+                }
+            }
+            
+            // Resize the array to the actual number of restaked strategies
+            assembly {
+                mstore(restakedStrategies, restakedCount)
+            }
         }
-
-        return restakedStrategies;
     }
 
     /**
      * @inheritdoc IUniFiAVSManager
      */
     function getRestakeableStrategies() external view returns (address[] memory) {
-        address[] memory strategies = new address[](1);
-        strategies[0] = BEACON_CHAIN_STRATEGY;
-
-        return strategies;
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.allowlistedRestakingStrategies.values();
     }
 
     /**

@@ -25,10 +25,10 @@ interface IUniFiAVSManager {
     /// @notice Thrown when trying to finish deregistering an operator before the delay has elapsed
     error DeregistrationDelayNotElapsed();
 
-    /// @notice Thrown when attempting to start deregistration for an operator that has already started
+    /// @notice Thrown when attempting to start deregistering an operator that has already started
     error DeregistrationAlreadyStarted();
 
-    /// @notice Thrown when trying to finish deregistration for an operator that hasn't started
+    /// @notice Thrown when trying to finish deregistering an operator that hasn't started
     error DeregistrationNotStarted();
 
     /// @notice Thrown when an address is not delegated to the expected operator
@@ -143,6 +143,13 @@ interface IUniFiAVSManager {
     event ChainIDSet(uint8 index, uint256 chainID);
 
     /**
+     * @notice Emitted when a restaking strategy is added or removed from the allowlist.
+     * @param strategy The address of the strategy.
+     * @param allowed Whether the strategy is allowed (true) or disallowed (false).
+     */
+    event RestakingStrategyAllowlistUpdated(address indexed strategy, bool allowed);
+
+    /**
      * @notice Returns the EigenPodManager contract.
      * @return IEigenPodManager The EigenPodManager contract.
      */
@@ -218,7 +225,7 @@ interface IUniFiAVSManager {
     /**
      * @notice Sets a new deregistration delay for operators.
      * @param newDelay The new deregistration delay in seconds.
-     * @dev This function can only be called by the contract owner.
+     * @dev Restricted to the DAO
      */
     function setDeregistrationDelay(uint64 newDelay) external;
 
@@ -226,9 +233,17 @@ interface IUniFiAVSManager {
      * @notice Sets the chain ID for a specific index in the bitmap.
      * @param index The index in the bitmap to set.
      * @param chainID The chain ID to set for the given index.
-     * @dev This function can only be called by the contract owner.
+     * @dev Restricted to the DAO
      */
     function setChainID(uint8 index, uint256 chainID) external;
+
+    /**
+     * @notice Add or remove a strategy address from the allowlist of restaking strategies
+     * @param strategy The address of the strategy to add or remove
+     * @param allowed Whether the strategy should be allowed (true) or disallowed (false)
+     * @dev Restricted to the DAO
+     */
+    function setAllowlistRestakingStrategy(address strategy, bool allowed) external;
 
     /**
      * @notice Retrieves information about a specific operator.
