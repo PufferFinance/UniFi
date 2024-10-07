@@ -909,7 +909,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
     function testSetAllowlistRestakingStrategy() public {
         address newStrategy = address(0x123);
-        
+
         // Initially, only BEACON_CHAIN_STRATEGY should be allowlisted
         address[] memory initialStrategies = avsManager.getRestakeableStrategies();
         assertEq(initialStrategies.length, 1);
@@ -925,7 +925,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         address[] memory updatedStrategies = avsManager.getRestakeableStrategies();
         assertEq(updatedStrategies.length, 2);
         assertTrue(
-            updatedStrategies[0] == avsManager.BEACON_CHAIN_STRATEGY() || updatedStrategies[1] == avsManager.BEACON_CHAIN_STRATEGY()
+            updatedStrategies[0] == avsManager.BEACON_CHAIN_STRATEGY()
+                || updatedStrategies[1] == avsManager.BEACON_CHAIN_STRATEGY()
         );
         assertTrue(updatedStrategies[0] == newStrategy || updatedStrategies[1] == newStrategy);
 
@@ -939,11 +940,16 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         address[] memory finalStrategies = avsManager.getRestakeableStrategies();
         assertEq(finalStrategies.length, 1);
         assertEq(finalStrategies[0], avsManager.BEACON_CHAIN_STRATEGY());
+
+        // Try to remove newStrategy (should fail)
+        vm.prank(DAO);
+        vm.expectRevert(IUniFiAVSManager.RestakingStrategyAllowlistUpdateFailed.selector);
+        avsManager.setAllowlistRestakingStrategy(newStrategy, false);
     }
 
     function testSetAllowlistRestakingStrategy_Unauthorized() public {
         address newStrategy = address(0x123);
-        
+
         vm.prank(operator);
         vm.expectRevert();
         avsManager.setAllowlistRestakingStrategy(newStrategy, true);
@@ -971,7 +977,8 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         assertEq(restakedStrategies.length, 2, "Should return two restaked strategies");
         assertTrue(
-            restakedStrategies[0] == avsManager.BEACON_CHAIN_STRATEGY() || restakedStrategies[1] == avsManager.BEACON_CHAIN_STRATEGY(),
+            restakedStrategies[0] == avsManager.BEACON_CHAIN_STRATEGY()
+                || restakedStrategies[1] == avsManager.BEACON_CHAIN_STRATEGY(),
             "Should include BEACON_CHAIN_STRATEGY"
         );
         assertTrue(

@@ -67,6 +67,9 @@ interface IUniFiAVSManager {
     /// @notice Thrown when attempting to deregister a validator that is already deregistered
     error ValidatorAlreadyDeregistered();
 
+    /// @notice Thrown when a restaking strategy allowlist update fails
+    error RestakingStrategyAllowlistUpdateFailed();
+
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS.
      * @param operator The address of the registered operator.

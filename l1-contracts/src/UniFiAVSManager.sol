@@ -86,7 +86,7 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
     function initialize(address accessManager, uint64 initialDeregistrationDelay) public initializer {
         __AccessManaged_init(accessManager);
         _setDeregistrationDelay(initialDeregistrationDelay);
-        
+
         // Initialize BEACON_CHAIN_STRATEGY as an allowed restaking strategy
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         $.allowlistedRestakingStrategies.add(BEACON_CHAIN_STRATEGY);
@@ -344,6 +344,8 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         }
         if (success) {
             emit RestakingStrategyAllowlistUpdated(strategy, allowed);
+        } else {
+            revert RestakingStrategyAllowlistUpdateFailed();
         }
     }
 
@@ -467,23 +469,23 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         if (operatorData.isRegistered) {
             uint256 allowlistedCount = $.allowlistedRestakingStrategies.length();
             IStrategy[] memory strategies = new IStrategy[](allowlistedCount);
-            
+
             for (uint256 i = 0; i < allowlistedCount; i++) {
                 strategies[i] = IStrategy($.allowlistedRestakingStrategies.at(i));
             }
-            
+
             uint256[] memory shares = EIGEN_DELEGATION_MANAGER.getOperatorShares(operator, strategies);
-            
+
             uint256 restakedCount = 0;
             restakedStrategies = new address[](allowlistedCount);
-            
+
             for (uint256 i = 0; i < allowlistedCount; i++) {
                 if (shares[i] > 0) {
                     restakedStrategies[restakedCount] = address(strategies[i]);
                     restakedCount++;
                 }
             }
-            
+
             // Resize the array to the actual number of restaked strategies
             assembly {
                 mstore(restakedStrategies, restakedCount)
