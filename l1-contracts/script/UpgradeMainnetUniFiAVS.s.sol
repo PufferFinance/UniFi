@@ -45,7 +45,7 @@ contract UpgradeMainnetUniFiAVS is BaseScript {
 
         bytes memory calldatas;
         bytes4[] memory daoSelectors = new bytes4[](1);
-        daoSelectors[0] = UniFiAVSManager.updateAVSMetadataURI.selector;
+        daoSelectors[0] = UniFiAVSManager.setAllowlistRestakingStrategy.selector;
 
         calldatas = abi.encodeWithSelector(
             AccessManager.setTargetFunctionRole.selector, address(uniFiAVSManagerProxy), daoSelectors, ROLE_ID_DAO
