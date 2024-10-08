@@ -366,7 +366,7 @@ contract UniFiAVSManager is
                 // If verification succeeds, check if the stored index matches the proof
                 if (validatorIndex != 0 && validatorIndex != proof.validatorIndex) {
                     _slashAndDeregisterValidator(blsPubKeyHash);
-                    delete $.validatorIndexes[proof.validatorIndex]; // free up the index
+                    delete $.validatorIndexes[validatorIndex]; // free up the index
                 }
 
                 if (validatorIndex == 0) {
