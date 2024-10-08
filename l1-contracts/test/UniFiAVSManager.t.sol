@@ -775,29 +775,6 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         assertEq(restakedStrategies[0], avsManager.BEACON_CHAIN_STRATEGY(), "Should return BEACON_CHAIN_STRATEGY");
     }
 
-    function testGetOperatorRestakedStrategies_NoShares() public {
-        _setupOperator();
-        _registerOperator();
-
-        // Don't set any shares for the operator
-
-        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
-
-        assertEq(restakedStrategies.length, 0, "Should return no restaked strategies");
-    }
-
-    function testGetOperatorRestakedStrategies_NotRegistered() public {
-        _setupOperator();
-        // Don't register the operator
-
-        // Set shares for the operator
-        mockDelegationManager.setShares(operator, IStrategy(avsManager.BEACON_CHAIN_STRATEGY()), 100);
-
-        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
-
-        assertEq(restakedStrategies.length, 0, "Should return no restaked strategies for unregistered operator");
-    }
-
     function testGetRestakeableStrategies() public {
         address[] memory restakeableStrategies = avsManager.getRestakeableStrategies();
 
@@ -928,5 +905,121 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         vm.prank(DAO);
         avsManager.updateAVSMetadataURI(newMetadataURI);
+    }
+
+    function testSetAllowlistRestakingStrategy() public {
+        address newStrategy = address(0x123);
+
+        // Initially, only BEACON_CHAIN_STRATEGY should be allowlisted
+        address[] memory initialStrategies = avsManager.getRestakeableStrategies();
+        assertEq(initialStrategies.length, 1);
+        assertEq(initialStrategies[0], avsManager.BEACON_CHAIN_STRATEGY());
+
+        // Add a new strategy
+        vm.prank(DAO);
+        vm.expectEmit(true, true, false, true);
+        emit IUniFiAVSManager.RestakingStrategyAllowlistUpdated(newStrategy, true);
+        avsManager.setAllowlistRestakingStrategy(newStrategy, true);
+
+        // Check that the new strategy is added
+        address[] memory updatedStrategies = avsManager.getRestakeableStrategies();
+        assertEq(updatedStrategies.length, 2);
+        assertTrue(
+            updatedStrategies[0] == avsManager.BEACON_CHAIN_STRATEGY()
+                || updatedStrategies[1] == avsManager.BEACON_CHAIN_STRATEGY()
+        );
+        assertTrue(updatedStrategies[0] == newStrategy || updatedStrategies[1] == newStrategy);
+
+        // Remove the new strategy
+        vm.prank(DAO);
+        vm.expectEmit(true, true, false, true);
+        emit IUniFiAVSManager.RestakingStrategyAllowlistUpdated(newStrategy, false);
+        avsManager.setAllowlistRestakingStrategy(newStrategy, false);
+
+        // Check that the strategy is removed
+        address[] memory finalStrategies = avsManager.getRestakeableStrategies();
+        assertEq(finalStrategies.length, 1);
+        assertEq(finalStrategies[0], avsManager.BEACON_CHAIN_STRATEGY());
+
+        // Try to remove newStrategy (should fail)
+        vm.prank(DAO);
+        vm.expectRevert(IUniFiAVSManager.RestakingStrategyAllowlistUpdateFailed.selector);
+        avsManager.setAllowlistRestakingStrategy(newStrategy, false);
+    }
+
+    function testSetAllowlistRestakingStrategy_Unauthorized() public {
+        address newStrategy = address(0x123);
+
+        vm.prank(operator);
+        vm.expectRevert();
+        avsManager.setAllowlistRestakingStrategy(newStrategy, true);
+    }
+
+    function testGetOperatorRestakedStrategies_MultipleStrategies() public {
+        _setupOperator();
+        _registerOperator();
+
+        address newStrategy1 = address(0x123);
+        address newStrategy2 = address(0x456);
+
+        // Add new strategies to the allowlist
+        vm.startPrank(DAO);
+        avsManager.setAllowlistRestakingStrategy(newStrategy1, true);
+        avsManager.setAllowlistRestakingStrategy(newStrategy2, true);
+        vm.stopPrank();
+
+        // Set shares for the operator
+        mockDelegationManager.setShares(operator, IStrategy(avsManager.BEACON_CHAIN_STRATEGY()), 100);
+        mockDelegationManager.setShares(operator, IStrategy(newStrategy1), 200);
+        // Note: We don't set shares for newStrategy2
+
+        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
+
+        assertEq(restakedStrategies.length, 2, "Should return two restaked strategies");
+        assertTrue(
+            restakedStrategies[0] == avsManager.BEACON_CHAIN_STRATEGY()
+                || restakedStrategies[1] == avsManager.BEACON_CHAIN_STRATEGY(),
+            "Should include BEACON_CHAIN_STRATEGY"
+        );
+        assertTrue(
+            restakedStrategies[0] == newStrategy1 || restakedStrategies[1] == newStrategy1,
+            "Should include newStrategy1"
+        );
+    }
+
+    function testGetOperatorRestakedStrategies_NoShares() public {
+        _setupOperator();
+        _registerOperator();
+
+        address newStrategy = address(0x123);
+
+        // Add new strategy to the allowlist
+        vm.prank(DAO);
+        avsManager.setAllowlistRestakingStrategy(newStrategy, true);
+
+        // Don't set any shares for the operator
+
+        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
+
+        assertEq(restakedStrategies.length, 0, "Should return no restaked strategies");
+    }
+
+    function testGetOperatorRestakedStrategies_NotRegistered() public {
+        _setupOperator();
+        // Don't register the operator
+
+        address newStrategy = address(0x123);
+
+        // Add new strategy to the allowlist
+        vm.prank(DAO);
+        avsManager.setAllowlistRestakingStrategy(newStrategy, true);
+
+        // Set shares for the operator
+        mockDelegationManager.setShares(operator, IStrategy(avsManager.BEACON_CHAIN_STRATEGY()), 100);
+        mockDelegationManager.setShares(operator, IStrategy(newStrategy), 200);
+
+        address[] memory restakedStrategies = avsManager.getOperatorRestakedStrategies(operator);
+
+        assertEq(restakedStrategies.length, 0, "Should return no restaked strategies for unregistered operator");
     }
 }

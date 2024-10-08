@@ -1,11 +1,21 @@
 type Operator @entity {
   id: ID!
   address: Bytes!
-  shares: BigInt!
+  strategyShares: [StrategyShares!]! @derivedFrom(field: "operator")
+  totalEthShares: BigInt!
+  totalEigenShares: BigInt!
   isRegistered: Boolean!
+}
+
+type StrategyShares @entity {
+  id: ID!
+  operator: Operator!
+  strategy: Bytes!
+  shares: BigInt!
 }
 
 type TotalShares @entity {
   id: ID!
   totalShares: BigInt!
+  totalEigenShares: BigInt!
 }

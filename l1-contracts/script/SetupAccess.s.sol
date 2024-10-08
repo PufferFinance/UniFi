@@ -74,10 +74,11 @@ contract SetupAccess is BaseScript {
         bytes[] memory calldatas = new bytes[](2);
 
         bytes4[] memory daoSelectors = new bytes4[](0);
-        daoSelectors = new bytes4[](3);
+        daoSelectors = new bytes4[](4);
         daoSelectors[0] = UniFiAVSManager.setDeregistrationDelay.selector;
         daoSelectors[1] = UniFiAVSManager.setChainID.selector;
         daoSelectors[2] = UniFiAVSManager.updateAVSMetadataURI.selector;
+        daoSelectors[3] = UniFiAVSManager.setAllowlistRestakingStrategy.selector;
 
         calldatas[0] = abi.encodeWithSelector(
             AccessManager.setTargetFunctionRole.selector,

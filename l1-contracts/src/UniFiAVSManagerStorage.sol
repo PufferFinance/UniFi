@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
 
@@ -19,6 +20,8 @@ abstract contract UniFiAVSManagerStorage {
         mapping(uint8 => uint256) bitmapIndexToChainId;
         // Mapping to store chainId to bitmap index
         mapping(uint256 => uint8) chainIdToBitmapIndex;
+        // Set of allowlisted restaking strategies
+        EnumerableSet.AddressSet allowlistedRestakingStrategies;
     }
 
     /**
