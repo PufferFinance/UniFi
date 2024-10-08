@@ -282,6 +282,8 @@ contract UniFiAVSManager is
                 expiry: params.expiry
             });
 
+            $.validatorIndexes[params.index] = blsPubKeyHash;
+
             emit ValidatorRegistered({
                 podOwner: address(0),
                 operator: msg.sender,
