@@ -385,7 +385,7 @@ interface IUniFiAVSManager {
      * @param index The index for the message.
      * @return BN254.G1Point The BLS message hash.
      */
-    function blsMessageHash(bytes32 typeHash, address operator, uint64 salt, uint64 expiry, uint256 index)
+    function blsMessageHash(bytes32 typeHash, address operator, bytes32 salt, uint256 expiry, uint256 index)
         external
         view
         returns (BN254.G1Point memory);
