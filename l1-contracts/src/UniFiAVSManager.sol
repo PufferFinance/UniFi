@@ -19,6 +19,8 @@ import { IEigenPod } from "eigenlayer/interfaces/IEigenPod.sol";
 import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
 // Local Imports
 import { BLSSignatureCheckerLib } from "./lib/BLSSignatureCheckerLib.sol";
+import { BeaconChainHelperLib } from "./lib/BeaconChainHelperLib.sol";
+
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
 import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
@@ -309,15 +311,6 @@ contract UniFiAVSManager is
             address operator = validator.operator;
             ValidatorRegistrationData memory validatorRegistrationData = $.validatorRegistrations[blsPubKeyHash];
 
-            if (validator.index == 0) {
-                revert ValidatorNotFound();
-            }
-
-            // Check if the validator is already deregistered
-            if (validator.registeredUntil != type(uint64).max) {
-                revert ValidatorAlreadyDeregistered();
-            }
-
             // Calculate the hash using EIP-712
             BN254.G1Point memory messageHash = blsMessageHash({
                 typeHash: VALIDATOR_REGISTRATION_TYPEHASH,
@@ -336,24 +329,90 @@ contract UniFiAVSManager is
             );
 
             if (!isValid) {
-                // Slash the operator
-                $.slashedOperators[operator].push(
-                    InvalidValidator({ slashingBeneficiary: msg.sender, blsPubKeyHash: blsPubKeyHash })
-                );
-
-                // Update the registeredUntil field to deregister the validator
-                validator.registeredUntil = uint64(block.number) + $.deregistrationDelay;
-
-                // Emit the ValidatorDeregistered event
-                emit ValidatorDeregistered({ operator: operator, blsPubKeyHash: blsPubKeyHash });
-
-                emit ValidatorSlashed(operator, blsPubKeyHash);
-
-                // Decrement the operator's validator count
-                OperatorData storage operatorData = $.operators[operator];
-                operatorData.validatorCount -= 1;
+                _slashAndDeregisterValidator(blsPubKeyHash);
             }
         }
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted in this context is like `whenNotPaused` modifier from Pausable.sol
+     */
+    function verifyValidatorOnBeaconChain(
+        bytes32[] calldata blsPubKeyHashes,
+        BeaconChainHelperLib.InclusionProof[] calldata proofs
+    ) external restricted {
+        if (blsPubKeyHashes.length != proofs.length) {
+            revert InvalidArrayLengths();
+        }
+
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            bytes32 blsPubKeyHash = blsPubKeyHashes[i];
+            BeaconChainHelperLib.InclusionProof memory proof = proofs[i];
+
+            (, bytes32 beaconBlockRoot) = BeaconChainHelperLib.getRootFromTimestamp(block.timestamp - 12);
+
+            // Verify the validator using BeaconChainHelperLib
+            bool isValid = BeaconChainHelperLib.verifyValidator(blsPubKeyHash, beaconBlockRoot, proof);
+
+            if (isValid) {
+                ValidatorData storage validator = $.validators[blsPubKeyHash];
+                uint64 validatorIndex = validator.index;
+
+                // If verification succeeds, check if the stored index matches the proof
+                if (validatorIndex != 0 && validatorIndex != proof.validatorIndex) {
+                    _slashAndDeregisterValidator(blsPubKeyHash);
+                    delete $.validatorIndexes[proof.validatorIndex]; // free up the index
+                }
+
+                if (validatorIndex == 0) {
+                    bytes32 blsPubKeyHashFromIndex = $.validatorIndexes[proof.validatorIndex];
+                    validator = $.validators[blsPubKeyHashFromIndex];
+
+                    if (validator.index != 0 && blsPubKeyHashFromIndex != blsPubKeyHash) {
+                        _slashAndDeregisterValidator(blsPubKeyHashFromIndex);
+                        delete $.validatorIndexes[proof.validatorIndex]; // free up the index
+                    } else {
+                        revert ValidatorNotFound();
+                    }
+                }
+            } else {
+                revert InvalidValidatorProof();
+            }
+        }
+    }
+
+    // Helper function to slash and deregister a validator
+    function _slashAndDeregisterValidator(bytes32 blsPubKeyHash) internal {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        ValidatorData storage validator = $.validators[blsPubKeyHash];
+        address operator = validator.operator;
+
+        if (validator.index == 0) {
+            revert ValidatorNotFound();
+        }
+
+        if (validator.registeredUntil <= block.number) {
+            revert ValidatorAlreadyDeregistered();
+        }
+
+        $.slashedOperators[operator].push(
+            InvalidValidator({ slashingBeneficiary: msg.sender, blsPubKeyHash: blsPubKeyHash })
+        );
+
+        // Update the registeredUntil field to deregister the validator immediately
+        validator.registeredUntil = uint64(block.number);
+
+        // Emit the ValidatorDeregistered event
+        emit ValidatorDeregistered({ operator: operator, blsPubKeyHash: blsPubKeyHash });
+
+        emit ValidatorSlashed(operator, blsPubKeyHash);
+
+        // Decrement the operator's validator count
+        OperatorData storage operatorData = $.operators[operator];
+        operatorData.validatorCount -= 1;
     }
 
     /**
@@ -653,15 +712,9 @@ contract UniFiAVSManager is
     }
 
     /**
-     * @notice Calculate the BLS message hash using EIP-712
-     * @param typeHash The type hash for the registration
-     * @param operator The operator's address
-     * @param salt The unique salt
-     * @param expiry The expiry time
-     * @param index The index of the validator
-     * @return The BLS message hash as a G1 point
+     * @inheritdoc IUniFiAVSManager
      */
-    function blsMessageHash(bytes32 typeHash, address operator, bytes32 salt, uint256 expiry, uint64 index)
+    function blsMessageHash(bytes32 typeHash, address operator, bytes32 salt, uint256 expiry, uint256 index)
         public
         view
         returns (BN254.G1Point memory)

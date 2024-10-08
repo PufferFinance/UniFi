@@ -9,6 +9,7 @@ import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
 import { IAVSDirectoryExtended } from "../interfaces/EigenLayer/IAVSDirectoryExtended.sol";
 import "../structs/ValidatorData.sol";
 import "../structs/OperatorData.sol";
+import { BeaconChainHelperLib } from "../lib/BeaconChainHelperLib.sol";
 
 /**
  * @title IUniFiAVSManager
@@ -78,6 +79,12 @@ interface IUniFiAVSManager {
 
     /// @notice Thrown when a signature is expired
     error SignatureExpired();
+
+    /// @notice Thrown when the lengths of the input arrays are not equal
+    error InvalidArrayLengths();
+
+    /// @notice Thrown when a validator proof is invalid
+    error InvalidValidatorProof();
 
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS.
@@ -275,6 +282,16 @@ interface IUniFiAVSManager {
      * @param blsPubKeyHashes The BLS public key hashes of the validators.
      */
     function verifyValidatorSignatures(bytes32[] calldata blsPubKeyHashes) external;
+
+    /**
+     * @notice Verifies the validator's presence on the beacon chain.
+     * @param blsPubKeyHashes The BLS public key hashes of the validators.
+     * @param proofs The inclusion proofs for each validator.
+     */
+    function verifyValidatorOnBeaconChain(
+        bytes32[] calldata blsPubKeyHashes,
+        BeaconChainHelperLib.InclusionProof[] calldata proofs
+    ) external;
 
     /**
      * @notice Retrieves information about a specific operator.
