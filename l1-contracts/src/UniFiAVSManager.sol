@@ -366,9 +366,7 @@ contract UniFiAVSManager is
                 if (validatorIndex != 0 && validatorIndex != proof.validatorIndex) {
                     _slashAndDeregisterValidator(blsPubKeyHash);
                     delete $.validatorIndexes[validatorIndex];
-                }
-
-                if (validatorIndex == 0) {
+                } else if (validatorIndex == 0) {
                     bytes32 blsPubKeyHashFromIndex = $.validatorIndexes[proof.validatorIndex];
                     validator = $.validators[blsPubKeyHashFromIndex];
 
