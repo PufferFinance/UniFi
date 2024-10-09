@@ -61,6 +61,7 @@ struct ValidatorRegistrationData {
  * @notice Struct to store parameters for validator registration.
  */
 struct ValidatorRegistrationParams {
+    bytes32 blsPubKeyHash;
     BN254.G1Point registrationSignature;
     BN254.G1Point pubkeyG1;
     BN254.G2Point pubkeyG2;

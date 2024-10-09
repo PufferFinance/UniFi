@@ -26,6 +26,8 @@ import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
 
+import "forge-std/console.sol";
+
 contract UniFiAVSManager is
     UniFiAVSManagerStorage,
     IUniFiAVSManager,
@@ -246,7 +248,7 @@ contract UniFiAVSManager is
             ValidatorRegistrationParams memory params = paramsArray[i];
 
             // Derive the BLS public key hash from pubkeyG1
-            bytes32 blsPubKeyHash = BN254.hashG1Point(params.pubkeyG1);
+            bytes32 blsPubKeyHash = params.blsPubKeyHash;
 
             ValidatorData storage existingValidator = $.validators[blsPubKeyHash];
             ValidatorRegistrationData storage validatorRegistrationData = $.validatorRegistrations[blsPubKeyHash];
@@ -353,20 +355,17 @@ contract UniFiAVSManager is
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             bytes32 blsPubKeyHash = blsPubKeyHashes[i];
             BeaconChainHelperLib.InclusionProof memory proof = proofs[i];
-
             (, bytes32 beaconBlockRoot) = BeaconChainHelperLib.getRootFromTimestamp(block.timestamp - 12);
 
-            // Verify the validator using BeaconChainHelperLib
             bool isValid = BeaconChainHelperLib.verifyValidator(blsPubKeyHash, beaconBlockRoot, proof);
 
             if (isValid) {
                 ValidatorData storage validator = $.validators[blsPubKeyHash];
                 uint64 validatorIndex = validator.index;
 
-                // If verification succeeds, check if the stored index matches the proof
                 if (validatorIndex != 0 && validatorIndex != proof.validatorIndex) {
                     _slashAndDeregisterValidator(blsPubKeyHash);
-                    delete $.validatorIndexes[validatorIndex]; // free up the index
+                    delete $.validatorIndexes[validatorIndex];
                 }
 
                 if (validatorIndex == 0) {
@@ -375,7 +374,7 @@ contract UniFiAVSManager is
 
                     if (validator.index != 0 && blsPubKeyHashFromIndex != blsPubKeyHash) {
                         _slashAndDeregisterValidator(blsPubKeyHashFromIndex);
-                        delete $.validatorIndexes[proof.validatorIndex]; // free up the index
+                        delete $.validatorIndexes[proof.validatorIndex];
                     } else {
                         revert ValidatorNotFound();
                     }
