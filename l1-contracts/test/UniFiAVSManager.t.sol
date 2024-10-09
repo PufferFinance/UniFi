@@ -1367,7 +1367,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         avsManager.verifyValidatorOnBeaconChain(blsPubKeyHashes, proofs);
 
         // Check that the validator is still registered
-        ValidatorDataExtended memory validator = avsManager.getValidator(BeaconProofs.validatorIndex());
+        ValidatorDataExtended memory validator = avsManager.getValidator(bytes32(uint256(1234)));
         assertFalse(validator.registered, "Validator should be deregistered after slashing");
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
