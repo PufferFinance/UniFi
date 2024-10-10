@@ -89,6 +89,9 @@ interface IUniFiAVSManager {
     /// @notice Thrown when a validator index is already used
     error ValidatorIndexAlreadyUsed();
 
+    /// @notice Thrown when an operator is slashed
+    error OperatorSlashed();
+
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS.
      * @param operator The address of the registered operator.
@@ -351,6 +354,12 @@ interface IUniFiAVSManager {
      * @return The current deregistration delay in seconds.
      */
     function getDeregistrationDelay() external view returns (uint64);
+
+    /**
+     * @notice Retrieves the current registration delay for validators.
+     * @return The current registration delay in seconds.
+     */
+    function getRegistrationDelay() external view returns (uint64);
 
     /**
      * @notice Converts a bitmap to an array of chain IDs.

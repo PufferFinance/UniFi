@@ -348,6 +348,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 0, "all validators should be deregistered");
 
+        vm.roll(initialBlockNumber + avsManager.getRegistrationDelay() + 1);
         for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
             ValidatorDataExtended memory validatorData = avsManager.getValidator(blsPubKeyHashes[i]);
             assertTrue(validatorData.registered, "Validator should be registered");
@@ -901,6 +902,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         vm.prank(operator);
         avsManager.registerValidators(podOwner, blsPubKeyHashes);
+        vm.roll(block.number + avsManager.getRegistrationDelay() + 1);
 
         // Deregister the first validator
         bytes32[] memory deregisterFirst = new bytes32[](1);
@@ -1106,6 +1108,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         OperatorDataExtended memory operatorData = avsManager.getOperator(operator);
         assertEq(operatorData.validatorCount, 2, "Validator count should be 2");
+        vm.roll(block.number + avsManager.getRegistrationDelay() + 1);
 
         ValidatorDataExtended memory validator1 = avsManager.getValidator(pubkeyHash1);
         ValidatorDataExtended memory validator2 = avsManager.getValidator(pubkeyHash2);
@@ -1183,6 +1186,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
         blsPubKeyHashes[0] = pubkeyHash;
 
         avsManager.verifyValidatorSignatures(blsPubKeyHashes);
+        vm.roll(block.number + avsManager.getRegistrationDelay() + 1);
 
         ValidatorDataExtended memory validator = avsManager.getValidator(pubkeyHash);
         assertTrue(validator.registered, "Validator should still be registered after verification");
@@ -1278,6 +1282,7 @@ contract UniFiAVSManagerTest is UnitTestHelper {
 
         // Verify the validator on the beacon chain
         avsManager.verifyValidatorOnBeaconChain(blsPubKeyHashes, proofs);
+        vm.roll(block.number + avsManager.getRegistrationDelay() + 1);
 
         // Check that the validator is still registered
         ValidatorDataExtended memory validator = avsManager.getValidator(blsPubKeyHashes[0]);

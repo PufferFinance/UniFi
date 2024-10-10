@@ -402,6 +402,10 @@ contract UniFiAVSManager is
             revert DeregistrationAlreadyStarted();
         }
 
+        if ($.slashedOperators[msg.sender].length > 0) {
+            revert OperatorSlashed();
+        }
+
         operator.startDeregisterOperatorBlock = uint64(block.number);
 
         emit OperatorDeregisterStarted(msg.sender);
@@ -542,6 +546,14 @@ contract UniFiAVSManager is
     function getDeregistrationDelay() external view returns (uint64) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.deregistrationDelay;
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     */
+    function getRegistrationDelay() external view returns (uint64) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.registerationDelay;
     }
 
     /**
