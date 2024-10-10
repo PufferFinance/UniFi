@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
+// OpenZeppelin Imports
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { AccessManagedUpgradeable } from
     "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+// EigenLayer Imports
 import { ISignatureUtils } from "eigenlayer/interfaces/ISignatureUtils.sol";
 import { IStrategy } from "eigenlayer/interfaces/IStrategy.sol";
 import { IAVSDirectory } from "eigenlayer/interfaces/IAVSDirectory.sol";
@@ -12,15 +16,28 @@ import { IAVSDirectoryExtended } from "./interfaces/EigenLayer/IAVSDirectoryExte
 import { IDelegationManager } from "eigenlayer/interfaces/IDelegationManager.sol";
 import { IEigenPodManager } from "eigenlayer/interfaces/IEigenPodManager.sol";
 import { IEigenPod } from "eigenlayer/interfaces/IEigenPod.sol";
+import { BN254 } from "eigenlayer-middleware/libraries/BN254.sol";
+// Local Imports
+import { BLSSignatureCheckerLib } from "./lib/BLSSignatureCheckerLib.sol";
+import { BeaconChainHelperLib } from "./lib/BeaconChainHelperLib.sol";
+
 import { IUniFiAVSManager } from "./interfaces/IUniFiAVSManager.sol";
-import { UniFiAVSManagerStorage } from "./UniFiAVSManagerStorage.sol";
+import { UniFiAVSManagerStorage } from "./storage/UniFiAVSManagerStorage.sol";
 import "./structs/ValidatorData.sol";
 import "./structs/OperatorData.sol";
 
-contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgradeable, AccessManagedUpgradeable {
+contract UniFiAVSManager is
+    UniFiAVSManagerStorage,
+    IUniFiAVSManager,
+    UUPSUpgradeable,
+    AccessManagedUpgradeable,
+    EIP712
+{
     using EnumerableSet for EnumerableSet.AddressSet;
 
     address public constant BEACON_CHAIN_STRATEGY = 0xbeaC0eeEeeeeEEeEeEEEEeeEEeEeeeEeeEEBEaC0;
+    bytes32 public constant VALIDATOR_REGISTRATION_TYPEHASH =
+        keccak256("BN254ValidatorRegistration(address operator,bytes32 salt,uint256 expiry,uint64 index)");
 
     /**
      * @notice The EigenPodManager
@@ -76,7 +93,7 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         IEigenPodManager eigenPodManagerAddress,
         IDelegationManager eigenDelegationManagerAddress,
         IAVSDirectory avsDirectoryAddress
-    ) {
+    ) EIP712("UniFiAVSManager", "1") {
         EIGEN_POD_MANAGER = eigenPodManagerAddress;
         EIGEN_DELEGATION_MANAGER = eigenDelegationManagerAddress;
         AVS_DIRECTORY = IAVSDirectoryExtended(address(avsDirectoryAddress));
@@ -161,7 +178,8 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
                 eigenPod: address(eigenPod),
                 index: validatorInfo.validatorIndex,
                 operator: msg.sender,
-                registeredUntil: type(uint64).max
+                registeredUntil: type(uint64).max,
+                registeredAfter: uint64(block.number)
             });
 
             $.validatorIndexes[validatorInfo.validatorIndex] = blsPubKeyHash;
@@ -216,6 +234,161 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
      * @inheritdoc IUniFiAVSManager
      * @dev Restricted in this context is like `whenNotPaused` modifier from Pausable.sol
      */
+    function registerValidatorsOptimistically(ValidatorRegistrationParams[] memory paramsArray)
+        external
+        registeredOperator(msg.sender)
+        restricted
+    {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        uint256 newValidatorCount = 0;
+        bytes memory delegateKey = $.operators[msg.sender].commitment.delegateKey;
+
+        for (uint256 i = 0; i < paramsArray.length; i++) {
+            ValidatorRegistrationParams memory params = paramsArray[i];
+
+            // Derive the BLS public key hash from pubkeyG1
+            bytes32 blsPubKeyHash = params.blsPubKeyHash;
+
+            ValidatorData storage existingValidator = $.validators[blsPubKeyHash];
+            ValidatorRegistrationData storage validatorRegistrationData = $.validatorRegistrations[blsPubKeyHash];
+
+            // Check if the validator already exists with active status
+            if (existingValidator.index != 0 && existingValidator.registeredUntil == type(uint64).max) {
+                revert ValidatorAlreadyRegistered();
+            }
+
+            if ($.validatorIndexes[params.index] != bytes32(0)) {
+                revert ValidatorIndexAlreadyUsed();
+            }
+
+            // Check if the registration salt has been used before
+            if (validatorRegistrationData.salt == params.salt) {
+                revert SaltAlreadyUsed();
+            }
+
+            // Check if the signature is expired
+            if (block.timestamp > params.expiry) {
+                revert SignatureExpired();
+            }
+
+            // Store the validator data
+            $.validators[blsPubKeyHash] = ValidatorData({
+                eigenPod: address(0), // Not from EigenPod
+                index: params.index, // Store the provided index
+                operator: msg.sender,
+                registeredUntil: type(uint64).max,
+                registeredAfter: uint64(block.number) + $.registerationDelay
+            });
+
+            $.validatorRegistrations[blsPubKeyHash] = ValidatorRegistrationData({
+                registrationSignature: params.registrationSignature,
+                pubkeyG1: params.pubkeyG1,
+                pubkeyG2: params.pubkeyG2,
+                salt: params.salt,
+                expiry: params.expiry
+            });
+
+            $.validatorIndexes[params.index] = blsPubKeyHash;
+
+            emit ValidatorRegistered({
+                podOwner: address(0),
+                operator: msg.sender,
+                delegateKey: delegateKey,
+                blsPubKeyHash: blsPubKeyHash,
+                validatorIndex: params.index
+            });
+
+            newValidatorCount++;
+        }
+
+        // Update the operator's validator count
+        OperatorData storage operator = $.operators[msg.sender];
+        operator.validatorCount += uint128(newValidatorCount);
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted in this context is like `whenNotPaused` modifier from Pausable.sol
+     */
+    function verifyValidatorSignatures(bytes32[] calldata blsPubKeyHashes) external restricted {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            bytes32 blsPubKeyHash = blsPubKeyHashes[i];
+            ValidatorData storage validator = $.validators[blsPubKeyHash];
+            address operator = validator.operator;
+            ValidatorRegistrationData memory validatorRegistrationData = $.validatorRegistrations[blsPubKeyHash];
+
+            // Calculate the hash using EIP-712
+            BN254.G1Point memory messageHash = blsMessageHash({
+                typeHash: VALIDATOR_REGISTRATION_TYPEHASH,
+                operator: operator,
+                salt: validatorRegistrationData.salt,
+                expiry: validatorRegistrationData.expiry,
+                index: validator.index
+            });
+
+            // Use the stored signature for verification
+            bool isValid = BLSSignatureCheckerLib.isBlsSignatureValid(
+                validatorRegistrationData.pubkeyG1,
+                validatorRegistrationData.pubkeyG2,
+                validatorRegistrationData.registrationSignature,
+                messageHash
+            );
+
+            if (!isValid) {
+                _slashAndDeregisterValidator(blsPubKeyHash, validator.index);
+            }
+        }
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted in this context is like `whenNotPaused` modifier from Pausable.sol
+     */
+    function verifyValidatorOnBeaconChain(
+        bytes32[] calldata blsPubKeyHashes,
+        BeaconChainHelperLib.InclusionProof[] calldata proofs
+    ) external restricted {
+        if (blsPubKeyHashes.length != proofs.length) {
+            revert InvalidArrayLengths();
+        }
+
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+
+        for (uint256 i = 0; i < blsPubKeyHashes.length; i++) {
+            bytes32 blsPubKeyHash = blsPubKeyHashes[i];
+            BeaconChainHelperLib.InclusionProof memory proof = proofs[i];
+            (, bytes32 beaconBlockRoot) = BeaconChainHelperLib.getRootFromTimestamp(block.timestamp - 12);
+
+            bool isValid = BeaconChainHelperLib.verifyValidator(blsPubKeyHash, beaconBlockRoot, proof);
+
+            if (isValid) {
+                ValidatorData storage validator = $.validators[blsPubKeyHash];
+                uint64 validatorIndex = validator.index;
+
+                if (validatorIndex != 0 && validatorIndex != proof.validatorIndex) {
+                    _slashAndDeregisterValidator(blsPubKeyHash, validatorIndex);
+                } else if (validatorIndex == 0) {
+                    bytes32 blsPubKeyHashFromIndex = $.validatorIndexes[proof.validatorIndex];
+                    validator = $.validators[blsPubKeyHashFromIndex];
+
+                    if (validator.index != 0 && blsPubKeyHashFromIndex != blsPubKeyHash) {
+                        _slashAndDeregisterValidator(blsPubKeyHashFromIndex, uint64(proof.validatorIndex));
+                    } else {
+                        revert ValidatorNotFound();
+                    }
+                }
+            } else {
+                revert InvalidValidatorProof();
+            }
+        }
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted in this context is like `whenNotPaused` modifier from Pausable.sol
+     */
     function startDeregisterOperator() external registeredOperator(msg.sender) restricted {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
 
@@ -227,6 +400,10 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
 
         if (operator.startDeregisterOperatorBlock != 0) {
             revert DeregistrationAlreadyStarted();
+        }
+
+        if ($.slashedOperators[msg.sender].length > 0) {
+            revert OperatorSlashed();
         }
 
         operator.startDeregisterOperatorBlock = uint64(block.number);
@@ -312,6 +489,18 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
      * @inheritdoc IUniFiAVSManager
      * @dev Restricted to the DAO
      */
+    function setRegistrationDelay(uint64 newDelay) external restricted {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        uint64 oldDelay = $.registerationDelay;
+        $.registerationDelay = newDelay;
+
+        emit RegistrationDelaySet(oldDelay, newDelay);
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     * @dev Restricted to the DAO
+     */
     function setChainID(uint8 index, uint256 chainID) external restricted {
         if (index == 0) revert IndexOutOfBounds();
 
@@ -357,6 +546,14 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
     function getDeregistrationDelay() external view returns (uint64) {
         UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
         return $.deregistrationDelay;
+    }
+
+    /**
+     * @inheritdoc IUniFiAVSManager
+     */
+    function getRegistrationDelay() external view returns (uint64) {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        return $.registerationDelay;
     }
 
     /**
@@ -508,6 +705,17 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         return address(AVS_DIRECTORY);
     }
 
+    /**
+     * @inheritdoc IUniFiAVSManager
+     */
+    function blsMessageHash(bytes32 typeHash, address operator, bytes32 salt, uint256 expiry, uint256 index)
+        public
+        view
+        returns (BN254.G1Point memory)
+    {
+        return BN254.hashToG1(_hashTypedDataV4(keccak256(abi.encodePacked(typeHash, operator, salt, expiry, index))));
+    }
+
     // INTERNAL FUNCTIONS
 
     function _getOperator(address operator) internal view returns (OperatorDataExtended memory) {
@@ -533,10 +741,17 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         ValidatorData memory validatorData = $.validators[blsPubKeyHash];
 
         if (validatorData.index != 0) {
-            IEigenPod eigenPod = IEigenPod(validatorData.eigenPod);
-            IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHash);
+            IEigenPod.VALIDATOR_STATUS eigenPodStatus;
+            bool backedByEigenPodStake;
 
-            bool backedByStake = EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
+            if (validatorData.eigenPod != address(0)) {
+                IEigenPod eigenPod = IEigenPod(validatorData.eigenPod);
+                IEigenPod.ValidatorInfo memory validatorInfo = eigenPod.validatorPubkeyHashToInfo(blsPubKeyHash);
+
+                eigenPodStatus = validatorInfo.status;
+                backedByEigenPodStake =
+                    EIGEN_DELEGATION_MANAGER.delegatedTo(eigenPod.podOwner()) == validatorData.operator;
+            }
 
             OperatorData storage operator = $.operators[validatorData.operator];
             OperatorCommitment memory activeCommitment = _getActiveCommitment(operator);
@@ -544,12 +759,12 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
             return ValidatorDataExtended({
                 operator: validatorData.operator,
                 eigenPod: validatorData.eigenPod,
-                validatorIndex: validatorInfo.validatorIndex,
-                status: validatorInfo.status,
+                validatorIndex: validatorData.index,
+                eigenPodStatus: eigenPodStatus,
                 delegateKey: activeCommitment.delegateKey,
                 chainIDBitMap: activeCommitment.chainIDBitMap,
-                backedByStake: backedByStake,
-                registered: block.number < validatorData.registeredUntil
+                backedByEigenPodStake: backedByEigenPodStake,
+                registered: block.number < validatorData.registeredUntil && block.number > validatorData.registeredAfter
             });
         }
     }
@@ -575,6 +790,43 @@ contract UniFiAVSManager is UniFiAVSManagerStorage, IUniFiAVSManager, UUPSUpgrad
         $.deregistrationDelay = newDelay;
 
         emit DeregistrationDelaySet(oldDelay, newDelay);
+    }
+
+    /**
+     * @dev Internal function to slash and deregister a validator
+     * @param blsPubKeyHash The BLS public key hash of the validator
+     * @param validatorIndex The index of the validator
+     */
+    function _slashAndDeregisterValidator(bytes32 blsPubKeyHash, uint64 validatorIndex) internal {
+        UniFiAVSStorage storage $ = _getUniFiAVSManagerStorage();
+        ValidatorData storage validator = $.validators[blsPubKeyHash];
+        address operator = validator.operator;
+
+        if (validator.index == 0) {
+            revert ValidatorNotFound();
+        }
+
+        if (validator.registeredUntil <= block.number) {
+            revert ValidatorAlreadyDeregistered();
+        }
+
+        $.slashedOperators[operator].push(
+            InvalidValidator({ slashingBeneficiary: msg.sender, blsPubKeyHash: blsPubKeyHash })
+        );
+
+        // Update the registeredUntil field to deregister the validator immediately
+        validator.registeredUntil = uint64(block.number);
+
+        delete $.validatorIndexes[validatorIndex];
+
+        // Emit the ValidatorDeregistered event
+        emit ValidatorDeregistered({ operator: operator, blsPubKeyHash: blsPubKeyHash });
+
+        emit ValidatorSlashed(operator, blsPubKeyHash);
+
+        // Decrement the operator's validator count
+        OperatorData storage operatorData = $.operators[operator];
+        operatorData.validatorCount -= 1;
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override restricted { }
