@@ -86,6 +86,9 @@ interface IUniFiAVSManager {
     /// @notice Thrown when a validator proof is invalid
     error InvalidValidatorProof();
 
+    /// @notice Thrown when a validator index is already used
+    error ValidatorIndexAlreadyUsed();
+
     /**
      * @notice Emitted when a new operator is registered in the UniFi AVS.
      * @param operator The address of the registered operator.
@@ -176,6 +179,13 @@ interface IUniFiAVSManager {
     event ValidatorSlashed(address indexed operator, bytes32 indexed blsPubKeyHash);
 
     /**
+     * @notice Emitted when the registration delay is set.
+     * @param oldDelay The previous registration delay value.
+     * @param newDelay The new registration delay value.
+     */
+    event RegistrationDelaySet(uint64 oldDelay, uint64 newDelay);
+
+    /**
      * @notice Returns the EigenPodManager contract.
      * @return IEigenPodManager The EigenPodManager contract.
      */
@@ -254,6 +264,13 @@ interface IUniFiAVSManager {
      * @dev Restricted to the DAO
      */
     function setDeregistrationDelay(uint64 newDelay) external;
+
+    /**
+     * @notice Sets a new registration delay for validators.
+     * @param newDelay The new registration delay in seconds.
+     * @dev Restricted to the DAO
+     */
+    function setRegistrationDelay(uint64 newDelay) external;
 
     /**
      * @notice Sets the chain ID for a specific index in the bitmap.

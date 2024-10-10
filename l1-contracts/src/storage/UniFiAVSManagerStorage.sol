@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "./structs/ValidatorData.sol";
-import "./structs/OperatorData.sol";
+import "../structs/ValidatorData.sol";
+import "../structs/OperatorData.sol";
 
 /**
  * @title UniFiAVSManagerStorage
@@ -24,6 +24,8 @@ abstract contract UniFiAVSManagerStorage {
         EnumerableSet.AddressSet allowlistedRestakingStrategies;
         // Mapping to store validator registration data
         mapping(bytes32 => ValidatorRegistrationData) validatorRegistrations;
+        // Delay after which a validator can be considered registered
+        uint64 registerationDelay;
         // Slashed operators mapping
         mapping(address => InvalidValidator[]) slashedOperators; // operator => InvalidValidator[]
     }

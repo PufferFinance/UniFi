@@ -18,6 +18,8 @@ struct ValidatorData {
     address operator;
     /// @notice The block number until which the validator is registered.
     uint64 registeredUntil;
+    /// @notice The block number after which the validator is registered.
+    uint64 registeredAfter;
 }
 
 /**
